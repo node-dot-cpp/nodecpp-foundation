@@ -28,11 +28,47 @@
 #ifndef NODECPP_FOUNDATION_H
 #define NODECPP_FOUNDATION_H 
 
-#if defined _MSC_VER
+// PLATFORM SELECTION
+#if defined(__clang__)
+#define NODECPP_CLANG
+#elif defined(__GNUC__) || defined(__GNUG__)
+#define NODECPP_GCC
+#elif defined(_MSC_VER)
+#define NODECPP_MSVC
+#else
+#pragma message( "Unknown compiler. Sume features may not be implemented" ) 
+#endif
+
+#if (defined __X86_64__) || (defined __X86_64) || (defined __amd64__) || (defined __amd64) || (defined _M_X64)
+#define NODECPP_X64
+static_assert(sizeof(void*) == 8 );
+#elif (defined __i386__ ) || (defined i386 ) || (defined __i386 ) || (defined __I86__ ) || (defined _M_IX86 )
+#define NODECPP_X86
+static_assert(sizeof(void*) == 4 );
+#else
+#pragma message( "Unknown patform. Sume features may not be implemented" ) 
+#endif
+
+// os
+#if ( defined __linux ) || (defined linux )
+#define NODECPP_OS_LINUX
+#elif (defined __WINDOWS__ ) ||(defined _WIN32) || (defined _WIN64 )
+#define NODECPP_OS_WINDOWS
+#else
+#pragma message( "Unknown Operating System. Sume features may not be implemented" ) 
+#endif
+
+#if (defined NODECPP_64BIT) || (defined NODECPP_32BIT)
+#define NODECPP_GUARD_PAGE_SIZE 4096
+#else
+#define NODECPP_GUARD_PAGE_SIZE 0
+#endif
+
+#if defined NODECPP_MSVC
 #define ALIGN(n)      __declspec(align(n))
 #define NOINLINE      __declspec(noinline)
 #define FORCE_INLINE	__forceinline
-#elif defined __GNUC__
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
 #define ALIGN(n)      __attribute__ ((aligned(n))) 
 #define NOINLINE      __attribute__ ((noinline))
 #define	FORCE_INLINE inline __attribute__((always_inline))
@@ -42,6 +78,10 @@
 //#define ALIGN(n)
 #warning ALIGN, FORCE_INLINE and NOINLINE may not be properly defined
 #endif
+
+
+#include <utility>
+#include <assert.h>
 
 FORCE_INLINE
 void* readVMT(void* p) { return *((void**)p); }
@@ -57,13 +97,13 @@ FORCE_INLINE
 bool isGuaranteedOnStack( void* ptr )
 {
 	int a;
-	constexpr uintptr_t upperBitsMask = ~( CONTROL_BLOCK_SIZE - 1 );
+	constexpr uintptr_t upperBitsMask = ~( NODECPP_GUARD_PAGE_SIZE - 1 );
 //	printf( "   ---> isGuaranteedOnStack(%zd), &a = %zd (%s)\n", ((uintptr_t)(ptr)), ((uintptr_t)(&a)), ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0 ? "YES" : "NO" );
 	return ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0;
 }
 
 
-struct Ptr2PtrWishFlags {
+struct PtrWithFlags {
 private:
 	uintptr_t ptr;
 public:
@@ -74,7 +114,7 @@ public:
 	void unsetFlag(size_t pos) { assert( pos < 3); ptr &= ~(((uintptr_t)(1))<<pos); }
 	bool isFlag(size_t pos) const { assert( pos < 3); return (ptr & (((uintptr_t)(1))<<pos))>>pos; }
 };
-static_assert( sizeof(Ptr2PtrWishFlags) == 8 );
+static_assert( sizeof(PtrWithFlags) == 8 );
 
 struct Ptr2PtrWishDataBase {
 //private:

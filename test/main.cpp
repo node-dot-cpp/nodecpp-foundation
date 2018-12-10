@@ -26,10 +26,43 @@
 * -------------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include "../include/foundation.h"
 #include "test.h"
+
+void printPlatform()
+{
+#if defined NODECPP_CLANG
+	printf( "Compiler: clang\n" );
+#elif defined NODECPP_GCC
+	printf( "Compiler: gcc\n" );
+#elif defined NODECPP_MSVC
+	printf( "Compiler: msvcv\n" );
+#else
+	printf( "Compiler: unknown\n" );
+#endif
+
+#if defined NODECPP_64BIT
+	printf( "64 bit\n" );
+#elif defined NODECPP_32BIT
+	printf( "32 bit\n" );
+#else
+	printf( "unknown platform\n" );
+#endif
+
+#if defined NODECPP_OS_LINUX
+	printf( "OS: Linux\n" );
+#elif (defined NODECPP_OS_WINDOWS )
+	printf( "OS: Windows\n" );
+#else
+	printf( "OS: unknown\n" );
+#endif
+	printf( "Guard page size: %d bytes\n", NODECPP_GUARD_PAGE_SIZE );
+}
 
 int main(int argc, char *argv[])
 {
+	printPlatform();
+	printf( "\n" );
 	testSEH();
     return 0;
 }

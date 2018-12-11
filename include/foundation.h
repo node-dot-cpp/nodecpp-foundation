@@ -73,7 +73,7 @@ static_assert(sizeof(void*) == 4);
 #define	NODECPP_FORCEINLINE inline
 #define NODECPP_NOINLINE
 //#define ALIGN(n)
-#pragma message( "NODECPP_FORCEINLINE and NODECPP_NOINLINE may not be properly defined" )
+#pragma message( "Unknown compiler. Force-inlining and force-uninlining are disabled" )
 #endif
 
 //!!!NO COMPILER-SPECIFIC #defines PAST THIS POINT!!!
@@ -127,7 +127,7 @@ NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
 
 inline
-constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( 0, sizeof(void*) ); }
+constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( size_t(0), sizeof(void*) ); }
 #else//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 #pragma message("Unknown compiler. Trying to guess VMT pointer layout. Don't complain if it will crash.")
 	
@@ -138,23 +138,52 @@ NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
 
 inline
-constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( 0, sizeof(void*) ); }
+constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( size_t(0), sizeof(void*) ); }
 #endif//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 }//nodecpp::platform
 
-struct PtrWithFlags {
+namespace nodecpp::platform { 
+	
+#ifdef NODECPP_X64
+template< int nflags >
+struct ptr_with_flags {
+	static_assert(nflags <= 3);
 private:
 	uintptr_t ptr;
 public:
 	void init( void* ptr_ ) { ptr = (uintptr_t)ptr_ & ~((uintptr_t)7); }
-	void resetPtr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
-	void* getPtr() const { return (void*)( ptr & ~((uintptr_t)7) ); }
-	void setFlag(size_t pos) { assert( pos < 3); ptr |= ((uintptr_t)(1))<<pos; }
-	void unsetFlag(size_t pos) { assert( pos < 3); ptr &= ~(((uintptr_t)(1))<<pos); }
-	bool isFlag(size_t pos) const { assert( pos < 3); return (ptr & (((uintptr_t)(1))<<pos))>>pos; }
+	void update_ptr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
+	void* get_ptr() const { return (void*)( ptr & ~((uintptr_t)7) ); }
+	template<int pos>
+	void set_flag() { static_assert( pos < nflags); ptr |= ((uintptr_t)(1))<<pos; }
+	template<int pos>
+	void unset_flag() { static_assert( pos < nflags); ptr &= ~(((uintptr_t)(1))<<pos); }
+	template<int pos>
+	bool has_flag() const { static_assert( pos < flags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
 };
-static_assert( sizeof(PtrWithFlags) == 8 );
+static_assert( sizeof(ptr_with_flags) == 8 );
+#else
+template< int nflags >
+struct ptr_with_flags {
+	static_assert(nflags <= 3);
+private:
+	void* ptr;
+	uint8_t flags;
+public:
+	void init( void* ptr_ ) { ptr = ptr_; flags = 0;}
+	void update_ptr( void* ptr_ ) { ptr = ptr_; }
+	void* get_ptr() const { return ptr; }
+	template<int pos>
+	void set_flag() { static_assert( pos < nflags ); flags |= (uint8_t(1))<<pos; }
+	template<int pos>
+	void unset_flag() { static_assert( pos < nflags ); flags &= ~(((uint8_t)(1))<<pos); }
+	template<int pos>
+	bool has_flag() const { static_assert( pos < nflags ); return (flags & (((uint8_t)(1))<<pos)) != 0; }
+};
+#endif//X64
 
+}//nodecpp:platform
+	
 struct Ptr2PtrWishDataBase {
 //private:
 	uintptr_t ptr;

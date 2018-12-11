@@ -91,6 +91,8 @@ namespace nodecpp::platform {
 NODECPP_FORCEINLINE
 bool is_guaranteed_on_stack( void* ptr )
 {
+	//on a page-based system, if a pointer to current on-stack variable (int a below) 
+	//   belongs to the same CPU page as ptr being analysed, ptr points to stack regardless of stack being contiguous etc. etc.
 	int a;
 	constexpr uintptr_t upperBitsMask = ~( NODECPP_MINIMUM_CPU_PAGE_SIZE - 1 );
 //	printf( "   ---> isGuaranteedOnStack(%zd), &a = %zd (%s)\n", ((uintptr_t)(ptr)), ((uintptr_t)(&a)), ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0 ? "YES" : "NO" );
@@ -115,13 +117,13 @@ constexpr bool is_guaranteed_on_stack(void*)
 namespace nodecpp::platform { 
 	
 //USAGE FOR read_vmt_pointer()/restore_vmt_pointer():
-//   auto saved = read_vmt_pointer(p);//in general, return type of read_vmt_pointer() is NOT guaranteed to be void*
+//   auto saved = backup_vmt_pointer(p);//in general, return type of backup_vmt_pointer() is NOT guaranteed to be void*
 //   do_something();
 //   restore_vmt_pointer(p,saved);
 
 #if defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 NODECPP_FORCEINLINE
-void* read_vmt_pointer(void* p) { return *((void**)p); }
+void* backup_vmt_pointer(void* p) { return *((void**)p); }
 
 NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
@@ -132,7 +134,7 @@ constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::mak
 #pragma message("Unknown compiler. Trying to guess VMT pointer layout. Don't complain if it will crash.")
 	
 NODECPP_FORCEINLINE
-void* read_vmt_pointer(void* p) { return *((void**)p); }
+void* backup_vmt_pointer(void* p) { return *((void**)p); }
 
 NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }

@@ -53,26 +53,23 @@ static_assert(sizeof(void*) == 4);
 #endif
 
 //OS
-#if defined(__linux) || defined(linux) || defined(__linux__)
+#if (defined __linux) || (defined linux) || (defined __linux__)
 #define NODECPP_LINUX
-#elif defined(__WINDOWS__) || defined(_WIN32) || defined(_WIN64)
+#elif (defined __WINDOWS__) || (defined _WIN32) || (defined _WIN64)
 #define NODECPP_WINDOWS
 #else
 #pragma message( "Unknown Operating System. We'll try our best but...") 
 #endif
 
 #if defined(NODECPP_MSVC)
-//#define NODECPP_ALIGN(n)      __declspec(align(n))
 #define NODECPP_NOINLINE      __declspec(noinline)
-#define FORCE_INLINE	__forceinline
-#elif defined NODECPP_CLANG) || defined(NODECPP_GCC)
-//#define NODECPP_ALIGN(n)      __attribute__ ((aligned(n)))
+#define NODECPP_FORCEINLINE	__forceinline
+#elif (defined NODECPP_CLANG) || defined(NODECPP_GCC)
 #define NODECPP_NOINLINE      __attribute__ ((noinline))
 #define NODECPP_FORCEINLINE inline __attribute__((always_inline))
 #else
 #define NODECPP_FORCEINLINE inline
 #define NODECPP_NOINLINE
-//#define ALIGN(n)
 #pragma message( "Unknown compiler. Force-inlining and force-uninlining are disabled" )
 #endif
 
@@ -86,6 +83,11 @@ static_assert(sizeof(void*) == 4);
 #if defined(NODECPP_X86) || defined(NODECPP_X64)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
+
+// inevitable headers
+#include <stddef.h>
+#include <cstdint>
+#include <utility>
 
 namespace nodecpp::platform { 
 NODECPP_FORCEINLINE
@@ -149,7 +151,7 @@ namespace nodecpp::platform {
 #ifdef NODECPP_X64
 template< int nflags >
 struct ptr_with_flags {
-	static_assert(nflags <= 3);
+	static_assert(nflags <= 2);
 private:
 	uintptr_t ptr;
 public:
@@ -161,9 +163,10 @@ public:
 	template<int pos>
 	void unset_flag() { static_assert( pos < nflags); ptr &= ~(((uintptr_t)(1))<<pos); }
 	template<int pos>
-	bool has_flag() const { static_assert( pos < flags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
+	bool has_flag() const { static_assert( pos < nflags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
 };
-static_assert( sizeof(ptr_with_flags) == 8 );
+static_assert( sizeof(ptr_with_flags<1>) == 8 );
+static_assert( sizeof(ptr_with_flags<2>) == 8 );
 #else
 template< int nflags >
 struct ptr_with_flags {
@@ -185,6 +188,10 @@ public:
 #endif//X64
 
 }//nodecpp:platform
+
+#ifndef assert // TODO: replace by our own means ASAP
+#define assert(x) 
+#endif
 	
 struct Ptr2PtrWishDataBase {
 //private:

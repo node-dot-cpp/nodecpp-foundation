@@ -16,7 +16,7 @@
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+* DISCLAIMED. IN NO EVENT SHALL OLogN Technologies AG BE LIABLE FOR ANY
 * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -29,6 +29,8 @@
 #define NODECPP_FOUNDATION_H 
 
 // PLATFORM SELECTION
+
+//COMPILER
 #if defined(__clang__)
 #define NODECPP_CLANG
 #elif defined(__GNUC__) || defined(__GNUG__)
@@ -36,72 +38,109 @@
 #elif defined(_MSC_VER)
 #define NODECPP_MSVC
 #else
-#pragma message( "Unknown compiler. Sume features may not be implemented" ) 
+#pragma message( "Unknown compiler. You're on your own." ) 
 #endif
 
-#if (defined __X86_64__) || (defined __X86_64) || (defined __amd64__) || (defined __amd64) || (defined _M_X64)
+//CPU
+#if defined(__X86_64__) || defined(__X86_64) || defined(__amd64__) || defined(__amd64) || defined(_M_X64)
 #define NODECPP_X64
-static_assert(sizeof(void*) == 8 );
-#elif (defined __i386__ ) || (defined i386 ) || (defined __i386 ) || (defined __I86__ ) || (defined _M_IX86 )
+static_assert(sizeof(void*) == 8);
+#elif defined(__i386__) || defined(i386) || defined(__i386) || defined(__I86__) || defined(_M_IX86)
 #define NODECPP_X86
-static_assert(sizeof(void*) == 4 );
+static_assert(sizeof(void*) == 4);
 #else
-#pragma message( "Unknown patform. Sume features may not be implemented" ) 
+#pragma message( "Unknown CPU. CPU-specific optimizations are disabled." ) 
 #endif
 
-// os
-#if ( defined __linux ) || (defined linux )
-#define NODECPP_OS_LINUX
-#elif (defined __WINDOWS__ ) ||(defined _WIN32) || (defined _WIN64 )
-#define NODECPP_OS_WINDOWS
+//OS
+#if defined(__linux) || defined(linux) || defined(__linux__)
+#define NODECPP_LINUX
+#elif defined(__WINDOWS__) || defined(_WIN32) || defined(_WIN64)
+#define NODECPP_WINDOWS
 #else
-#pragma message( "Unknown Operating System. Sume features may not be implemented" ) 
+#pragma message( "Unknown Operating System. We'll try our best but...") 
 #endif
 
-#if (defined NODECPP_64BIT) || (defined NODECPP_32BIT)
-#define NODECPP_GUARD_PAGE_SIZE 4096
-#else
-#define NODECPP_GUARD_PAGE_SIZE 0
-#endif
-
-#if defined NODECPP_MSVC
-#define ALIGN(n)      __declspec(align(n))
-#define NOINLINE      __declspec(noinline)
+#if defined(NODECPP_MSVC)
+//#define NODECPP_ALIGN(n)      __declspec(align(n))
+#define NODECPP_NOINLINE      __declspec(noinline)
 #define FORCE_INLINE	__forceinline
-#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
-#define ALIGN(n)      __attribute__ ((aligned(n))) 
-#define NOINLINE      __attribute__ ((noinline))
-#define	FORCE_INLINE inline __attribute__((always_inline))
+#elif defined NODECPP_CLANG) || defined(NODECPP_GCC)
+//#define NODECPP_ALIGN(n)      __attribute__ ((aligned(n)))
+#define NODECPP_NOINLINE      __attribute__ ((noinline))
+#define	NODECPP_FORCEINLINE inline __attribute__((always_inline))
 #else
-#define	FORCE_INLINE inline
-#define NOINLINE
+#define	NODECPP_FORCEINLINE inline
+#define NODECPP_NOINLINE
 //#define ALIGN(n)
-#warning ALIGN, FORCE_INLINE and NOINLINE may not be properly defined
+#pragma message( "NODECPP_FORCEINLINE and NODECPP_NOINLINE may not be properly defined" )
 #endif
 
+//!!!NO COMPILER-SPECIFIC #defines PAST THIS POINT!!!
 
-#include <utility>
-#include <assert.h>
+//PLATFORM PROPERTIES
 
-FORCE_INLINE
-void* readVMT(void* p) { return *((void**)p); }
+//MMU-BASED SYSTEMS IN PROTECTED MODE
+#if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
 
-FORCE_INLINE
-void restoreVMT(void* p, void* vpt) { *((void**)p) = vpt; }
+#if defined(NODECPP_X86) || defined(NODECPP_X64)
+#define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
+#define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
 
-FORCE_INLINE
-std::pair<size_t, size_t> getVMPPos(void* p) { return std::make_pair( 0, sizeof(void*) ); }
-
-
-FORCE_INLINE
-bool isGuaranteedOnStack( void* ptr )
+namespace nodecpp::platform { 
+NODECPP_FORCEINLINE
+bool is_guaranteed_on_stack( void* ptr )
 {
 	int a;
-	constexpr uintptr_t upperBitsMask = ~( NODECPP_GUARD_PAGE_SIZE - 1 );
+	constexpr uintptr_t upperBitsMask = ~( NODECPP_MINIMUM_CPU_PAGE_SIZE - 1 );
 //	printf( "   ---> isGuaranteedOnStack(%zd), &a = %zd (%s)\n", ((uintptr_t)(ptr)), ((uintptr_t)(&a)), ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0 ? "YES" : "NO" );
 	return ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0;
 }
+}//nodecpp::platform
+#endif//defined(NODECPP_X86) || defined(NODECPP_X64)
 
+#endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
+
+#ifndef NODECPP_MINIMUM_CPU_PAGE_SIZE
+namespace nodecpp::platform { 
+NODECPP_FORCEINLINE
+constexpr bool is_guaranteed_on_stack(void*)
+{
+	return false;
+}
+}//nodecpp::platform
+#endif
+
+//CLASS LAYOUT
+namespace nodecpp::platform { 
+	
+//USAGE FOR read_vmt_pointer()/restore_vmt_pointer():
+//   auto saved = read_vmt_pointer(p);//in general, we return type of read_vmt_pointer() is NOT guaranteed to be void*
+//   do_something();
+//   restore_vmt_pointer(p,saved);
+
+#if defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
+NODECPP_FORCEINLINE
+void* read_vmt_pointer(void* p) { return *((void**)p); }
+
+NODECPP_FORCEINLINE
+void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
+
+inline
+constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( 0, sizeof(void*) ); }
+#else//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
+#pragma message("Unknown compiler. Trying to guess VMT pointer layout. Don't complain if it will crash.")
+	
+NODECPP_FORCEINLINE
+void* read_vmt_pointer(void* p) { return *((void**)p); }
+
+NODECPP_FORCEINLINE
+void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
+
+inline
+constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( 0, sizeof(void*) ); }
+#endif//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
+}//nodecpp::platform
 
 struct PtrWithFlags {
 private:

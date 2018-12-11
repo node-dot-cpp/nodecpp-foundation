@@ -68,9 +68,9 @@ static_assert(sizeof(void*) == 4);
 #elif defined NODECPP_CLANG) || defined(NODECPP_GCC)
 //#define NODECPP_ALIGN(n)      __attribute__ ((aligned(n)))
 #define NODECPP_NOINLINE      __attribute__ ((noinline))
-#define	NODECPP_FORCEINLINE inline __attribute__((always_inline))
+#define NODECPP_FORCEINLINE inline __attribute__((always_inline))
 #else
-#define	NODECPP_FORCEINLINE inline
+#define NODECPP_FORCEINLINE inline
 #define NODECPP_NOINLINE
 //#define ALIGN(n)
 #pragma message( "Unknown compiler. Force-inlining and force-uninlining are disabled" )
@@ -115,7 +115,7 @@ constexpr bool is_guaranteed_on_stack(void*)
 namespace nodecpp::platform { 
 	
 //USAGE FOR read_vmt_pointer()/restore_vmt_pointer():
-//   auto saved = read_vmt_pointer(p);//in general, we return type of read_vmt_pointer() is NOT guaranteed to be void*
+//   auto saved = read_vmt_pointer(p);//in general, return type of read_vmt_pointer() is NOT guaranteed to be void*
 //   do_something();
 //   restore_vmt_pointer(p,saved);
 
@@ -127,7 +127,7 @@ NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
 
 inline
-constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( size_t(0), sizeof(void*) ); }
+constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::make_pair( size_t(0), sizeof(void*) ); }
 #else//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 #pragma message("Unknown compiler. Trying to guess VMT pointer layout. Don't complain if it will crash.")
 	
@@ -138,7 +138,7 @@ NODECPP_FORCEINLINE
 void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
 
 inline
-constexpr std::pair<size_t, size_t> get_vmt_pointer_position(void* p) { return std::make_pair( size_t(0), sizeof(void*) ); }
+constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::make_pair( size_t(0), sizeof(void*) ); }
 #endif//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 }//nodecpp::platform
 
@@ -152,7 +152,7 @@ private:
 	uintptr_t ptr;
 public:
 	void init( void* ptr_ ) { ptr = (uintptr_t)ptr_ & ~((uintptr_t)7); }
-	void update_ptr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
+	void set_ptr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
 	void* get_ptr() const { return (void*)( ptr & ~((uintptr_t)7) ); }
 	template<int pos>
 	void set_flag() { static_assert( pos < nflags); ptr |= ((uintptr_t)(1))<<pos; }
@@ -171,7 +171,7 @@ private:
 	uint8_t flags;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; flags = 0;}
-	void update_ptr( void* ptr_ ) { ptr = ptr_; }
+	void set_ptr( void* ptr_ ) { ptr = ptr_; }
 	void* get_ptr() const { return ptr; }
 	template<int pos>
 	void set_flag() { static_assert( pos < nflags ); flags |= (uint8_t(1))<<pos; }

@@ -151,6 +151,10 @@ constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::mak
 }//nodecpp::platform
 
 namespace nodecpp::platform { 
+
+#ifndef assert // TODO: replace by our own means ASAP
+#define assert(x) 
+#endif
 	
 #ifdef NODECPP_X64
 template< int nflags >
@@ -159,8 +163,8 @@ struct ptr_with_flags {
 private:
 	uintptr_t ptr;
 public:
-	void init( void* ptr_ ) { ptr = (uintptr_t)ptr_ & ~((uintptr_t)7); }
-	void set_ptr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
+	void init( void* ptr_ ) { assert((uintptr_t)ptr_ & ((uintptr_t)7)==0); ptr = (uintptr_t)ptr_ & ~((uintptr_t)7); }
+	void set_ptr( void* ptr_ ) { assert((uintptr_t)ptr_ & ((uintptr_t)7)==0); ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
 	void* get_ptr() const { return (void*)( ptr & ~((uintptr_t)7) ); }
 	template<int pos>
 	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<pos; }
@@ -192,10 +196,6 @@ public:
 #endif//X64
 
 }//nodecpp:platform
-
-#ifndef assert // TODO: replace by our own means ASAP
-#define assert(x) 
-#endif
 	
 struct Ptr2PtrWishDataBase {
 //private:

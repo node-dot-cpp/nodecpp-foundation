@@ -95,6 +95,7 @@ bool is_guaranteed_on_stack( void* ptr )
 {
 	//on a page-based system, if a pointer to current on-stack variable (int a below) 
 	//   belongs to the same CPU page as ptr being analysed, ptr points to stack regardless of stack being contiguous etc. etc.
+	//it ensures that false positives are impossible, and false negatives are possible but rare
 	int a;
 	constexpr uintptr_t upperBitsMask = ~( NODECPP_MINIMUM_CPU_PAGE_SIZE - 1 );
 //	printf( "   ---> isGuaranteedOnStack(%zd), &a = %zd (%s)\n", ((uintptr_t)(ptr)), ((uintptr_t)(&a)), ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0 ? "YES" : "NO" );
@@ -119,16 +120,19 @@ constexpr bool is_guaranteed_on_stack(void*)
 namespace nodecpp::platform { 
 	
 //USAGE FOR read_vmt_pointer()/restore_vmt_pointer():
-//   auto saved = backup_vmt_pointer(p);//in general, return type of backup_vmt_pointer() is NOT guaranteed to be void*
+//   auto backup = backup_vmt_pointer(p);//in general, return type of backup_vmt_pointer() is NOT guaranteed to be void*
 //   do_something();
-//   restore_vmt_pointer(p,saved);
+//   restore_vmt_pointer(p,backup);
 
 #if defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
+	
+//IMPORTANT: in general, return type of backup_vmt_pointer() MAY differ from void*; callers MUST treat it as an opaque value
+//           which may ONLY be used to feed it to restore_vmt_pointer() as a second parameter 
 NODECPP_FORCEINLINE
 void* backup_vmt_pointer(void* p) { return *((void**)p); }
 
 NODECPP_FORCEINLINE
-void restore_vmt_pointer(void* p, void* vpt) { *((void**)p) = vpt; }
+void restore_vmt_pointer(void* p, void* backup) { *((void**)p) = backup; }
 
 inline
 constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::make_pair( size_t(0), sizeof(void*) ); }
@@ -151,7 +155,7 @@ namespace nodecpp::platform {
 #ifdef NODECPP_X64
 template< int nflags >
 struct ptr_with_flags {
-	static_assert(nflags <= 2);
+	static_assert(nflags > 0 && nflags <= 2);//don't need more than 2 ATM
 private:
 	uintptr_t ptr;
 public:
@@ -159,18 +163,18 @@ public:
 	void set_ptr( void* ptr_ ) { ptr = (ptr & 7) | ((uintptr_t)ptr_ & ~((uintptr_t)7)); }
 	void* get_ptr() const { return (void*)( ptr & ~((uintptr_t)7) ); }
 	template<int pos>
-	void set_flag() { static_assert( pos < nflags); ptr |= ((uintptr_t)(1))<<pos; }
+	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<pos; }
 	template<int pos>
-	void unset_flag() { static_assert( pos < nflags); ptr &= ~(((uintptr_t)(1))<<pos); }
+	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<pos); }
 	template<int pos>
-	bool has_flag() const { static_assert( pos < nflags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
+	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
 };
 static_assert( sizeof(ptr_with_flags<1>) == 8 );
 static_assert( sizeof(ptr_with_flags<2>) == 8 );
 #else
 template< int nflags >
 struct ptr_with_flags {
-	static_assert(nflags <= 3);
+	static_assert(nflags > 0 && nflags <= 2);//don't need more than 2 ATM
 private:
 	void* ptr;
 	uint8_t flags;
@@ -179,11 +183,11 @@ public:
 	void set_ptr( void* ptr_ ) { ptr = ptr_; }
 	void* get_ptr() const { return ptr; }
 	template<int pos>
-	void set_flag() { static_assert( pos < nflags ); flags |= (uint8_t(1))<<pos; }
+	void set_flag() { static_assert( pos >= 0 && pos < nflags ); flags |= (uint8_t(1))<<pos; }
 	template<int pos>
-	void unset_flag() { static_assert( pos < nflags ); flags &= ~(((uint8_t)(1))<<pos); }
+	void unset_flag() { static_assert( pos >= 0 && pos < nflags ); flags &= ~(((uint8_t)(1))<<pos); }
 	template<int pos>
-	bool has_flag() const { static_assert( pos < nflags ); return (flags & (((uint8_t)(1))<<pos)) != 0; }
+	bool has_flag() const { static_assert( pos >= 0 && pos < nflags ); return (flags & (((uint8_t)(1))<<pos)) != 0; }
 };
 #endif//X64
 

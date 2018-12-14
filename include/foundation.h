@@ -154,6 +154,12 @@ namespace nodecpp::platform {
 
 #ifndef assert // TODO: replace by our own means ASAP
 #define assert(x) 
+#endif//X64
+
+#ifdef NODECPP_X64
+#define nodecpp_memory_size_bits 47
+#else
+#define nodecpp_memory_size_bits 31
 #endif
 	
 #ifdef NODECPP_X64
@@ -181,8 +187,8 @@ static_assert( sizeof(allocated_ptr_with_flags<1>) == 8 );
 static_assert( sizeof(allocated_ptr_with_flags<2>) == 8 );
 #else
 template< int nflags >
-	static_assert(nflags > 0 && nflags <= 2);//don't need more than 2 ATM
 struct allocated_ptr_with_flags {
+	static_assert(nflags > 0 && nflags <= 2);//don't need more than 2 ATM
 private:
 	void* ptr;
 	uint8_t flags;
@@ -294,14 +300,14 @@ struct reference_impl__allocated_ptr_and_ptr_and_data_and_flags {
 private:
 	void* ptr;
 	void* allocptr;
-	uint64_t data;
-	uint64_t flags;
+	size_t data;
+	size_t flags;
 
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
 
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; }
-	void init( size_t data_ ) { init(); data = data; }
+	void init( size_t data_ ) { init(); data = data_; }
 	void init( void* ptr_, void* allocptr_, size_t data_ ) {
 		ptr = ptr_; 
 		allocptr = allocptr_;
@@ -414,7 +420,8 @@ public:
 	}
 };
 #else
-#error // TODO: add it ASAP!
+template< int dataminsize, int nflags >
+struct allocated_ptr_and_ptr_and_data_and_flags : public reference_impl__allocated_ptr_and_ptr_and_data_and_flags<dataminsize, nflags> {};
 #endif//X64
 
 }//nodecpp:platform

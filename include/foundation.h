@@ -235,32 +235,29 @@ private:
 	uintptr_t ptr;
 	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFF8ULL;
 	static constexpr uintptr_t upperDataMask_ = ~(0xFFFFFFFFFFFFULL);
+	static constexpr uintptr_t upperDataOffset_ = 48;
 	static constexpr uintptr_t lowerDataMask_ = 0x7ULL;
-	//static constexpr uintptr_t upperDataMaskInData_ = 0x7FFF8ULL;
 	static constexpr size_t upperDataSize_ = 16;
 	static constexpr size_t lowerDataSize_ = 3;
-	static constexpr size_t upperDataShift_ = 45;
-	//static constexpr size_t invalidData = ( lowerDataMask_ | upperDataMaskInData_ );
-	//static_assert ( (upperDataMaskInData_ << upperDataShift_ ) == upperDataMask_ );
 	static_assert ( (ptrMask_ & upperDataMask_) == 0 );
-	static_assert ( (ptrMask_ >> (upperDataShift_ + lowerDataSize_)) == 0 );
+	static_assert ( (ptrMask_ >> upperDataOffset_) == 0 );
 	static_assert ( (ptrMask_ & lowerDataMask_) == 0 );
 	static_assert ( (upperDataMask_ & lowerDataMask_) == 0 );
 	static_assert ( (ptrMask_ | upperDataMask_ | lowerDataMask_) == 0xFFFFFFFFFFFFFFFFULL );
 public:
 	void init() { ptr = 0; }
 	void init( void* ptr_ ) { 
-		assert( ( (uintptr_t)ptr_ & (~ptrMask_) ) == 0 ); 
+		assert( ( (uintptr_t)ptr_ & (~ptrMask_) ) == 0 );
 		ptr = (uintptr_t)ptr_; 
 	}
-	void set_ptr( void* ptr_ ) { ptr = (ptr & lowerDataMask_) | ((uintptr_t)ptr_ & ~lowerDataMask_); }
-	void* get_ptr() const { return (void*)( ptr & ~lowerDataMask_ ); }
+	void set_ptr( void* ptr_ ) { assert( ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); ptr = (ptr & lowerDataMask_) | ((uintptr_t)ptr_ & ~lowerDataMask_); }
+	void* get_ptr() const { return (void*)( ptr & ptrMask_ ); }
 	template<int pos>
-	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<(upperDataShift_+pos); }
+	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<upperDataOffset_; }
 	template<int pos>
-	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<(upperDataShift_+pos)); }
+	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<upperDataOffset_); }
 	template<int pos>
-	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<(upperDataShift_+pos))) != 0; }
+	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<upperDataOffset_)) != 0; }
 	size_t get_mask() { return ptr & lowerDataMask_; }
 	void set_mask( size_t mask ) { assert( mask < (1<<masksize)); ptr = (ptr & ~lowerDataMask_) | mask; }
 };
@@ -373,7 +370,7 @@ public:
 		assert( ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); 
 		assert( ((uintptr_t)allocptr_ & ~allocptrMask_) == 0 ); 
 		ptr = (uintptr_t)ptr_ & ptrMask_; 
-		allocptr = (uintptr_t)ptr_ & allocptrMask_; 
+		allocptr = (uintptr_t)allocptr_ & allocptrMask_; 
 		set_data( data ); 
 	}
 

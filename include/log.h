@@ -25,51 +25,65 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <utility> // TODO: move it to a proper place
-#include <assert.h> // TODO: replace by ouw own assertion system
-#include "../include/foundation.h"
-#include "test.h"
+#ifndef NODECPP_LOG_H
+#define NODECPP_LOG_H 
 
-void printPlatform()
-{
-#if defined NODECPP_CLANG
-	printf( "Compiler: clang\n" );
-#elif defined NODECPP_GCC
-	printf( "Compiler: gcc\n" );
-#elif defined NODECPP_MSVC
-	printf( "Compiler: msvcv\n" );
-#else
-	printf( "Compiler: unknown\n" );
-#endif
+#include "platform_base.h"
+#include <string>
+#include "../3rdparty/fmt/include/fmt/format.h"
 
-#if defined NODECPP_X64
-	printf( "64 bit\n" );
-#elif defined NODECPP_X86
-	printf( "32 bit\n" );
-#else
-	printf( "unknown platform\n" );
-#endif
 
-#if defined NODECPP_LINUX
-	printf( "OS: Linux\n" );
-#elif (defined NODECPP_WINDOWS )
-	printf( "OS: Windows\n" );
-#else
-	printf( "OS: unknown\n" );
-#endif
-	printf( "Minimum CPU page size: %d bytes\n", NODECPP_MINIMUM_CPU_PAGE_SIZE );
-	printf( "Minimum Zero Guard page size: %d bytes\n", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
-}
+namespace nodecpp::log { 
 
-int main(int argc, char *argv[])
-{
-	nodecpp::log::log<0, nodecpp::log::LogLevel::Notice>("[1] Hi!" );
-	nodecpp::log::log<1, nodecpp::log::LogLevel::Notice>("[2] Hi!" );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Notice>("[3] Hi!" );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Error>("[4] Hi!" );
-	printPlatform();
-	printf( "\n" );
-	testSEH();
-    return 0;
-}
+	enum class LogLevel { Emergency = 0, Alert = 1, Critical = 2, Error = 3, Warning = 4, Notice = 5, Informational = 6, Debug = 7 }; // https://en.wikipedia.org/wiki/Syslog#Severity_level
+	using ModuleIDType = int; // at least, so far
+
+	template< ModuleIDType module, LogLevel level>
+	struct ShouldLog
+	{
+		static constexpr bool value = true;
+	};
+
+#ifdef NODECPP_CUSTOM_LOG_PROCESSING
+#include NODECPP_CUSTOM_LOG_PROCESSING
+#endif // NODECPP_CUSTOM_LOG_PROCESSING
+
+	class Log
+	{
+	private:
+		FILE* LogFile = NULL;
+		FILE* LogConsole = stdout;
+	public:
+		template< ModuleIDType module, LogLevel level, typename... ARGS>
+		void log( const char* formatStr, const ARGS& ... args ) {
+			if constexpr ( ShouldLog<module, level>::value )
+			{
+				std::string s = fmt::format( formatStr, args... );
+				if ( LogFile ) fprintf( LogFile, "%s\n", s.c_str() );
+				if ( LogConsole ) fprintf( LogConsole, "%s\n", s.c_str() );
+			}
+		}
+	};
+
+
+	extern std::unique_ptr<Log> logObject;
+
+//	inline
+	std::unique_ptr<Log> create_log_object();
+/*	{
+		return std::make_unique<Log>();
+	}*/
+
+	template< ModuleIDType module, LogLevel level, typename... ARGS>
+	void log( const char* formatStr, const ARGS& ... args ) {
+		if constexpr ( ShouldLog<module, level>::value )
+		{
+			if ( logObject == nullptr )
+				logObject = create_log_object();
+			logObject->log<module, level>(formatStr, args... );
+		}
+	}
+
+} // namespace nodecpp::log
+
+#endif // NODECPP_LOG_H

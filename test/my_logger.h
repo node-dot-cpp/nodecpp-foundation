@@ -25,51 +25,26 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <utility> // TODO: move it to a proper place
-#include <assert.h> // TODO: replace by ouw own assertion system
-#include "../include/foundation.h"
-#include "test.h"
+#ifndef MYLOGGER_H
+#define MYLOGGER_H 
 
-void printPlatform()
+template<LogLevel level>
+struct ShouldLog<0, level>
 {
-#if defined NODECPP_CLANG
-	printf( "Compiler: clang\n" );
-#elif defined NODECPP_GCC
-	printf( "Compiler: gcc\n" );
-#elif defined NODECPP_MSVC
-	printf( "Compiler: msvcv\n" );
-#else
-	printf( "Compiler: unknown\n" );
-#endif
+	static constexpr bool value = true;
+};
 
-#if defined NODECPP_X64
-	printf( "64 bit\n" );
-#elif defined NODECPP_X86
-	printf( "32 bit\n" );
-#else
-	printf( "unknown platform\n" );
-#endif
 
-#if defined NODECPP_LINUX
-	printf( "OS: Linux\n" );
-#elif (defined NODECPP_WINDOWS )
-	printf( "OS: Windows\n" );
-#else
-	printf( "OS: unknown\n" );
-#endif
-	printf( "Minimum CPU page size: %d bytes\n", NODECPP_MINIMUM_CPU_PAGE_SIZE );
-	printf( "Minimum Zero Guard page size: %d bytes\n", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
-}
-
-int main(int argc, char *argv[])
+template<LogLevel level>
+struct ShouldLog<1, level>
 {
-	nodecpp::log::log<0, nodecpp::log::LogLevel::Notice>("[1] Hi!" );
-	nodecpp::log::log<1, nodecpp::log::LogLevel::Notice>("[2] Hi!" );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Notice>("[3] Hi!" );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Error>("[4] Hi!" );
-	printPlatform();
-	printf( "\n" );
-	testSEH();
-    return 0;
-}
+	static constexpr bool value = false;
+};
+
+template<LogLevel level>
+struct ShouldLog<2, level>
+{
+	static constexpr bool value = level <= nodecpp::log::LogLevel::Error;
+};
+
+#endif // MYLOGGER_H

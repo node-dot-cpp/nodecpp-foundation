@@ -25,51 +25,25 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef NODECPP_LOG_H
-#define NODECPP_LOG_H 
+#ifndef FILE_CONSOLE_SINK_H
+#define FILE_CONSOLE_SINK_H 
 
 #include "platform_base.h"
-#include "../3rdparty/fmt/include/fmt/format.h"
-
 
 namespace nodecpp::log { 
 
-	enum class LogLevel { Emergency = 0, Alert = 1, Critical = 2, Error = 3, Warning = 4, Notice = 5, Informational = 6, Debug = 7 }; // https://en.wikipedia.org/wiki/Syslog#Severity_level
-	constexpr const char* LogLevelNames[] = { "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "" };
-	using ModuleIDType = int; // at least, so far
-
-#ifdef NODECPP_CUSTOM_LOG_PROCESSING
-#include NODECPP_CUSTOM_LOG_PROCESSING
-#else
-#include "default_log.h"
-#endif // NODECPP_CUSTOM_LOG_PROCESSING
-
-	extern std::unique_ptr<DefaultSink> logObject;
-
-	std::unique_ptr<DefaultSink> create_sink();
-
-	template< ModuleIDType module, LogLevel level, typename... ARGS>
-	void log( const char* formatStr, const ARGS& ... args ) {
-		if constexpr ( ShouldLog<module, level>::value )
-		{
-			if ( logObject == nullptr )
-				logObject = create_sink();
-			constexpr size_t logBufSz = 1024;
-			char logBuf[logBufSz];
-			auto res = fmt::format_to_n( logBuf, logBufSz-1, formatStr, args... );
-			if ( res.size >= logBufSz )
-			{
-				logBuf[logBufSz-4] = '.';
-				logBuf[logBufSz-3] = '.';
-				logBuf[logBufSz-2] = '.';
-				logBuf[logBufSz-1] = 0;
-			}
-			else
-				logBuf[res.size] = 0;
-			logObject->log( level, logBuf );
+	class FileConsoleSink
+	{
+	private:
+		FILE* LogFile = NULL;
+		FILE* LogConsole = stdout;
+	public:
+		void log( LogLevel severity, const char* logmsg ) {
+			if ( LogFile ) fprintf( LogFile, "[%s] %s\n", LogLevelNames[(size_t)severity], logmsg );
+			if ( LogConsole ) fprintf( LogConsole, "[%s] %s\n", LogLevelNames[(size_t)severity], logmsg );
 		}
-	}
+	};
 
 } // namespace nodecpp::log
 
-#endif // NODECPP_LOG_H
+#endif // FILE_CONSOLE_SINK_H

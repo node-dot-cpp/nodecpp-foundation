@@ -28,6 +28,12 @@
 #ifndef MYLOGGER_H
 #define MYLOGGER_H 
 
+template< ModuleIDType module, LogLevel level>
+struct ShouldLog
+{
+	static constexpr bool value = true;
+};
+
 template<LogLevel level>
 struct ShouldLog<0, level>
 {
@@ -46,5 +52,9 @@ struct ShouldLog<2, level>
 {
 	static constexpr bool value = level <= nodecpp::log::LogLevel::Error;
 };
+
+#include "file_console_sink.h"
+
+using DefaultSink = nodecpp::log::FileConsoleSink;
 
 #endif // MYLOGGER_H

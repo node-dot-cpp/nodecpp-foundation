@@ -30,9 +30,8 @@
 namespace nodecpp::log { 
 
 std::unique_ptr<DefaultSink> logObject;
-thread_local char logBuf[logBufSz];
 
-std::unique_ptr<DefaultSink> create_log_object()
+std::unique_ptr<DefaultSink> create_sink()
 {
 	return std::make_unique<DefaultSink>();
 }

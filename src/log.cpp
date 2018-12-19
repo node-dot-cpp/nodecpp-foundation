@@ -29,11 +29,12 @@
 
 namespace nodecpp::log { 
 
-std::unique_ptr<Log> logObject;
+std::unique_ptr<DefaultSink> logObject;
+thread_local char logBuf[logBufSz];
 
-std::unique_ptr<Log> create_log_object()
+std::unique_ptr<DefaultSink> create_log_object()
 {
-	return std::make_unique<Log>();
+	return std::make_unique<DefaultSink>();
 }
 
 } // namespace nodecpp::log

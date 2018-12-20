@@ -47,11 +47,11 @@ namespace nodecpp::assert { // pedantic regular critical
 	};
 
 
-	template< ModuleIDType module, AssertLevel level, typename... ARGS>
-	void nodecpp_assert( const char* file, int line, bool cond, const char* condString, const char* formatStr, const ARGS& ... args ) {
+	template< ModuleIDType module, AssertLevel level, class Expr, typename... ARGS>
+	void nodecpp_assert( const char* file, int line, const Expr& expr, const char* condString, const char* formatStr, const ARGS& ... args ) {
 		if constexpr ( ShouldAssert<module, level>::value != ActionType::ignoring )
 		{
-			if ( cond )
+			if ( expr() )
 				return;
 			constexpr size_t logBufSz = 1024;
 			char logBuf[logBufSz];
@@ -74,7 +74,7 @@ namespace nodecpp::assert { // pedantic regular critical
 	}
 
 #define NODECPP_ASSERT( module, level, condition, ... ) \
-	nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, condition, #condition, __VA_ARGS__ )
+	nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, [&] { return condition; }, #condition, __VA_ARGS__ )
 
 } // namespace nodecpp::assert
 

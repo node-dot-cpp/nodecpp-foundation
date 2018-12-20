@@ -26,6 +26,7 @@
     <ClCompile Include="..\test_seh.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\assert.h" />
     <ClInclude Include="..\..\include\cpu_exceptions_translator.h" />
     <ClInclude Include="..\..\include\default_log.h" />
     <ClInclude Include="..\..\include\file_console_sink.h" />

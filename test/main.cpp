@@ -28,7 +28,9 @@
 #include <stdio.h>
 #include <utility> // TODO: move it to a proper place
 #include <assert.h> // TODO: replace by ouw own assertion system
+
 #include "../include/foundation.h"
+#include "../include/assert.h"
 #include "test.h"
 
 void printPlatform()
@@ -62,8 +64,24 @@ void printPlatform()
 	printf( "Minimum Zero Guard page size: %d bytes\n", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
 }
 
+void fnWithAssertion(int i)
+{
+	NODECPP_ASSERT( 0, nodecpp::assert::AssertLevel::critical, i>0, "i = {}", i );
+}
+
 int main(int argc, char *argv[])
 {
+	fnWithAssertion(1);
+	try
+	{
+		fnWithAssertion(0);
+	}
+	catch (...)
+	{
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error cought!");
+	}
+
+
 	const char* testMsg = "some long message";
 	int fake = 17;
 	nodecpp::log::log<0, nodecpp::log::LogLevel::info>("[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );

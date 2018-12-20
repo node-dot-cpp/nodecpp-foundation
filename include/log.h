@@ -34,8 +34,8 @@
 
 namespace nodecpp::log { 
 
-	enum class LogLevel { Emergency = 0, Alert = 1, Critical = 2, Error = 3, Warning = 4, Notice = 5, Informational = 6, Debug = 7 }; // https://en.wikipedia.org/wiki/Syslog#Severity_level
-	constexpr const char* LogLevelNames[] = { "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "" };
+	enum class LogLevel { error = 0, warn = 1, info = 2, verbose = 3, debug = 4, silly = 5 }; // https://blog.risingstack.com/node-js-logging-tutorial/
+	constexpr const char* LogLevelNames[] = { "error", "warn", "info", "verbose", "debug", "silly", "" };
 	using ModuleIDType = int; // at least, so far
 
 #ifdef NODECPP_CUSTOM_LOG_PROCESSING

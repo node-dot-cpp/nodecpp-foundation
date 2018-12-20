@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
 {
 	const char* testMsg = "some long message";
 	int fake = 17;
-	nodecpp::log::log<0, nodecpp::log::LogLevel::Notice>("[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<1, nodecpp::log::LogLevel::Notice>("[2] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Notice>("[3] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::Error>("[4] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>("[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::log::log<1, nodecpp::log::LogLevel::info>("[2] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::log::log<2, nodecpp::log::LogLevel::verbose>("[3] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::log::log<2, nodecpp::log::LogLevel::error>("[4] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 	printPlatform();
 	printf( "\n" );
 	testSEH();

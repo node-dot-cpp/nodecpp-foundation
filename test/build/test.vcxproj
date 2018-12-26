@@ -30,6 +30,7 @@
     <ClInclude Include="..\..\include\cpu_exceptions_translator.h" />
     <ClInclude Include="..\..\include\default_assert.h" />
     <ClInclude Include="..\..\include\default_log.h" />
+    <ClInclude Include="..\..\include\exception.h" />
     <ClInclude Include="..\..\include\file_console_sink.h" />
     <ClInclude Include="..\..\include\foundation.h" />
     <ClInclude Include="..\..\include\log.h" />

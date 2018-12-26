@@ -69,8 +69,72 @@ void fnWithAssertion(int i)
 	NODECPP_ASSERT( 0, nodecpp::assert::AssertLevel::critical, i>0, "i = {}", i );
 }
 
+#include "../include/exception.h"
+
+int fnThatThrows( int n )
+{
+	if ( n > 0 )
+		return n;
+	switch ( n )
+	{
+/*		case -1: throw nodecpp::exception::file_exception_dne{}; break;
+		case -2: throw nodecpp::exception::file_exception_access_denied{}; break;
+		case -3: throw nodecpp::exception::memory_exception_memory_access_violation{}; break;
+		case -4: throw nodecpp::exception::memory_exception_null_pointer_access{}; break;
+		case -5: throw nodecpp::exception::memory_exception_out_of_bound{}; break;*/
+		/*case -1: throw nodecpp::exception::FILE_EXCEPTION::dne; break;
+		case -2: throw nodecpp::exception::FILE_EXCEPTION::access_denied; break;
+		case -3: throw nodecpp::exception::MEMORY_EXCEPTION::memory_access_violation; break;
+		case -4: throw nodecpp::exception::MEMORY_EXCEPTION::null_pointer_access; break;
+		case -5: throw nodecpp::exception::MEMORY_EXCEPTION::out_of_bound; break;*/
+		/*case -1: throw nodecpp::exception::file_exception_dne_; break;
+		case -2: throw nodecpp::exception::file_exception_access_denied_; break;
+		case -3: throw nodecpp::exception::memory_exception_memory_access_violation_; break;
+		case -4: throw nodecpp::exception::memory_exception_null_pointer_access_; break;
+		case -5: throw nodecpp::exception::memory_exception_out_of_bound_; break;*/
+/*		case -1: throw nodecpp::exception::file_exception_dne__; break;
+		case -2: throw nodecpp::exception::file_exception_access_denied__; break;
+		case -3: throw nodecpp::exception::memory_exception_memory_access_violation__; break;
+		case -4: throw nodecpp::exception::memory_exception_null_pointer_access__; break;
+		case -5: throw nodecpp::exception::memory_exception_out_of_bound__; break;*/
+		case - 1: throw nodecpp::exception::file_error(nodecpp::exception::FILE_EXCEPTION::dne, "some_file" ); break;
+		/*case -2: throw nodecpp::exception::file_exception_access_denied__; break;
+		case -3: throw nodecpp::exception::memory_exception_memory_access_violation__; break;
+		case -4: throw nodecpp::exception::memory_exception_null_pointer_access__; break;
+		case -5: throw nodecpp::exception::memory_exception_out_of_bound__; break;*/
+	}
+	return 1;
+}
+
+void fnThatCatches()
+{
+	int ret = fnThatThrows(1);
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatThrows(1) = {}", ret);
+	ret = 0;
+	try
+	{
+		ret = fnThatThrows(-1);
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
+	}
+	/*catch (nodecpp::exception::exception3 e)
+	{
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.description = {}", e.description() );
+//		if ( e.
+		ret = 0;
+	}*/
+	catch (nodecpp::exception::error e)
+	{
+		std::string d = e.description();
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name(), d );
+//		if ( e.
+		ret = 0;
+	}
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatCatches(), ret = {}", ret);
+}
+
 int main(int argc, char *argv[])
 {
+	fnThatCatches(); return 0;
 	fnWithAssertion(1);
 	try
 	{

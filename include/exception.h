@@ -32,8 +32,56 @@
 #include "../3rdparty/fmt/include/fmt/format.h"
 #include "log.h"
 
-
 namespace nodecpp::exception {
+
+	class string_ref
+	{
+		bool fromLiteral;
+		const char* str;
+		class literal_tag_t {};
+		char* duplicate_str( const char* str_ ) { return _strdup( str_ ); }
+
+	public:
+		string_ref( const char* str_ ) : fromLiteral( false ) {
+			str = duplicate_str( str_ );
+		}
+		string_ref( literal_tag_t, const char* str_ ) : fromLiteral( true ), str( str_ ) {}
+		string_ref( const string_ref& other ) {
+			if ( fromLiteral )
+				str = other.str;
+			else
+				str = duplicate_str(other.str);
+			fromLiteral = other.fromLiteral;
+		}
+		string_ref operator = ( const string_ref& other ) {
+			if ( fromLiteral )
+				str = other.str;
+			else
+				str = duplicate_str(other.str);
+			fromLiteral = other.fromLiteral;
+			return *this;
+		}
+		string_ref( string_ref&& other ) {
+			other.str = nullptr;
+			str = other.str;
+			fromLiteral = other.fromLiteral;
+			other.fromLiteral = false;
+		}
+		string_ref operator = ( string_ref&& other ) {
+			other.str = nullptr;
+			str = other.str;
+			fromLiteral = other.fromLiteral;
+			other.fromLiteral = false;
+			return *this;
+		}
+		~string_ref() {
+			if ( !fromLiteral && str )
+				free( const_cast<char*>(str) );
+		}
+		const char* c_str() {
+			return str ? str : "";
+		}
+	};
 
 	enum class FILE_EXCEPTION { dne, access_denied };
 	enum class MEMORY_EXCEPTION { memory_access_violation, null_pointer_access, out_of_bound };
@@ -62,7 +110,7 @@ namespace nodecpp::exception {
 	{
 		friend class file_error_domain;
 		FILE_EXCEPTION errorCode;
-		std::string fileName;
+		string_ref fileName;
 	public:
 		file_error_value( FILE_EXCEPTION code, const char* fileName_ ) : errorCode( code ), fileName( fileName_ ) {}
 		file_error_value( const file_error_value& other ) = default;
@@ -91,8 +139,8 @@ namespace nodecpp::exception {
 			file_error_value* myData = reinterpret_cast<file_error_value*>(value);
 			switch ( myData->errorCode )
 			{
-				case FILE_EXCEPTION::dne: { std::string s = fmt::format("\'{}\': file does not exist", myData->fileName); return s.c_str(); break; }
-				case FILE_EXCEPTION::access_denied: { std::string s = fmt::format("\'{}\': access denied", myData->fileName); return s.c_str(); break; }
+				case FILE_EXCEPTION::dne: { std::string s = fmt::format("\'{}\': file does not exist", myData->fileName.c_str()); return s.c_str(); break; }
+				case FILE_EXCEPTION::access_denied: { std::string s = fmt::format("\'{}\': access denied", myData->fileName.c_str()); return s.c_str(); break; }
 				default: return "unknown file error"; break;
 			}
 		}

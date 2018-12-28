@@ -28,15 +28,16 @@
 #ifndef CPU_EXCEPTIONS_TRANSLATOR_H
 #define CPU_EXCEPTIONS_TRANSLATOR_H
 
-#include <string>
+#include "../3rdparty/fmt/include/fmt/format.h"
 #include <stdexcept>
 
 void initTranslator();
 
 class MemoryAccessViolationException : public std::exception {
-	char whatText[0x100];
+	static constexpr size_t buffsz = 0x100;
+	char whatText[buffsz];
 public:
-	MemoryAccessViolationException( void* p ) { sprintf( whatText, "Memory Access Violation at 0x%zx", (size_t)p ); }
+	MemoryAccessViolationException( void* p ) { auto res = fmt::format_to_n( whatText, buffsz - 1, "Memory Access Violation at 0x{:x}", (size_t)p ); if ( res.size >= buffsz ) whatText[buffsz-1] = 0; else whatText[res.size] = 0; }
 	MemoryAccessViolationException( const MemoryAccessViolationException& other ) = default;
 	const char* what() const noexcept override {  return whatText; };
 

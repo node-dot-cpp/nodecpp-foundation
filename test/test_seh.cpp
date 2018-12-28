@@ -29,6 +29,7 @@
 #include <stdexcept>
 
 #include "../include/cpu_exceptions_translator.h"
+#include "../include/log.h"
 
 using namespace std;
 
@@ -36,8 +37,8 @@ class TestBase
 {
 	int n1;
 public:
-	TestBase( int k ) { n1 = k; printf( "TestBase::TestBase(%d)\n", k ); }
-	virtual ~TestBase() { printf( "TestBase::~TestBase()\n" ); }
+	TestBase( int k ) { n1 = k; nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "TestBase::TestBase({})", k ); }
+	virtual ~TestBase() { nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "TestBase::~TestBase()" ); }
 
 };
 
@@ -45,8 +46,8 @@ class Test : public TestBase
 {
 	int n2;
 public:
-	Test( int k ) : TestBase(k+1) { n2 = k;  printf( "Test::Test(%d)\n", k ); }
-	virtual ~Test() { printf( "Test::~Test()\n" ); }
+	Test( int k ) : TestBase(k+1) { n2 = k;  nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Test::Test({})", k ); }
+	virtual ~Test() { nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Test::~Test()" ); }
 
 };
 
@@ -60,7 +61,7 @@ void badCallOuter_Nullptr()
 {
 	TestBase tb( 1 );
 	badCallInner_Nullptr();
-	printf( "we must be dead here\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "we must be dead here" );
 }
 
 void badCallInner_AnyPtr()
@@ -73,21 +74,21 @@ void badCallOuter_AnyPtr()
 {
 	TestBase tb( 10 );
 	badCallInner_AnyPtr();
-	printf( "we must be dead here\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "we must be dead here" );
 }
 
 void badCallInner_DivByZero()
 {
 	volatile int a = 0;
 	volatile int b = 3 / a;
-	printf( "%d\n", b ); // dummy call to avoid optimizing out
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "{}", b ); // dummy call to avoid optimizing out
 }
 
 void badCallOuter_DivByZero()
 {
 	TestBase tb( 100 );
 	badCallInner_DivByZero();
-	printf( "we must be dead here\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "we must be dead here" );
 }
 
 void testSEH()
@@ -100,10 +101,10 @@ void testSEH()
     }
     catch (std::exception& e)
     {
-        printf( "%s\n", e.what() );
+        nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "{}", e.what() );
     }
 
-    printf( "... and still working [1]\n" );
+    nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "... and still working [1]" );
 
     try
     {
@@ -111,10 +112,10 @@ void testSEH()
 	}
     catch (std::exception& e)
     {
-        printf( "%s\n", e.what() );
+        nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "{}", e.what() );
     }
 
-    printf( "... and still working [2]\n" );
+    nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "... and still working [2]" );
 	
     try 
 	{
@@ -122,8 +123,8 @@ void testSEH()
 	}
 	catch( std::exception& e )
 	{
-		printf( "%s\n", e.what() );
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "{}", e.what() );
 	}
 
-    printf( "... and still working [3]\n" );
+    nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "... and still working [3]" );
 }

@@ -36,32 +36,32 @@
 void printPlatform()
 {
 #if defined NODECPP_CLANG
-	printf( "Compiler: clang\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Compiler: clang" );
 #elif defined NODECPP_GCC
-	printf( "Compiler: gcc\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Compiler: gcc" );
 #elif defined NODECPP_MSVC
-	printf( "Compiler: msvcv\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Compiler: msvcv" );
 #else
-	printf( "Compiler: unknown\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Compiler: unknown" );
 #endif
 
 #if defined NODECPP_X64
-	printf( "64 bit\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "64 bit" );
 #elif defined NODECPP_X86
-	printf( "32 bit\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "32 bit" );
 #else
-	printf( "unknown platform\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "unknown platform" );
 #endif
 
 #if defined NODECPP_LINUX
-	printf( "OS: Linux\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "OS: Linux" );
 #elif (defined NODECPP_WINDOWS )
-	printf( "OS: Windows\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "OS: Windows" );
 #else
-	printf( "OS: unknown\n" );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "OS: unknown" );
 #endif
-	printf( "Minimum CPU page size: %d bytes\n", NODECPP_MINIMUM_CPU_PAGE_SIZE );
-	printf( "Minimum Zero Guard page size: %d bytes\n", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Minimum CPU page size: {} bytes", NODECPP_MINIMUM_CPU_PAGE_SIZE );
+	nodecpp::log::log<0, nodecpp::log::LogLevel::info>( "Minimum Zero Guard page size: {} bytes", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
 }
 
 void fnWithAssertion(int i)
@@ -126,7 +126,7 @@ void fnThatCatches()
 
 int main(int argc, char *argv[])
 {
-	fnThatCatches(); return 0;
+	fnThatCatches(); //return 0;
 	fnWithAssertion(1);
 	try
 	{
@@ -144,8 +144,9 @@ int main(int argc, char *argv[])
 	nodecpp::log::log<1, nodecpp::log::LogLevel::info>("[2] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 	nodecpp::log::log<2, nodecpp::log::LogLevel::verbose>("[3] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 	nodecpp::log::log<2, nodecpp::log::LogLevel::error>("[4] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+
 	printPlatform();
-	printf( "\n" );
 	testSEH();
+
     return 0;
 }

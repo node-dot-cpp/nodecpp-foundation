@@ -98,8 +98,7 @@ void fnThatCatches()
 	}
 	catch (nodecpp::exception::error e)
 	{
-		std::string d = e.description();
-		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name(), d );
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name(), e.description().c_str() );
 //		if ( e.
 		ret = 0;
 	}

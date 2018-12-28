@@ -38,8 +38,10 @@ namespace nodecpp::exception {
 	{
 		bool fromLiteral;
 		const char* str;
-		class literal_tag_t {};
 		char* duplicate_str( const char* str_ ) { return _strdup( str_ ); }
+
+	public:
+		class literal_tag_t {};
 
 	public:
 		string_ref( const char* str_ ) : fromLiteral( false ) {
@@ -100,7 +102,7 @@ namespace nodecpp::exception {
 		constexpr error_domain() {}
 		virtual Type type() const { return unknown_error; }
 		virtual const char* name() const { return "unknown error"; }
-		virtual std::string value_to_meaasage(error_value* value) const { return std::string(""); }
+		virtual string_ref value_to_meaasage(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
 		//virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const {}
 		virtual void destroy_value(error_value* value) const {}
@@ -135,12 +137,12 @@ namespace nodecpp::exception {
 		using Valuetype = file_error_value;
 		virtual error_domain::Type type() const { return error_domain::file_error; }
 		virtual const char* name() const { return "file error"; }
-		virtual std::string value_to_meaasage(error_value* value) const { 
+		virtual string_ref value_to_meaasage(error_value* value) const { 
 			file_error_value* myData = reinterpret_cast<file_error_value*>(value);
 			switch ( myData->errorCode )
 			{
-				case FILE_EXCEPTION::dne: { std::string s = fmt::format("\'{}\': file does not exist", myData->fileName.c_str()); return s.c_str(); break; }
-				case FILE_EXCEPTION::access_denied: { std::string s = fmt::format("\'{}\': access denied", myData->fileName.c_str()); return s.c_str(); break; }
+				case FILE_EXCEPTION::dne: { std::string s = fmt::format("\'{}\': file does not exist", myData->fileName.c_str()); return string_ref( s.c_str() ); break; }
+				case FILE_EXCEPTION::access_denied: { std::string s = fmt::format("\'{}\': access denied", myData->fileName.c_str()); return string_ref( s.c_str() ); break; }
 				default: return "unknown file error"; break;
 			}
 		}
@@ -201,7 +203,7 @@ namespace nodecpp::exception {
 			return *this;
 		}
 		const char* name() { return domain->name(); }
-		std::string description() { return domain->value_to_meaasage(value); }
+		string_ref description() { return domain->value_to_meaasage(value); }
 		~error() {
 			if ( domain )
 				domain->destroy_value( value );

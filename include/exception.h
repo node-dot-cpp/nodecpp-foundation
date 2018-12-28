@@ -175,59 +175,57 @@ namespace nodecpp::exception {
 	public:
 		using DomainTypeT = error_domain;
 
-		const error_domain* domain = nullptr;
-		error_value* value = nullptr;
-
-//	private:
-//		friend class error_domain;
-//		constexpr error() : domain( nullptr ), value( nullptr ) {}
+	private:
+		const error_domain* domain_ = nullptr;
+		error_value* value_ = nullptr;
 
 	public:
-//		bool operator == ( FILE_EXCEPTION fe ) { return t == file_exception && e.fe == fe; }
-//		bool operator == ( MEMORY_EXCEPTION me ) { return t == memory_exception && e.me == me; }
-		constexpr error(const error_domain* domain_, error_value* value_) : domain( domain_ ), value( value_ ) {}
+		constexpr error(const error_domain* domain, error_value* value_) : domain_( domain ), value_( value_ ) {}
 		error( const error& other ) {
-			domain = other.domain;
-			if ( domain )
-				value = domain->clone_value( other.value );
+			domain_ = other.domain_;
+			if ( domain_ )
+				value_ = domain_->clone_value( other.value_ );
 			else
-				value = nullptr;
+				value_ = nullptr;
 		}
 		error operator = ( const error& other ) {
-			domain = other.domain;
-			if ( domain )
-				value = domain->clone_value( other.value );
+			domain_ = other.domain_;
+			if ( domain_ )
+				value_ = domain_->clone_value( other.value_ );
 			else
-				value = nullptr;
+				value_ = nullptr;
 			return *this;
 		}
 		error( error&& other ) {
-			domain = other.domain;
-			other.domain = nullptr;
-			value = other.value;
-			other.value = nullptr;
+			domain_ = other.domain_;
+			other.domain_ = nullptr;
+			value_ = other.value_;
+			other.value_ = nullptr;
 		}
 		error operator = ( error&& other ) {
-			domain = other.domain;
-			other.domain = nullptr;
-			value = other.value;
-			other.value = nullptr;
+			domain_ = other.domain_;
+			other.domain_ = nullptr;
+			value_ = other.value_;
+			other.value_ = nullptr;
 			return *this;
 		}
-		string_ref name() const { return domain->name(); }
-		string_ref description() const { return domain->value_to_meaasage(value); }
+		string_ref name() const { return domain_->name(); }
+		string_ref description() const { return domain_->value_to_meaasage(value_); }
 		~error() {
-			if ( domain )
-				domain->destroy_value( value );
+			if ( domain_ )
+				domain_->destroy_value( value_ );
 		}
+
+		const error_domain* domain() const { return domain_; }
+		error_value* value() const { return value_; }
 
 		template <class ParticularError>
 		inline bool
 		operator==(const ParticularError &b) const
 		{
-			if ( domain != b.domain )
-				return domain->is_equivalent( b, value ) || reinterpret_cast<const typename ParticularError::DomainTypeT*>(b.domain)->ParticularError::DomainTypeT::is_equivalent( *this, b.value );
-			return domain->is_same_error_code(value, b.value);
+			if ( domain_ != b.domain_ )
+				return domain_->is_equivalent( b, value_ ) || reinterpret_cast<const typename ParticularError::DomainTypeT*>(b.domain_)->ParticularError::DomainTypeT::is_equivalent( *this, b.value_ );
+			return domain_->is_same_error_code(value_, b.value_);
 		}
 	};
 
@@ -288,12 +286,11 @@ namespace nodecpp::exception {
 			}
 		}
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
-			if ( src.domain == this )
-				return is_same_error_code( my_value, src.value );
+			if ( src.domain() == this )
+				return is_same_error_code( my_value, src.value() );
 			else
 				return false;
 		}
-		//virtual ~file_error_domain() {}
 	};
 	static constexpr file_error_domain file_error_domain_obj;
 
@@ -318,15 +315,13 @@ namespace nodecpp::exception {
 			return value;
 		}
 		virtual void destroy_value(error_value* value) const {}
-		//virtual ~file_error_domain() {}
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
-			if ( src.domain == this )
-				return is_same_error_code( my_value, src.value );
+			if ( src.domain() == this )
+				return is_same_error_code( my_value, src.value() );
 			else
 				return false;
 		}
 	};
-	//static constexpr system_error_domain system_error_domain_obj;
 	extern const system_error_domain system_error_domain_obj;
 
 	class memory_error_domain : public error_domain
@@ -350,17 +345,15 @@ namespace nodecpp::exception {
 			return value;
 		}
 		virtual void destroy_value(error_value* value) const {}
-		//virtual ~file_error_domain() {}
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
-			if ( src.domain == this )
-				return is_same_error_code( my_value, src.value );
-			else if ( src.domain == &system_error_domain_obj )
+			if ( src.domain() == this )
+				return is_same_error_code( my_value, src.value() );
+			else if ( src.domain() == &system_error_domain_obj )
 			{
-//				switch ( reinterpret_cast<int>(src.value) )
 				switch ( reinterpret_cast<int>(my_value) )
 				{
-					case (int)(merrc::zero_pointer_access): return reinterpret_cast<int>(src.value) == (int)(errc::bad_address); break;
-					case (int)(merrc::memory_access_violation): return reinterpret_cast<int>(src.value) == (int)(errc::bad_address); break;
+					case (int)(merrc::zero_pointer_access): return reinterpret_cast<int>(src.value()) == (int)(errc::bad_address); break;
+					case (int)(merrc::memory_access_violation): return reinterpret_cast<int>(src.value()) == (int)(errc::bad_address); break;
 					default: return false; break;
 				}
 			}
@@ -368,7 +361,6 @@ namespace nodecpp::exception {
 				return false;
 		}
 	};
-	//static constexpr system_error_domain system_error_domain_obj;
 	extern const memory_error_domain memory_error_domain_obj;
 
 	class file_error : public error
@@ -382,15 +374,8 @@ namespace nodecpp::exception {
 	{
 	public:
 		using DomainTypeT = system_error_domain;
-		//static constexpr const DomainTypeT* domain= &system_error_domain_obj;
 		constexpr system_error(errc code) : error( &system_error_domain_obj, system_error_domain_obj.create_value(code) ) {}
-		//~system_error() {}
 	};
-/*	static constexpr system_error bad_address( errc::bad_address );
-	static constexpr system_error file_exists( errc::file_exists );
-	static constexpr system_error no_such_file_or_directory( errc::no_such_file_or_directory );
-	static constexpr system_error not_enough_memory( errc::not_enough_memory );
-	static constexpr system_error permission_denied( errc::permission_denied );*/
 
 	extern const nodecpp::exception::system_error bad_address;
 	extern const nodecpp::exception::system_error file_exists;
@@ -402,9 +387,7 @@ namespace nodecpp::exception {
 	{
 	public:
 		using DomainTypeT = memory_error_domain;
-		static constexpr const DomainTypeT* domain= &memory_error_domain_obj;
 		constexpr memory_error(merrc code) : error( &memory_error_domain_obj, memory_error_domain_obj.create_value(code) ) {}
-		//~system_error() {}
 	};
 
 	extern const nodecpp::exception::memory_error memory_access_violation;

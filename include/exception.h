@@ -164,6 +164,7 @@ namespace nodecpp::exception {
 		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }
+		virtual int _nodecpp_get_error_code(const error_value* value) const { return -1; } // for inter-domain comparison purposes only
 		virtual void destroy_value(error_value* value) const {}
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const { return false; }
 	};
@@ -251,6 +252,9 @@ namespace nodecpp::exception {
 
 	class file_error_domain : public error_domain
 	{
+	protected:
+		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(reinterpret_cast<const file_error_value*>(value)->errorCode); } // for inter-domain comparison purposes only
+
 	public:
 		constexpr file_error_domain() {}
 		using Valuetype = file_error_value;
@@ -293,6 +297,9 @@ namespace nodecpp::exception {
 
 	class system_error_domain : public error_domain
 	{
+	protected:
+		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(value); } // for inter-domain comparison purposes only
+
 	public:
 		constexpr system_error_domain() {}
 		using Valuetype = errc;
@@ -322,6 +329,9 @@ namespace nodecpp::exception {
 
 	class memory_error_domain : public error_domain
 	{
+	protected:
+		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(value); } // for inter-domain comparison purposes only
+
 	public:
 		constexpr memory_error_domain() {}
 		using Valuetype = merrc;
@@ -347,8 +357,8 @@ namespace nodecpp::exception {
 			{
 				switch ( reinterpret_cast<int>(my_value) )
 				{
-					case (int)(merrc::zero_pointer_access): return reinterpret_cast<int>(src.value()) == (int)(errc::bad_address); break;
-					case (int)(merrc::memory_access_violation): return reinterpret_cast<int>(src.value()) == (int)(errc::bad_address); break;
+					case (int)(merrc::zero_pointer_access): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
+					case (int)(merrc::memory_access_violation): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
 					default: return false; break;
 				}
 			}

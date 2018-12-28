@@ -69,7 +69,7 @@ namespace nodecpp::error {
 		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
 
 	public:
-		constexpr memory_error_domain() {}
+		memory_error_domain() {}
 		using Valuetype = merrc;
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
@@ -108,7 +108,7 @@ namespace nodecpp::error {
 	{
 	public:
 		using DomainTypeT = memory_error_domain;
-		constexpr memory_error(merrc code) : error( &memory_error_domain_obj, memory_error_domain_obj.create_value(code) ) {}
+		memory_error(merrc code) : error( &memory_error_domain_obj, memory_error_domain_obj.create_value(code) ) {}
 	};
 
 	extern const nodecpp::error::memory_error memory_access_violation;

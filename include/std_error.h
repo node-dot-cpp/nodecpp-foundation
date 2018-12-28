@@ -101,7 +101,7 @@ namespace nodecpp::error {
 	{
 	public:
 		using DomainTypeT = std_error_domain;
-		constexpr system_error(errc code) : error( &std_error_domain_obj, std_error_domain_obj.create_value(code) ) {}
+		system_error(errc code) : error( &std_error_domain_obj, std_error_domain_obj.create_value(code) ) {}
 	};
 
 	extern const nodecpp::error::system_error bad_address;

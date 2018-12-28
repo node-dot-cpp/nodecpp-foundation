@@ -30,13 +30,21 @@
 
 #include "platform_base.h"
 
+// quick workaround TODO: address properly ASAP!
+#if defined(NODECPP_MSVC)
+#define strdup _strdup 
+#else
+#include <cstdlib>
+#include <string.h>
+#endif
+
 namespace nodecpp::error {
 
 	class string_ref
 	{
 		bool fromLiteral;
 		const char* str;
-		char* duplicate_str( const char* str_ ) { return _strdup( str_ ); }
+		char* duplicate_str( const char* str_ ) { return strdup( str_ ); }
 
 	public:
 		class literal_tag_t {};
@@ -47,7 +55,7 @@ namespace nodecpp::error {
 		}
 		string_ref( literal_tag_t, const char* str_ ) : fromLiteral( true ), str( str_ ) {}
 		string_ref( const string_ref& other ) {
-			if ( fromLiteral )
+			if ( other.fromLiteral )
 				str = other.str;
 			else
 				str = duplicate_str(other.str);

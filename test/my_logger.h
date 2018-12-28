@@ -53,7 +53,7 @@ struct ShouldLog<2, level>
 	static constexpr bool value = level <= nodecpp::log::LogLevel::info;
 };
 
-#include "file_console_sink.h"
+#include "../include/file_console_sink.h"
 
 using DefaultSink = nodecpp::log::FileConsoleSink;
 

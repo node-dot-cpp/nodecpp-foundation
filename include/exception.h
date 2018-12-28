@@ -164,7 +164,7 @@ namespace nodecpp::exception {
 		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }
-		virtual int _nodecpp_get_error_code(const error_value* value) const { return -1; } // for inter-domain comparison purposes only
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return -1; } // for inter-domain comparison purposes only
 		virtual void destroy_value(error_value* value) const {}
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const { return false; }
 	};
@@ -253,7 +253,7 @@ namespace nodecpp::exception {
 	class file_error_domain : public error_domain
 	{
 	protected:
-		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(reinterpret_cast<const file_error_value*>(value)->errorCode); } // for inter-domain comparison purposes only
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (int)(reinterpret_cast<const file_error_value*>(value)->errorCode); } // for inter-domain comparison purposes only
 
 	public:
 		constexpr file_error_domain() {}
@@ -298,7 +298,7 @@ namespace nodecpp::exception {
 	class system_error_domain : public error_domain
 	{
 	protected:
-		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(value); } // for inter-domain comparison purposes only
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
 
 	public:
 		constexpr system_error_domain() {}
@@ -306,13 +306,13 @@ namespace nodecpp::exception {
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
 			constexpr generic_code_messages msgs;
-			return string_ref(msgs[reinterpret_cast<int>(value)]);
+			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}
 		error_value* create_value( Valuetype code ) const {
 			return reinterpret_cast<error_value*>(code);
 		}
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
-			return reinterpret_cast<int>(value1) == reinterpret_cast<int>(value2);
+			return reinterpret_cast<uintptr_t>(value1) == reinterpret_cast<uintptr_t>(value2);
 		}
 		virtual error_value* clone_value(error_value* value) const {
 			return value;
@@ -330,7 +330,7 @@ namespace nodecpp::exception {
 	class memory_error_domain : public error_domain
 	{
 	protected:
-		virtual int _nodecpp_get_error_code(const error_value* value) const { return (int)(value); } // for inter-domain comparison purposes only
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
 
 	public:
 		constexpr memory_error_domain() {}
@@ -338,13 +338,13 @@ namespace nodecpp::exception {
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
 			constexpr memory_code_messages msgs;
-			return string_ref(msgs[reinterpret_cast<int>(value)]);
+			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}
 		error_value* create_value( Valuetype code ) const {
 			return reinterpret_cast<error_value*>(code);
 		}
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
-			return reinterpret_cast<int>(value1) == reinterpret_cast<int>(value2);
+			return reinterpret_cast<uintptr_t>(value1) == reinterpret_cast<uintptr_t>(value2);
 		}
 		virtual error_value* clone_value(error_value* value) const {
 			return value;
@@ -355,7 +355,7 @@ namespace nodecpp::exception {
 				return is_same_error_code( my_value, src.value() );
 			else if ( src.domain() == &system_error_domain_obj )
 			{
-				switch ( reinterpret_cast<int>(my_value) )
+				switch ( reinterpret_cast<uintptr_t>(my_value) )
 				{
 					case (int)(merrc::zero_pointer_access): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
 					case (int)(merrc::memory_access_violation): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;

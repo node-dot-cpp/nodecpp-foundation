@@ -25,25 +25,16 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "../include/exception.h"
+#include "../include/std_error.h"
 
-namespace nodecpp::exception {
+namespace nodecpp::error {
 
-	const system_error_domain system_error_domain_obj;
+	const std_error_domain std_error_domain_obj;
 
-	const nodecpp::exception::system_error bad_address( nodecpp::exception::errc::bad_address );
-	const nodecpp::exception::system_error file_exists( nodecpp::exception::errc::file_exists );
-	const nodecpp::exception::system_error no_such_file_or_directory( nodecpp::exception::errc::no_such_file_or_directory );
-	const nodecpp::exception::system_error not_enough_memory( nodecpp::exception::errc::not_enough_memory );
-	const nodecpp::exception::system_error permission_denied( nodecpp::exception::errc::permission_denied );
+	const nodecpp::error::system_error bad_address( nodecpp::error::errc::bad_address );
+	const nodecpp::error::system_error file_exists( nodecpp::error::errc::file_exists );
+	const nodecpp::error::system_error no_such_file_or_directory( nodecpp::error::errc::no_such_file_or_directory );
+	const nodecpp::error::system_error not_enough_memory( nodecpp::error::errc::not_enough_memory );
+	const nodecpp::error::system_error permission_denied( nodecpp::error::errc::permission_denied );
 
-
-	const memory_error_domain memory_error_domain_obj;
-
-	const nodecpp::exception::memory_error memory_access_violation( nodecpp::exception::merrc::memory_access_violation );
-	const nodecpp::exception::memory_error out_of_range( nodecpp::exception::merrc::out_of_range );
-	const nodecpp::exception::memory_error zero_pointer_access( nodecpp::exception::merrc::zero_pointer_access );
-
-	const file_error_domain file_error_domain_obj;
-
-} // namespace nodecpp::exception
+} // namespace nodecpp::error

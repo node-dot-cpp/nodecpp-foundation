@@ -69,7 +69,9 @@ void fnWithAssertion(int i)
 	NODECPP_ASSERT( 0, nodecpp::assert::AssertLevel::critical, i>0, "i = {}", i );
 }
 
-#include "../include/exception.h"
+#include "../include/std_error.h"
+#include "samples/safe_memory_error.h"
+#include "samples/file_error.h"
 
 int fnThatThrows( int n )
 {
@@ -77,11 +79,11 @@ int fnThatThrows( int n )
 		return n;
 	switch ( n )
 	{
-		case - 1: throw nodecpp::exception::file_error(nodecpp::exception::FILE_EXCEPTION::dne, "some_file" ); break;
-		case -2: throw nodecpp::exception::bad_address; break;
-		/*case -3: throw nodecpp::exception::memory_exception_memory_access_violation__; break;
-		case -4: throw nodecpp::exception::memory_exception_null_pointer_access__; break;
-		case -5: throw nodecpp::exception::memory_exception_out_of_bound__; break;*/
+		case - 1: throw nodecpp::error::file_error(nodecpp::error::FILE_EXCEPTION::dne, "some_file" ); break;
+		case -2: throw nodecpp::error::bad_address; break;
+		/*case -3: throw nodecpp::error::memory_error_memory_access_violation__; break;
+		case -4: throw nodecpp::error::memory_error_null_pointer_access__; break;
+		case -5: throw nodecpp::error::memory_error_out_of_bound__; break;*/
 	}
 	return 1;
 }
@@ -96,9 +98,9 @@ void fnThatCatches()
 		ret = fnThatThrows(-1);
 		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
 	}
-	catch (nodecpp::exception::error e)
+	catch (nodecpp::error::error e)
 	{
-		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
 		ret = 0;
 	}
 	try
@@ -106,14 +108,14 @@ void fnThatCatches()
 		ret = fnThatThrows(-2);
 		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
 	}
-	catch (nodecpp::exception::error e)
+	catch (nodecpp::error::error e)
 	{
-		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
-		if ( e == nodecpp::exception::bad_address )
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		if ( e == nodecpp::error::bad_address )
 			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: OK" );
 		else
 			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: FAILED" );
-		if ( e == nodecpp::exception::zero_pointer_access )
+		if ( e == nodecpp::error::zero_pointer_access )
 			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: OK" );
 		else
 			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: FAILED" );

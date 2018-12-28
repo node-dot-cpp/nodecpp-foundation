@@ -173,6 +173,8 @@ namespace nodecpp::exception {
 	class error
 	{
 	public:
+		using DomainTypeT = error_domain;
+
 		const error_domain* domain = nullptr;
 		error_value* value = nullptr;
 
@@ -224,7 +226,7 @@ namespace nodecpp::exception {
 		operator==(const ParticularError &b) const
 		{
 			if ( domain != b.domain )
-				return domain->is_equivalent( b, value ) || b.domain->is_equivalent( *this, b.value );
+				return domain->is_equivalent( b, value ) || reinterpret_cast<const typename ParticularError::DomainTypeT*>(b.domain)->ParticularError::DomainTypeT::is_equivalent( *this, b.value );
 			return domain->is_same_error_code(value, b.value);
 		}
 	};
@@ -372,6 +374,7 @@ namespace nodecpp::exception {
 	class file_error : public error
 	{
 	public:
+		using DomainTypeT = file_error_domain;
 		file_error(FILE_EXCEPTION code, const char* fileName) : error( &file_error_domain_obj, file_error_domain_obj.create_value(code, fileName) ) {}
 	};
 
@@ -379,7 +382,7 @@ namespace nodecpp::exception {
 	{
 	public:
 		using DomainTypeT = system_error_domain;
-		static constexpr const DomainTypeT* domain= &system_error_domain_obj;
+		//static constexpr const DomainTypeT* domain= &system_error_domain_obj;
 		constexpr system_error(errc code) : error( &system_error_domain_obj, system_error_domain_obj.create_value(code) ) {}
 		//~system_error() {}
 	};

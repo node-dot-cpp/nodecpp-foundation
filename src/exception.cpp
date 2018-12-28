@@ -44,4 +44,6 @@ namespace nodecpp::exception {
 	const nodecpp::exception::memory_error out_of_range( nodecpp::exception::merrc::out_of_range );
 	const nodecpp::exception::memory_error zero_pointer_access( nodecpp::exception::merrc::zero_pointer_access );
 
+	const file_error_domain file_error_domain_obj;
+
 } // namespace nodecpp::exception

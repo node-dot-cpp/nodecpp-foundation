@@ -158,12 +158,10 @@ namespace nodecpp::exception {
 	class error_domain
 	{
 	public:
-		enum Type { unknown_error, file_error, memory_error };
 		constexpr error_domain() {}
-		virtual Type type() const { return unknown_error; }
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "unknown domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
-		//virtual ~error_domain() {}
+		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }
 		virtual void destroy_value(error_value* value) const {}
@@ -256,7 +254,6 @@ namespace nodecpp::exception {
 	public:
 		constexpr file_error_domain() {}
 		using Valuetype = file_error_value;
-		virtual error_domain::Type type() const { return error_domain::file_error; }
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "file error" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
 			file_error_value* myData = reinterpret_cast<file_error_value*>(value);
@@ -292,14 +289,13 @@ namespace nodecpp::exception {
 				return false;
 		}
 	};
-	static constexpr file_error_domain file_error_domain_obj;
+	extern const file_error_domain file_error_domain_obj;
 
 	class system_error_domain : public error_domain
 	{
 	public:
 		constexpr system_error_domain() {}
 		using Valuetype = errc;
-		virtual error_domain::Type type() const { return error_domain::file_error; }
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
 			constexpr generic_code_messages msgs;
@@ -329,7 +325,6 @@ namespace nodecpp::exception {
 	public:
 		constexpr memory_error_domain() {}
 		using Valuetype = merrc;
-		virtual error_domain::Type type() const { return error_domain::memory_error; }
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_meaasage(error_value* value) const { 
 			constexpr memory_code_messages msgs;

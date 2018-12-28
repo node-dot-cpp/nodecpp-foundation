@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\src\cpu_exceptions_translator.cpp" />
+    <ClCompile Include="..\..\src\exception.cpp" />
     <ClCompile Include="..\..\src\log.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\test_seh.cpp" />

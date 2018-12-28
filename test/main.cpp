@@ -78,8 +78,8 @@ int fnThatThrows( int n )
 	switch ( n )
 	{
 		case - 1: throw nodecpp::exception::file_error(nodecpp::exception::FILE_EXCEPTION::dne, "some_file" ); break;
-		/*case -2: throw nodecpp::exception::file_exception_access_denied__; break;
-		case -3: throw nodecpp::exception::memory_exception_memory_access_violation__; break;
+		case -2: throw nodecpp::exception::bad_address; break;
+		/*case -3: throw nodecpp::exception::memory_exception_memory_access_violation__; break;
 		case -4: throw nodecpp::exception::memory_exception_null_pointer_access__; break;
 		case -5: throw nodecpp::exception::memory_exception_out_of_bound__; break;*/
 	}
@@ -98,8 +98,25 @@ void fnThatCatches()
 	}
 	catch (nodecpp::exception::error e)
 	{
-		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name(), e.description().c_str() );
-//		if ( e.
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		ret = 0;
+	}
+	try
+	{
+		ret = fnThatThrows(-2);
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
+	}
+	catch (nodecpp::exception::error e)
+	{
+		nodecpp::log::log<0, nodecpp::log::LogLevel::info>("exception caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		if ( e == nodecpp::exception::bad_address )
+			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: OK" );
+		else
+			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: FAILED" );
+		if ( e == nodecpp::exception::zero_pointer_access )
+			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: OK" );
+		else
+			nodecpp::log::log<0, nodecpp::log::LogLevel::info>("error comparison: FAILED" );
 		ret = 0;
 	}
 	nodecpp::log::log<0, nodecpp::log::LogLevel::info>("fnThatCatches(), ret = {}", ret);

@@ -30,7 +30,7 @@
 
 #include "../../include/platform_base.h"
 #include "../../include/error.h"
-#include "../../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 
 #include <cerrno>  // for error constants
 

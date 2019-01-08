@@ -29,7 +29,7 @@
 #define NODECPP_LOG_H 
 
 #include "platform_base.h"
-#include "../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 
 
 namespace nodecpp::log { 

@@ -28,7 +28,7 @@
 #ifndef CPU_EXCEPTIONS_TRANSLATOR_H
 #define CPU_EXCEPTIONS_TRANSLATOR_H
 
-#include "../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 #include <stdexcept>
 
 void initTranslator();

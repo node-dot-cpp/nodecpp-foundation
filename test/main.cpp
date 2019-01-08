@@ -27,10 +27,9 @@
 
 #include <stdio.h>
 #include <utility> // TODO: move it to a proper place
-//#include <assert.h> // TODO: replace by ouw own assertion system
 
-#include "../include/foundation.h"
-#include "../include/assert.h"
+#include <foundation.h>
+#include <nodecpp_assert.h>
 #include "test.h"
 
 void printPlatform()

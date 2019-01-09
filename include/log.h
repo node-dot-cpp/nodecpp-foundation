@@ -36,7 +36,7 @@ namespace nodecpp::log {
 
 	enum class LogLevel { error = 0, warn = 1, info = 2, verbose = 3, debug = 4, silly = 5 }; // https://blog.risingstack.com/node-js-logging-tutorial/
 	constexpr const char* LogLevelNames[] = { "error", "warn", "info", "verbose", "debug", "silly", "" };
-	using ModuleIDType = int; // at least, so far
+	using ModuleIDType = uint64_t; // at least, so far
 
 #ifdef NODECPP_CUSTOM_LOG_PROCESSING
 #include NODECPP_CUSTOM_LOG_PROCESSING

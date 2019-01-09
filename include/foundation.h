@@ -31,6 +31,11 @@
 #include "platform_base.h"
 #include "log.h"
 
+namespace nodecpp::foundation
+{
+	constexpr uint64_t module_id = 0;
+}
+
 namespace nodecpp::platform { 
 
 #ifndef assert // TODO: replace by our own means ASAP

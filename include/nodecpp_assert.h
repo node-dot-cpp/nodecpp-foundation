@@ -31,12 +31,13 @@
 #include "platform_base.h"
 #include <fmt/format.h>
 #include "log.h"
+#include "error.h"
 
 
 namespace nodecpp::assert { // pedantic regular critical
 
 	enum class AssertLevel { critical = 0, regular = 1, pedantic = 2 }; // just a sketch; TODO: revise
-	using ModuleIDType = int; // at least, so far
+	using ModuleIDType = uint64_t; // at least, so far
 
 	enum class ActionType { ignoring, throwing, terminating };
 

@@ -68,6 +68,11 @@ void fnWithAssertion(int i)
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, i>0, "i = {}", i );
 }
 
+void fnWithAssertion2(int i)
+{
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, i>0 );
+}
+
 #include "../include/std_error.h"
 #include "samples/safe_memory_error.h"
 #include "samples/file_error.h"
@@ -130,6 +135,14 @@ int main(int argc, char *argv[])
 	try
 	{
 		fnWithAssertion(0);
+	}
+	catch (...)
+	{
+		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error cought!");
+	}
+	try
+	{
+		fnWithAssertion2(0);
 	}
 	catch (...)
 	{

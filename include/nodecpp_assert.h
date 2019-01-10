@@ -48,31 +48,38 @@ namespace nodecpp::assert { // pedantic regular critical
 #endif // NODECPP_CUSTOM_LOG_PROCESSING
 
 	template< ModuleIDType module, AssertLevel level, class Expr, typename... ARGS>
-	void nodecpp_assert( const char* file, int line, const Expr& expr, const char* condString, const char* formatStr = nullptr, const ARGS& ... args ) {
+	void nodecpp_assert( const char* file, int line, const Expr& expr, const char* condString, const char* formatStr, const ARGS& ... args ) {
 		if constexpr ( ShouldAssert<module, level>::value != ActionType::ignoring )
 		{
 			if ( expr() )
 				return;
-			if ( formatStr )
+			constexpr size_t logBufSz = 1024;
+			char logBuf[logBufSz];
+			auto res = fmt::format_to_n( logBuf, logBufSz-1, formatStr, args... );
+			if ( res.size >= logBufSz )
 			{
-				constexpr size_t logBufSz = 1024;
-				char logBuf[logBufSz];
-				auto res = fmt::format_to_n( logBuf, logBufSz-1, formatStr, args... );
-				if ( res.size >= logBufSz )
-				{
-					logBuf[logBufSz-4] = '.';
-					logBuf[logBufSz-3] = '.';
-					logBuf[logBufSz-2] = '.';
-					logBuf[logBufSz-1] = 0;
-				}
-				else
-					logBuf[res.size] = 0;
-				nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString, logBuf );
+				logBuf[logBufSz-4] = '.';
+				logBuf[logBufSz-3] = '.';
+				logBuf[logBufSz-2] = '.';
+				logBuf[logBufSz-1] = 0;
 			}
 			else
-			{
-				nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed", file, line, condString);
-			}
+				logBuf[res.size] = 0;
+			nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString, logBuf );
+			if constexpr ( ShouldAssert<module, level>::value == ActionType::throwing )
+				throw std::exception();
+			else
+				std::abort();
+		}
+	}
+
+	template< ModuleIDType module, AssertLevel level, class Expr>
+	void nodecpp_assert( const char* file, int line, const Expr& expr, const char* condString ) {
+		if constexpr ( ShouldAssert<module, level>::value != ActionType::ignoring )
+		{
+			if ( expr() )
+				return;
+			nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed", file, line, condString);
 			if constexpr ( ShouldAssert<module, level>::value == ActionType::throwing )
 				throw std::exception();
 			else
@@ -81,7 +88,7 @@ namespace nodecpp::assert { // pedantic regular critical
 	}
 
 #define NODECPP_ASSERT( module, level, condition, ... ) \
-	nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, [&] { return condition; }, #condition, __VA_ARGS__ )
+	nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, [&] { return condition; }, #condition, ## __VA_ARGS__ )
 
 } // namespace nodecpp::assert
 

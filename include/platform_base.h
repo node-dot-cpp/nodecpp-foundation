@@ -64,13 +64,21 @@ static_assert(sizeof(void*) == 4);
 #if defined(NODECPP_MSVC)
 #define NODECPP_NOINLINE      __declspec(noinline)
 #define NODECPP_FORCEINLINE	__forceinline
-#elif (defined NODECPP_CLANG) || defined(NODECPP_GCC)
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
 #define NODECPP_NOINLINE      __attribute__ ((noinline))
 #define NODECPP_FORCEINLINE inline __attribute__((always_inline))
 #else
 #define NODECPP_FORCEINLINE inline
 #define NODECPP_NOINLINE
 #pragma message( "Unknown compiler. Force-inlining and force-uninlining are disabled" )
+#endif
+
+#if (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+#define NODECPP_LIKELY(x)       __builtin_expect(!!(x),1)
+#define NODECPP_UNLIKELY(x)     __builtin_expect(!!(x),0)
+#else
+#define NODECPP_LIKELY(x) (x)
+#define NODECPP_UNLIKELY(x) (x)
 #endif
 
 //!!!NO COMPILER-SPECIFIC #defines PAST THIS POINT!!!

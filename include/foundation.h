@@ -115,7 +115,7 @@ public:
 	void unset_flag() { static_assert( pos >= 0 && pos < nflags); flags &= ~(((uintptr_t)(1))<<pos); }
 	template<int pos>
 	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (flags & (((uintptr_t)(1))<<pos)) != 0; }
-	size_t get_mask() { return mask; }
+	size_t get_mask() const { return mask; }
 	void set_mask( size_t mask_ ) { assert( mask < (1<<masksize)); mask = mask_; }
 };
 #ifdef NODECPP_X64
@@ -150,7 +150,7 @@ public:
 	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<upperDataOffset_); }
 	template<int pos>
 	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<upperDataOffset_)) != 0; }
-	size_t get_mask() { return ptr & lowerDataMask_; }
+	size_t get_mask() const { return ptr & lowerDataMask_; }
 	void set_mask( size_t mask ) { assert( mask < (1<<masksize)); ptr = (ptr & ~lowerDataMask_) | mask; }
 };
 #else

@@ -2,6 +2,7 @@
 #define PTR_WITH_DATA_STRUCTS_IMPL_H
 
 #include "platform_base.h"
+#include "nodecpp_assert.h"
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
 
@@ -262,7 +263,7 @@ public:
 };
 #else
 template< int dataminsize, int nflags >
-using allocated_ptr_and_ptr_and_data_and_flags = generic_struct_allocated_ptr_and_ptr_and_data_and_flags_64_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
+using allocated_ptr_and_ptr_and_data_and_flags = generic_struct_allocated_ptr_and_ptr_and_data_and_flags_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
 #endif // NODECPP_X64
 
 } // nodecpp::platform::ptrwithdatastructsdefs

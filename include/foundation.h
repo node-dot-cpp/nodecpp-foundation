@@ -79,49 +79,6 @@ using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastruct
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
-
-template< int dataminsize, int nflags >
-struct reference_impl__allocated_ptr_and_ptr_and_data_and_flags {
-	// space-ineffective implenetation for testing purposes
-	static_assert(nflags <= 3); // current needs
-	static_assert(dataminsize <= 32);
-private:
-	void* ptr;
-	void* allocptr;
-	size_t data;
-	size_t flags;
-
-public:
-	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
-
-	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; }
-	void init( size_t data_ ) { init(); data = data_; }
-	void init( void* ptr_, void* allocptr_, size_t data_ ) {
-		ptr = ptr_; 
-		allocptr = allocptr_;
-		data = data_;
-		flags = 0;
-	}
-
-	void set_ptr( void* ptr_ ) { ptr = ptr_; }
-	void* get_ptr() const { return ptr; }
-	void set_allocated_ptr( void* ptr_ ) { allocptr = ptr_; }
-	void* get_allocated_ptr() const { return allocptr; }
-
-	template<int pos>
-	void set_flag() { static_assert( pos < nflags); flags |= ((uintptr_t)(1))<<pos; }
-	template<int pos>
-	void unset_flag() { static_assert( pos < nflags); flags &= ~(((uintptr_t)(1))<<pos); }
-	template<int pos>
-	bool has_flag() const { static_assert( pos < nflags); return (flags & (((uintptr_t)(1))<<pos)) != 0; }
-
-	size_t get_data() const { return data; }
-	void set_data( size_t data_ ) { 
-		assert( data_ <= max_data ); 
-		data = data_; 
-	}
-};
-
 #ifdef NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 template< int dataminsize, int nflags >
 using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_<dataminsize, nflags>;

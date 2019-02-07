@@ -169,24 +169,55 @@ private:
 	void* ptr;
 	void* allocptr;
 	size_t data;
-	size_t flags;
+	uint16_t flags;
+	bool isZombie;
 
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
 
-	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; }
-	void init( size_t data_ ) { init(); data = data_; }
+	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
+	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
 	void init( void* ptr_, void* allocptr_, size_t data_ ) {
 		ptr = ptr_; 
 		allocptr = allocptr_;
 		data = data_;
 		flags = 0;
+		isZombie = false;
 	}
 
 	void set_ptr( void* ptr_ ) { ptr = ptr_; }
-	void* get_ptr() const { return ptr; }
+	void* get_ptr() const { 
+		if ( isZombie )
+			throw nodecpp::error::zombie_pointer_access; 
+		return ptr; 
+	}
+	void* get_dereferencable_ptr() const {
+		if ( isZombie || ptr == nullptr ) {
+			if ( isZombie )
+				throw nodecpp::error::zombie_pointer_access; 
+			else
+				throw nodecpp::error::zero_pointer_access; 
+		}
+		return ptr; 
+	}
 	void set_allocated_ptr( void* ptr_ ) { allocptr = ptr_; }
-	void* get_allocated_ptr() const { return allocptr; }
+	void* get_allocated_ptr() const { 
+		if ( isZombie ) 
+			throw nodecpp::error::zombie_pointer_access; 
+		return allocptr;
+	}
+	void* get_dereferencable_allocated_ptr() const { 
+		if ( isZombie || allocptr == nullptr ) {
+			if ( isZombie )
+				throw nodecpp::error::zombie_pointer_access;
+			else
+				throw nodecpp::error::zombie_pointer_access;
+		}
+		return allocptr;
+	}
+
+	void set_zombie() { isZombie = true; }
+	bool is_zombie() const { return isZombie; }
 
 	template<int pos>
 	void set_flag() { static_assert( pos < nflags); flags |= ((uintptr_t)(1))<<pos; }
@@ -241,17 +272,46 @@ public:
 	void init() { ptr = 0; allocptr = 0;}
 	void init( size_t data ) { init(); set_data( data ); }
 	void init( void* ptr_, void* allocptr_, size_t data ) { 
-		assert( ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); 
-		assert( ((uintptr_t)allocptr_ & ~allocptrMask_) == 0 ); 
+		if ( ((uintptr_t)ptr_ & ~ptrMask_) != 0 ) throw nodecpp::error::bad_address; 
+		if ( ((uintptr_t)allocptr_ & ~allocptrMask_) != 0 )  throw nodecpp::error::bad_address; 
 		ptr = (uintptr_t)ptr_ & ptrMask_; 
 		allocptr = (uintptr_t)allocptr_ & allocptrMask_; 
 		set_data( data ); 
 	}
 
-	void set_ptr( void* ptr_ ) { assert( ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); }
-	void* get_ptr() const { return (void*)( ptr & ptrMask_ ); }
-	void set_allocated_ptr( void* ptr_ ) { assert( ((uintptr_t)ptr_ & ~allocptrMask_) == 0 ); allocptr = (allocptr & ~allocptrMask_) | ((uintptr_t)ptr_ & allocptrMask_); }
-	void* get_allocated_ptr() const { return (void*)( allocptr & allocptrMask_ ); }
+	void set_ptr( void* ptr_ ) { if ( ((uintptr_t)ptr_ & ~ptrMask_) == 0 )  throw nodecpp::error::bad_address; ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); }
+	void* get_ptr() const { 
+		if ( (ptr & ptrMask_) == (uintptr_t)(alignof(void*)) )
+			throw nodecpp::error::zombie_pointer_access;
+		return (void*)( ptr & ptrMask_ ); 
+	}
+	void* get_dereferencable_ptr() const { 
+		if ( (ptr & ptrMask_) <= (uintptr_t)(alignof(void*)) ) {
+			if ((ptr & ptrMask_) == (uintptr_t)(alignof(void*)))
+				throw nodecpp::error::zombie_pointer_access;
+			else
+				throw nodecpp::error::zero_pointer_access;
+		}
+		return (void*)( ptr & ptrMask_ ); 
+	}
+	void set_allocated_ptr( void* ptr_ ) { if ( ((uintptr_t)ptr_ & ~allocptrMask_) == 0 )  throw nodecpp::error::bad_address; allocptr = (allocptr & ~allocptrMask_) | ((uintptr_t)ptr_ & allocptrMask_); }
+	void* get_allocated_ptr() const { 
+		if ( is_zombie() ) 
+			throw nodecpp::error::zombie_pointer_access; 
+		return (void*)( allocptr & allocptrMask_ ); 
+	}
+	void* get_dereferencable_allocated_ptr() const { 
+		if ( is_zombie() || (allocptr & allocptrMask_) == 0 ) {
+			if ( is_zombie() )
+				throw nodecpp::error::zombie_pointer_access; 
+			else
+				throw nodecpp::error::zero_pointer_access;
+		}
+		return (void*)( allocptr & allocptrMask_ ); 
+	}
+
+	void set_zombie() { ptr = (uintptr_t)(alignof(void*)); }
+	bool is_zombie() const { return (ptr & ptrMask_) == (uintptr_t)(alignof(void*)); }
 
 	template<int pos>
 	void set_flag() { static_assert( pos < nflags); allocptr |= ((uintptr_t)(1))<<pos; }

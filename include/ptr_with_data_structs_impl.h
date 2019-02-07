@@ -15,9 +15,9 @@ private:
 public:
 	void init( void* ptr_ ) { ptr = ptr_; }
 	void set_zombie() { ptr = (void*)(uintptr_t)(alignof(void*)); }
-	bool is_zombie() { return ((uintptr_t)ptr) == alignof(void*); }
-	void* get_dereferencable_ptr() { if ( ((uintptr_t)ptr) <= alignof(void*) ) throw nodecpp::error::zombie_pointer_access; return ptr; }
-	void* get_ptr() { if ( ((uintptr_t)ptr) == alignof(void*) ) throw nodecpp::error::zombie_pointer_access; return ptr; }
+	bool is_zombie() const { return ((uintptr_t)ptr) == alignof(void*); }
+	void* get_dereferencable_ptr() const { if ( ((uintptr_t)ptr) <= alignof(void*) ) throw nodecpp::error::zombie_pointer_access; return ptr; }
+	void* get_ptr() const { if ( ((uintptr_t)ptr) == alignof(void*) ) throw nodecpp::error::zombie_pointer_access; return ptr; }
 };
 
 struct generic_ptr_with_zombie_property_ {
@@ -27,9 +27,9 @@ private:
 public:
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
 	void set_zombie() { isZombie = true;; }
-	bool is_zombie() { return isZombie; }
-	void* get_dereferencable_ptr() { if ( isZombie || ptr == nullptr ) throw nodecpp::error::zombie_pointer_access; return ptr; }
-	void* get_ptr() { if ( isZombie ) throw nodecpp::error::zombie_pointer_access; return ptr; }
+	bool is_zombie() const { return isZombie; }
+	void* get_dereferencable_ptr() const { if ( isZombie || ptr == nullptr ) throw nodecpp::error::zombie_pointer_access; return ptr; }
+	void* get_ptr() const { if ( isZombie ) throw nodecpp::error::zombie_pointer_access; return ptr; }
 };
 
 ///////  allocated_ptr_with_flags

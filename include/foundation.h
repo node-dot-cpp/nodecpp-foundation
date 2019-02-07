@@ -61,6 +61,16 @@ namespace nodecpp::platform {
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 template< int nflags >
+using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_;
+#elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
+template< int nflags >
+using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::generic_ptr_with_zombie_property_;
+#else
+#error Unsupported configuration
+#endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
+
+#if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
+template< int nflags >
 using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_with_flags_<nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 template< int nflags >

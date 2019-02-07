@@ -34,5 +34,6 @@ namespace nodecpp::error {
 	const nodecpp::error::memory_error memory_access_violation( nodecpp::error::merrc::memory_access_violation );
 	const nodecpp::error::memory_error out_of_range( nodecpp::error::merrc::out_of_range );
 	const nodecpp::error::memory_error zero_pointer_access( nodecpp::error::merrc::zero_pointer_access );
+	const nodecpp::error::memory_error zombie_pointer_access( nodecpp::error::merrc::zombie_pointer_access );
 
 } // namespace nodecpp::error

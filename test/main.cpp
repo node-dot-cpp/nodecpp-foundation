@@ -74,7 +74,7 @@ void fnWithAssertion2(int i)
 }
 
 #include "../include/std_error.h"
-#include "samples/safe_memory_error.h"
+#include "../include/safe_memory_error.h"
 #include "samples/file_error.h"
 
 int fnThatThrows( int n )

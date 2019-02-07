@@ -28,9 +28,9 @@
 #ifndef NODECPP_SAFE_MEMORY_ERROR_H
 #define NODECPP_SAFE_MEMORY_ERROR_H 
 
-#include "../../include/platform_base.h"
-#include "../../include/error.h"
-#include "../../include/std_error.h" // for error conversion purposes
+#include "platform_base.h"
+#include "error.h"
+#include "std_error.h" // for error conversion purposes
 
 #include <cerrno>  // for error constants
 
@@ -44,6 +44,7 @@ namespace nodecpp::error {
 		zero_pointer_access = 1,
 		memory_access_violation = 2,
 		out_of_range = 3,
+		zombie_pointer_access = 4,
 	};
 
 	struct memory_code_messages
@@ -59,6 +60,7 @@ namespace nodecpp::error {
 			msgs[(int)(merrc::zero_pointer_access)] = "Zero pointer access";
 			msgs[(int)(merrc::memory_access_violation)] = "Memory access violation";
 			msgs[(int)(merrc::out_of_range)] = "Out of range";
+			msgs[(int)(merrc::zombie_pointer_access)] = "Zombie pointer access";
 		}
 	};
 
@@ -95,6 +97,7 @@ namespace nodecpp::error {
 				{
 					case (int)(merrc::zero_pointer_access): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
 					case (int)(merrc::memory_access_violation): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
+					case (int)(merrc::zombie_pointer_access): return src.domain()->_nodecpp_get_error_code(src.value()) == (int)(errc::bad_address); break;
 					default: return false; break;
 				}
 			}
@@ -114,6 +117,7 @@ namespace nodecpp::error {
 	extern const nodecpp::error::memory_error memory_access_violation;
 	extern const nodecpp::error::memory_error out_of_range;
 	extern const nodecpp::error::memory_error zero_pointer_access;
+	extern const nodecpp::error::memory_error zombie_pointer_access;
 
 } // namespace nodecpp::error
 

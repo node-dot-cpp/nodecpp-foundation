@@ -21,11 +21,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\src\cpu_exceptions_translator.cpp" />
+    <ClCompile Include="..\..\src\safe_memory_error.cpp" />
     <ClCompile Include="..\..\src\std_error.cpp" />
     <ClCompile Include="..\..\src\log.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\samples\file_error.cpp" />
-    <ClCompile Include="..\samples\safe_memory_error.cpp" />
     <ClCompile Include="..\test_seh.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +35,7 @@
     <ClInclude Include="..\..\include\default_log.h" />
     <ClInclude Include="..\..\include\error.h" />
     <ClInclude Include="..\..\include\ptr_with_data_structs_impl.h" />
+    <ClInclude Include="..\..\include\safe_memory_error.h" />
     <ClInclude Include="..\..\include\std_error.h" />
     <ClInclude Include="..\..\include\file_console_sink.h" />
     <ClInclude Include="..\..\include\foundation.h" />
@@ -42,7 +43,6 @@
     <ClInclude Include="..\..\include\platform_base.h" />
     <ClInclude Include="..\my_logger.h" />
     <ClInclude Include="..\samples\file_error.h" />
-    <ClInclude Include="..\samples\safe_memory_error.h" />
     <ClInclude Include="..\test.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

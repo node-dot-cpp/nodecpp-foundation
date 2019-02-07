@@ -178,6 +178,8 @@ public:
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
 	void init( void* ptr_, void* allocptr_, size_t data_ ) {
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data <= max_data ); 
 		ptr = ptr_; 
 		allocptr = allocptr_;
 		data = data_;
@@ -200,7 +202,10 @@ public:
 		}
 		return ptr; 
 	}
-	void set_allocated_ptr( void* ptr_ ) { allocptr = ptr_; }
+	void set_allocated_ptr( void* allocptr_ ) { 
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
+		allocptr = allocptr_; 
+	}
 	void* get_allocated_ptr() const { 
 		if ( isZombie ) 
 			throw nodecpp::error::zombie_pointer_access; 
@@ -228,7 +233,7 @@ public:
 
 	size_t get_data() const { return data; }
 	void set_data( size_t data_ ) { 
-		assert( data_ <= max_data ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data_ <= max_data ); 
 		data = data_; 
 	}
 };
@@ -272,14 +277,18 @@ public:
 	void init() { ptr = 0; allocptr = 0;}
 	void init( size_t data ) { init(); set_data( data ); }
 	void init( void* ptr_, void* allocptr_, size_t data ) { 
-		if ( ((uintptr_t)ptr_ & ~ptrMask_) != 0 ) throw nodecpp::error::bad_address; 
-		if ( ((uintptr_t)allocptr_ & ~allocptrMask_) != 0 )  throw nodecpp::error::bad_address; 
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); 
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & ~allocptrMask_) == 0 ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data <= max_data ); 
 		ptr = (uintptr_t)ptr_ & ptrMask_; 
 		allocptr = (uintptr_t)allocptr_ & allocptrMask_; 
 		set_data( data ); 
 	}
 
-	void set_ptr( void* ptr_ ) { if ( ((uintptr_t)ptr_ & ~ptrMask_) == 0 )  throw nodecpp::error::bad_address; ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); }
+	void set_ptr( void* ptr_ ) { 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); 
+		ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); 
+	}
 	void* get_ptr() const { 
 		if ( (ptr & ptrMask_) == (uintptr_t)(alignof(void*)) )
 			throw nodecpp::error::zombie_pointer_access;
@@ -294,7 +303,10 @@ public:
 		}
 		return (void*)( ptr & ptrMask_ ); 
 	}
-	void set_allocated_ptr( void* ptr_ ) { if ( ((uintptr_t)ptr_ & ~allocptrMask_) == 0 )  throw nodecpp::error::bad_address; allocptr = (allocptr & ~allocptrMask_) | ((uintptr_t)ptr_ & allocptrMask_); }
+	void set_allocated_ptr( void* ptr_ ) { 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)ptr_ & ~allocptrMask_) == 0 ); 
+		allocptr = (allocptr & ~allocptrMask_) | ((uintptr_t)ptr_ & allocptrMask_); 
+	}
 	void* get_allocated_ptr() const { 
 		if ( is_zombie() ) 
 			throw nodecpp::error::zombie_pointer_access; 
@@ -339,7 +351,7 @@ public:
 		}
 	}
 	void set_data( size_t data ) { 
-		assert( data <= max_data ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data <= max_data ); 
 		ptr &= ptrMask_; 
 		ptr |= (data & ptrPartMaskInData_) << upperDataBitOffsetInPointers_;
 		allocptr &= allocptrMask_ | allocPtrFlagsMask_;

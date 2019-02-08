@@ -13,8 +13,8 @@ struct optimized_ptr_with_zombie_property_ {
 private:
 	void* ptr = nullptr;
 	// means to keep mainstream branch clean
-	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
-	NODECPP_NOINLINE void throwZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; }
 	void set_zombie() { ptr = (void*)(uintptr_t)(alignof(void*)); }
@@ -38,8 +38,8 @@ private:
 	void* ptr = nullptr;
 	bool isZombie = false;
 	// means to keep mainstream branch clean
-	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
-	NODECPP_NOINLINE void throwZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
 	void set_zombie() { isZombie = true;; }
@@ -199,8 +199,8 @@ private:
 	bool isZombie;
 
 	// means to keep mainstream branch clean
-	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
-	NODECPP_NOINLINE void throwZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
@@ -311,8 +311,8 @@ private:
 	static_assert ( (ptrMask_ & upperDataMaskInPointer_) == 0x0ULL );
 
 	// means to keep mainstream branch clean
-	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
-	NODECPP_NOINLINE void throwZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;

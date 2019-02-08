@@ -20,14 +20,16 @@ public:
 	void set_zombie() { ptr = (void*)(uintptr_t)(alignof(void*)); }
 	bool is_zombie() const { return ((uintptr_t)ptr) == alignof(void*); }
 	void* get_dereferencable_ptr() const { 
-		if ( ((uintptr_t)ptr) <= alignof(void*) )
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) > alignof(void*) ) )
+			return ptr; 
+		else
 			throwNullptrOrZombieAccess();
-		return ptr; 
 	}
 	void* get_ptr() const { 
-		if ( ((uintptr_t)ptr) == alignof(void*) ) 
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) != alignof(void*) ) ) 
+			return ptr; 
+		else
 			throwZombieAccess();
-		return ptr; 
 	}
 };
 
@@ -43,14 +45,16 @@ public:
 	void set_zombie() { isZombie = true;; }
 	bool is_zombie() const { return isZombie; }
 	void* get_dereferencable_ptr() const { 
-		if ( isZombie || ptr == nullptr )
+		if ( NODECPP_LIKELY( !(isZombie || ptr == nullptr) ) )
+			return ptr;
+		else
 			throwNullptrOrZombieAccess();
-		return ptr;
 	}
 	void* get_ptr() const { 
-		if ( isZombie ) 
+		if ( NODECPP_LIKELY( !isZombie ) ) 
+			return ptr; 
+		else
 			throwZombieAccess();
-		return ptr; 
 	}
 };
 
@@ -215,28 +219,32 @@ public:
 
 	void set_ptr( void* ptr_ ) { ptr = ptr_; }
 	void* get_ptr() const { 
-		if ( isZombie )
+		if ( NODECPP_LIKELY( !isZombie ) )
+			return ptr; 
+		else
 			throwZombieAccess(); 
-		return ptr; 
 	}
 	void* get_dereferencable_ptr() const {
-		if ( isZombie || ptr == nullptr )
+		if ( NODECPP_LIKELY( !(isZombie || ptr == nullptr) ) )
+			return ptr; 
+		else
 			throwNullptrOrZombieAccess();
-		return ptr; 
 	}
 	void set_allocated_ptr( void* allocptr_ ) { 
         NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
 		allocptr = allocptr_; 
 	}
 	void* get_allocated_ptr() const { 
-		if ( isZombie ) 
+		if ( NODECPP_LIKELY( !isZombie ) ) 
+			return allocptr;
+		else
 			throwZombieAccess(); 
-		return allocptr;
 	}
 	void* get_dereferencable_allocated_ptr() const { 
-		if ( isZombie || allocptr == nullptr )
+		if ( NODECPP_LIKELY( !(isZombie || allocptr == nullptr) ) )
+			return allocptr;
+		else
 			throwNullptrOrZombieAccess();
-		return allocptr;
 	}
 
 	void set_zombie() { isZombie = true; }
@@ -325,28 +333,32 @@ public:
 		ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); 
 	}
 	void* get_ptr() const { 
-		if ( (ptr & ptrMask_) == (uintptr_t)(alignof(void*)) )
+		if ( NODECPP_LIKELY( (ptr & ptrMask_) != (uintptr_t)(alignof(void*)) ) )
+			return (void*)( ptr & ptrMask_ ); 
+		else
 			throwZombieAccess();
-		return (void*)( ptr & ptrMask_ ); 
 	}
 	void* get_dereferencable_ptr() const { 
-		if ( (ptr & ptrMask_) <= (uintptr_t)(alignof(void*)) )
+		if ( NODECPP_LIKELY( (ptr & ptrMask_) > (uintptr_t)(alignof(void*)) ) )
+			return (void*)(ptr & ptrMask_);
+		else
 			throwNullptrOrZombieAccess();
-		return (void*)( ptr & ptrMask_ ); 
 	}
 	void set_allocated_ptr( void* ptr_ ) { 
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)ptr_ & ~allocptrMask_) == 0 ); 
 		allocptr = (allocptr & ~allocptrMask_) | ((uintptr_t)ptr_ & allocptrMask_); 
 	}
 	void* get_allocated_ptr() const { 
-		if ( is_zombie() ) 
+		if ( NODECPP_LIKELY( !is_zombie() ) ) 
+			return (void*)( allocptr & allocptrMask_ ); 
+		else
 			throwZombieAccess(); 
-		return (void*)( allocptr & allocptrMask_ ); 
 	}
 	void* get_dereferencable_allocated_ptr() const { 
-		if ( is_zombie() || (allocptr & allocptrMask_) == 0 )
+		if ( NODECPP_LIKELY( !(is_zombie() || (allocptr & allocptrMask_) == 0) ) )
+			return (void*)( allocptr & allocptrMask_ ); 
+		else
 			throwNullptrOrZombieAccess();
-		return (void*)( allocptr & allocptrMask_ ); 
 	}
 
 	void set_zombie() { ptr = (uintptr_t)(alignof(void*)); }

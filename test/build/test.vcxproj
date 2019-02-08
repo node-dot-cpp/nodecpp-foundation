@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\src\cpu_exceptions_translator.cpp" />
+    <ClCompile Include="..\..\src\ptr_with_data_structs_impl.cpp" />
     <ClCompile Include="..\..\src\safe_memory_error.cpp" />
     <ClCompile Include="..\..\src\std_error.cpp" />
     <ClCompile Include="..\..\src\log.cpp" />

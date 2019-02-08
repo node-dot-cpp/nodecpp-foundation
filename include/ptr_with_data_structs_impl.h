@@ -12,22 +12,21 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 struct optimized_ptr_with_zombie_property_ {
 private:
 	void* ptr = nullptr;
+	// means to keep mainstream branch clean
+	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; }
 	void set_zombie() { ptr = (void*)(uintptr_t)(alignof(void*)); }
 	bool is_zombie() const { return ((uintptr_t)ptr) == alignof(void*); }
 	void* get_dereferencable_ptr() const { 
-		if ( ((uintptr_t)ptr) <= alignof(void*) ) {
-			if (((uintptr_t)ptr) == alignof(void*))
-				throw nodecpp::error::zombie_pointer_access; 
-			else
-				throw nodecpp::error::zero_pointer_access; 
-		}
+		if ( ((uintptr_t)ptr) <= alignof(void*) )
+			throwNullptrOrZombieAccess();
 		return ptr; 
 	}
 	void* get_ptr() const { 
 		if ( ((uintptr_t)ptr) == alignof(void*) ) 
-			throw nodecpp::error::zombie_pointer_access; 
+			throwZombieAccess();
 		return ptr; 
 	}
 };
@@ -36,21 +35,21 @@ struct generic_ptr_with_zombie_property_ {
 private:
 	void* ptr = nullptr;
 	bool isZombie = false;
+	// means to keep mainstream branch clean
+	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
 	void set_zombie() { isZombie = true;; }
 	bool is_zombie() const { return isZombie; }
 	void* get_dereferencable_ptr() const { 
-		if ( isZombie || ptr == nullptr ) {
-			if ( isZombie )
-				throw nodecpp::error::zombie_pointer_access; 
-			else
-				throw nodecpp::error::zero_pointer_access;
-		}
+		if ( isZombie || ptr == nullptr )
+			throwNullptrOrZombieAccess();
 		return ptr;
 	}
 	void* get_ptr() const { 
-		if ( isZombie ) throw nodecpp::error::zombie_pointer_access; 
+		if ( isZombie ) 
+			throwZombieAccess();
 		return ptr; 
 	}
 };
@@ -195,6 +194,10 @@ private:
 	uint16_t flags;
 	bool isZombie;
 
+	// means to keep mainstream branch clean
+	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	NODECPP_NOINLINE void throwZombieAccess() const;
+
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
 
@@ -213,16 +216,12 @@ public:
 	void set_ptr( void* ptr_ ) { ptr = ptr_; }
 	void* get_ptr() const { 
 		if ( isZombie )
-			throw nodecpp::error::zombie_pointer_access; 
+			throwZombieAccess(); 
 		return ptr; 
 	}
 	void* get_dereferencable_ptr() const {
-		if ( isZombie || ptr == nullptr ) {
-			if ( isZombie )
-				throw nodecpp::error::zombie_pointer_access; 
-			else
-				throw nodecpp::error::zero_pointer_access; 
-		}
+		if ( isZombie || ptr == nullptr )
+			throwNullptrOrZombieAccess();
 		return ptr; 
 	}
 	void set_allocated_ptr( void* allocptr_ ) { 
@@ -231,16 +230,12 @@ public:
 	}
 	void* get_allocated_ptr() const { 
 		if ( isZombie ) 
-			throw nodecpp::error::zombie_pointer_access; 
+			throwZombieAccess(); 
 		return allocptr;
 	}
 	void* get_dereferencable_allocated_ptr() const { 
-		if ( isZombie || allocptr == nullptr ) {
-			if ( isZombie )
-				throw nodecpp::error::zombie_pointer_access;
-			else
-				throw nodecpp::error::zombie_pointer_access;
-		}
+		if ( isZombie || allocptr == nullptr )
+			throwNullptrOrZombieAccess();
 		return allocptr;
 	}
 
@@ -260,6 +255,19 @@ public:
 		data = data_; 
 	}
 };
+
+template< int dataminsize, int nflags >
+void generic_struct_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
+	if ( isZombie )
+		throw nodecpp::error::zombie_pointer_access; 
+	else
+		throw nodecpp::error::zero_pointer_access; 
+}
+
+template< int dataminsize, int nflags >
+void generic_struct_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwZombieAccess() const {
+	throw nodecpp::error::zero_pointer_access; 
+}
 
 #ifdef NODECPP_X64
 template< int dataminsize, int nflags >
@@ -294,6 +302,10 @@ private:
 	static_assert ( (ptrMask_ | upperDataMaskInPointer_) == 0xFFFFFFFFFFFFFFFFULL );
 	static_assert ( (ptrMask_ & upperDataMaskInPointer_) == 0x0ULL );
 
+	// means to keep mainstream branch clean
+	NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	NODECPP_NOINLINE void throwZombieAccess() const;
+
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
 
@@ -314,16 +326,12 @@ public:
 	}
 	void* get_ptr() const { 
 		if ( (ptr & ptrMask_) == (uintptr_t)(alignof(void*)) )
-			throw nodecpp::error::zombie_pointer_access;
+			throwZombieAccess();
 		return (void*)( ptr & ptrMask_ ); 
 	}
 	void* get_dereferencable_ptr() const { 
-		if ( (ptr & ptrMask_) <= (uintptr_t)(alignof(void*)) ) {
-			if ((ptr & ptrMask_) == (uintptr_t)(alignof(void*)))
-				throw nodecpp::error::zombie_pointer_access;
-			else
-				throw nodecpp::error::zero_pointer_access;
-		}
+		if ( (ptr & ptrMask_) <= (uintptr_t)(alignof(void*)) )
+			throwNullptrOrZombieAccess();
 		return (void*)( ptr & ptrMask_ ); 
 	}
 	void set_allocated_ptr( void* ptr_ ) { 
@@ -332,16 +340,12 @@ public:
 	}
 	void* get_allocated_ptr() const { 
 		if ( is_zombie() ) 
-			throw nodecpp::error::zombie_pointer_access; 
+			throwZombieAccess(); 
 		return (void*)( allocptr & allocptrMask_ ); 
 	}
 	void* get_dereferencable_allocated_ptr() const { 
-		if ( is_zombie() || (allocptr & allocptrMask_) == 0 ) {
-			if ( is_zombie() )
-				throw nodecpp::error::zombie_pointer_access; 
-			else
-				throw nodecpp::error::zero_pointer_access;
-		}
+		if ( is_zombie() || (allocptr & allocptrMask_) == 0 )
+			throwNullptrOrZombieAccess();
 		return (void*)( allocptr & allocptrMask_ ); 
 	}
 
@@ -382,6 +386,20 @@ public:
 		allocptr |= ( (data & allocptrLowerPartMaskInData_) >> allocptrLowerPartOffsetInData_ ) << nflags;
 	}
 };
+
+template< int dataminsize, int nflags >
+void optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwZombieAccess() const {
+	throw nodecpp::error::zero_pointer_access; 
+}
+
+template< int dataminsize, int nflags >
+void optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
+	if ( is_zombie() )
+		throw nodecpp::error::zombie_pointer_access; 
+	else
+		throw nodecpp::error::zero_pointer_access;
+}
+
 #else
 template< int dataminsize, int nflags >
 using allocated_ptr_and_ptr_and_data_and_flags = generic_struct_allocated_ptr_and_ptr_and_data_and_flags_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms

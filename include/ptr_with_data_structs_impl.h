@@ -179,7 +179,7 @@ public:
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
 	void init( void* ptr_, void* allocptr_, size_t data_ ) {
         NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
-		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data <= max_data ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data_ <= max_data ); 
 		ptr = ptr_; 
 		allocptr = allocptr_;
 		data = data_;

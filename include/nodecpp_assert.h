@@ -88,7 +88,7 @@ namespace nodecpp::assert { // pedantic regular critical
 	}
 
 #define NODECPP_ASSERT( module, level, condition, ... ) \
-	nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, [&] { return !!(condition); }, #condition, ## __VA_ARGS__ )
+	::nodecpp::assert::nodecpp_assert<module, level>( __FILE__, __LINE__, [&] { return !!(condition); }, #condition, ## __VA_ARGS__ )
 
 } // namespace nodecpp::assert
 

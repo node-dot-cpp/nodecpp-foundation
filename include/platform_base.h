@@ -110,6 +110,12 @@ bool is_guaranteed_on_stack( void* ptr )
 	return ( ( ((uintptr_t)(ptr)) ^ ((uintptr_t)(&a)) ) & upperBitsMask ) == 0;
 }
 }//nodecpp::platform
+
+#else
+
+#define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
+#define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
+
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64)
 
 #endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)

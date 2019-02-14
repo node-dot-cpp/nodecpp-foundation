@@ -29,12 +29,7 @@
 #define NODECPP_FOUNDATION_H 
 
 #include "platform_base.h"
-
-namespace nodecpp::foundation
-{
-	constexpr uint64_t module_id = 0;
-}
-
+#include "foundation_module.h"
 #include "log.h"
 #include "ptr_with_data_structs_impl.h"
 

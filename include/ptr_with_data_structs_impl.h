@@ -2,6 +2,7 @@
 #define PTR_WITH_DATA_STRUCTS_IMPL_H
 
 #include "platform_base.h"
+#include "foundation_module.h"
 #include "nodecpp_assert.h"
 #include "safe_memory_error.h"
 

@@ -29,13 +29,14 @@
 #define NODECPP_FOUNDATION_H 
 
 #include "platform_base.h"
-#include "log.h"
-#include "ptr_with_data_structs_impl.h"
 
 namespace nodecpp::foundation
 {
 	constexpr uint64_t module_id = 0;
 }
+
+#include "log.h"
+#include "ptr_with_data_structs_impl.h"
 
 namespace nodecpp::platform { 
 
@@ -56,7 +57,7 @@ namespace nodecpp::platform {
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 #else
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
-#endif NODECPP_X64
+#endif //NODECPP_X64
 #endif // NODECPP_USE_GENERIC_STRUCTS
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED

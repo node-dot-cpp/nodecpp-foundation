@@ -31,7 +31,7 @@
 #include "platform_base.h"
 #include "foundation_module.h"
 #include "log.h"
-#include "ptr_with_data_structs_impl.h"
+#include "tagged_ptr_impl.h"
 
 namespace nodecpp::platform { 
 

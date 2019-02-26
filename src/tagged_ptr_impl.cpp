@@ -27,7 +27,7 @@
 
 
 #include "../include/foundation.h"
-#include "../include/ptr_with_data_structs_impl.h"
+#include "../include/tagged_ptr_impl.h"
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
 

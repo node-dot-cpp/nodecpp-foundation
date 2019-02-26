@@ -45,13 +45,17 @@ void optimized_ptr_with_zombie_property_::throwZombieAccess() const {
 }
 
 void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
-	if (((uintptr_t)ptr) == alignof(void*))
+	if (isZombie)
 		throw ::nodecpp::error::zombie_pointer_access; 
 	else
+	{
+		NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ptr == nullptr );
 		throw ::nodecpp::error::zero_pointer_access; 
+	}
 }
 
 void generic_ptr_with_zombie_property_::throwZombieAccess() const {
+	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isZombie );
 	throw ::nodecpp::error::zombie_pointer_access; 
 }
 

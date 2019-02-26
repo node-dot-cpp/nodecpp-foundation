@@ -128,8 +128,68 @@ void fnThatCatches()
 	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("fnThatCatches(), ret = {}", ret);
 }
 
+template<class TestStructT, bool secondPtr = false>
+void testPtrStructsWithZombieProperty_(int* dummy)
+{
+	bool OK = true;
+	TestStructT optimizedPtrWithZombiePproperty;
+
+	if constexpr( secondPtr )
+		optimizedPtrWithZombiePproperty.init();
+	else
+		optimizedPtrWithZombiePproperty.init(nullptr);
+
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, !optimizedPtrWithZombiePproperty.is_zombie() );
+	try { optimizedPtrWithZombiePproperty.get_dereferencable_ptr(); OK = false; } catch ( ... ) {}
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+	try { optimizedPtrWithZombiePproperty.get_ptr(); } catch ( ... ) { OK = false; }
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+
+	if constexpr( secondPtr )
+		optimizedPtrWithZombiePproperty.init(&dummy, &dummy, 17);
+	else
+		optimizedPtrWithZombiePproperty.init(&dummy);
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, !optimizedPtrWithZombiePproperty.is_zombie() );
+	try { optimizedPtrWithZombiePproperty.get_dereferencable_ptr(); } catch ( ... ) { OK = false; }
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+	try { optimizedPtrWithZombiePproperty.get_ptr(); } catch ( ... ) { OK = false; }
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+
+	optimizedPtrWithZombiePproperty.set_zombie();
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, optimizedPtrWithZombiePproperty.is_zombie() );
+	try { optimizedPtrWithZombiePproperty.get_ptr(); OK = false; } catch ( ... ) {}
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+	try { optimizedPtrWithZombiePproperty.get_dereferencable_ptr(); OK = false; } catch ( ... ) {}
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+
+	if constexpr( secondPtr )
+	{
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, optimizedPtrWithZombiePproperty.is_zombie() );
+		try { optimizedPtrWithZombiePproperty.get_allocated_ptr(); OK = false; } catch ( ... ) {}
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+		try { optimizedPtrWithZombiePproperty.get_dereferencable_allocated_ptr(); OK = false; } catch ( ... ) {}
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
+	}
+}
+
+void testPtrStructsWithZombieProperty()
+{
+	int* dummy = new int; // allocated
+
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_ptr_with_zombie_property_>( dummy );
+
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_<32,1>, true>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_struct_allocated_ptr_and_ptr_and_data_and_flags_<32,1>, true>( dummy );
+
+	delete dummy;
+}
+
 int main(int argc, char *argv[])
 {
+	printPlatform();
+	testSEH();
+
 	fnThatCatches(); //return 0;
 	fnWithAssertion(1);
 	try
@@ -157,8 +217,7 @@ int main(int argc, char *argv[])
 	nodecpp::log::log<2, nodecpp::log::LogLevel::verbose>("[3] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 	nodecpp::log::log<2, nodecpp::log::LogLevel::error>("[4] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 
-	printPlatform();
-	testSEH();
+	testPtrStructsWithZombieProperty();
 
     return 0;
 }

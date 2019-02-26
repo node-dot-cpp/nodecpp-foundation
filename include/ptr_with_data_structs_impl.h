@@ -43,7 +43,7 @@ private:
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
-	void set_zombie() { isZombie = true;; }
+	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
 	void* get_dereferencable_ptr() const { 
 		if ( NODECPP_LIKELY( !(isZombie || ptr == nullptr) ) )

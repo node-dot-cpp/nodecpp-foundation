@@ -39,22 +39,23 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 
 struct optimized_ptr_with_zombie_property_ {
 private:
+	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
 	void* ptr = nullptr;
 	// means to keep mainstream branch clean
 	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
 	void init( void* ptr_ ) { ptr = ptr_; }
-	void set_zombie() { ptr = (void*)(uintptr_t)(alignof(void*)); }
-	bool is_zombie() const { return ((uintptr_t)ptr) == alignof(void*); }
+	void set_zombie() { ptr = (void*)zombie_indicator; }
+	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
 	void* get_dereferencable_ptr() const { 
-		if ( NODECPP_LIKELY( ((uintptr_t)ptr) > alignof(void*) ) )
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) > zombie_indicator ) )
 			return ptr; 
 		else
 			throwNullptrOrZombieAccess();
 	}
 	void* get_ptr() const { 
-		if ( NODECPP_LIKELY( ((uintptr_t)ptr) != alignof(void*) ) ) 
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) != zombie_indicator ) ) 
 			return ptr; 
 		else
 			throwZombieAccess();
@@ -90,9 +91,9 @@ public:
 
 template< int nflags >
 struct optimized_allocated_ptr_with_flags_ {
-	static_assert(nflags > 0 && (1<<nflags) <= alignof(void*));//don't need more than 2 ATM
+	static_assert(nflags > 0 && (1<<nflags) <= nodecpp_guaranteed_malloc_alignment);//don't need more than 2 ATM
 private:
-	static constexpr uintptr_t lowerDataMask_ = alignof(void*) - 1;
+	static constexpr uintptr_t lowerDataMask_ = nodecpp_guaranteed_malloc_alignment - 1;
 	uintptr_t ptr;
 public:
 	void init( void* ptr_ ) { 
@@ -115,7 +116,7 @@ static_assert( sizeof(optimized_allocated_ptr_with_flags_<2>) == 8 );
 
 template< int nflags >
 struct generic_allocated_ptr_with_flags_ {
-	static_assert(nflags > 0 && (1<<nflags) <= alignof(void*));//don't need more than 2 ATM
+	static_assert(nflags > 0 && (1<<nflags) <= nodecpp_guaranteed_malloc_alignment);//don't need more than 2 ATM
 private:
 	void* ptr;
 	uint8_t flags;
@@ -174,7 +175,8 @@ public:
 #ifdef NODECPP_X64
 template< int masksize, int nflags >
 struct optimized_allocated_ptr_with_mask_and_flags_64_ {
-	static_assert((1<<nflags) <= alignof(void*));
+	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
+	static_assert((1<<nflags) <= nodecpp_guaranteed_malloc_alignment);
 	static_assert(masksize <= 3);
 private:
 	uintptr_t ptr;
@@ -217,7 +219,7 @@ using optimized_allocated_ptr_with_mask_and_flags_64_ = generic_allocated_ptr_wi
 template< int dataminsize, int nflags >
 struct generic_allocated_ptr_and_ptr_and_data_and_flags_ {
 	// space-ineffective implenetation for testing purposes
-	static_assert((1<<nflags) <= alignof(void*)); // current needs
+	static_assert((1<<nflags) <= nodecpp_guaranteed_malloc_alignment); // current needs
 	static_assert(dataminsize <= 32);
 private:
 	void* ptr;
@@ -236,7 +238,7 @@ public:
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
 	void init( void* ptr_, void* allocptr_, size_t data_ ) {
-        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (nodecpp_guaranteed_malloc_alignment-1)) == 0 ); 
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data_ <= max_data ); 
 		ptr = ptr_; 
 		allocptr = allocptr_;
@@ -259,7 +261,7 @@ public:
 			throwNullptrOrZombieAccess();
 	}
 	void set_allocated_ptr( void* allocptr_ ) { 
-        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (alignof(void*)-1)) == 0 ); 
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)allocptr_ & (nodecpp_guaranteed_malloc_alignment-1)) == 0 ); 
 		allocptr = allocptr_; 
 	}
 	void* get_allocated_ptr() const { 
@@ -318,6 +320,8 @@ struct optimized_allocated_ptr_and_ptr_and_data_and_flags_64_ {
 private:
 	uintptr_t ptr;
 	uintptr_t allocptr;
+	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
+	static_assert ( nodecpp_guaranteed_malloc_alignment >= 8 ); // this assumption is used in below definitions
 	static constexpr uintptr_t allocptrMask_ = 0xFFFFFFFFFFF8ULL;
 	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFFFULL;
 	static constexpr uintptr_t upperDataMaskInPointer_ = ~(0xFFFFFFFFFFFFULL);
@@ -361,13 +365,13 @@ public:
 		ptr = (ptr & upperDataMaskInPointer_) | ((uintptr_t)ptr_ & ptrMask_); 
 	}
 	void* get_ptr() const { 
-		if ( NODECPP_LIKELY( (ptr & ptrMask_) != (uintptr_t)(alignof( std::max_align_t)) ) )
+		if ( NODECPP_LIKELY( (ptr & ptrMask_) != zombie_indicator ) )
 			return (void*)( ptr & ptrMask_ ); 
 		else
 			throwZombieAccess();
 	}
 	void* get_dereferencable_ptr() const { 
-		if ( NODECPP_LIKELY( (ptr & ptrMask_) > (uintptr_t)(alignof(void*)) ) )
+		if ( NODECPP_LIKELY( (ptr & ptrMask_) > zombie_indicator ) )
 			return (void*)(ptr & ptrMask_);
 		else
 			throwNullptrOrZombieAccess();
@@ -389,8 +393,8 @@ public:
 			throwNullptrOrZombieAccess();
 	}
 
-	void set_zombie() { ptr = (uintptr_t)(alignof(void*)); }
-	bool is_zombie() const { return (ptr & ptrMask_) == (uintptr_t)(alignof(void*)); }
+	void set_zombie() { ptr = zombie_indicator; }
+	bool is_zombie() const { return (ptr & ptrMask_) == zombie_indicator; }
 
 	template<int pos>
 	void set_flag() { static_assert( pos < nflags); allocptr |= ((uintptr_t)(1))<<pos; }

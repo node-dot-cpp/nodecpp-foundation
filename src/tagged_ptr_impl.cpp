@@ -34,7 +34,7 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 ///////  ptr_with_zombie_property
 
 void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
-	if (((uintptr_t)ptr) == alignof(void*))
+	if (((uintptr_t)ptr) == zombie_indicator)
 		throw ::nodecpp::error::zombie_pointer_access; 
 	else
 		throw ::nodecpp::error::zero_pointer_access; 

@@ -91,6 +91,7 @@ static_assert(sizeof(void*) == 4);
 #if defined(NODECPP_X86) || defined(NODECPP_X64)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
+#define nodecpp_guaranteed_malloc_alignment 8
 
 // inevitable headers
 #include <stddef.h>
@@ -115,6 +116,7 @@ bool is_guaranteed_on_stack( void* ptr )
 
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
+#define nodecpp_guaranteed_malloc_alignment 1
 
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64)
 

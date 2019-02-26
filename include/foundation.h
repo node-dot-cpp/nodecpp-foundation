@@ -65,30 +65,30 @@ using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::ge
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 template< int nflags >
-using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_with_flags_<nflags>;
+using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_flags_<nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 template< int nflags >
-using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_struct_allocated_ptr_with_flags_<nflags>;
+using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_flags_<nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 template< int masksize, int nflags >
-using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_with_mask_and_flags_64_<masksize, nflags>;
+using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_mask_and_flags_64_<masksize, nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 template< int masksize, int nflags >
-using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_struct_allocated_ptr_with_mask_and_flags_<masksize, nflags>;
+using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_mask_and_flags_<masksize, nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
 #ifdef NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 template< int dataminsize, int nflags >
-using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_<dataminsize, nflags>;
+using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<dataminsize, nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 template< int masksize, int nflags >
-using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_struct_allocated_ptr_with_mask_and_flags_<masksize, nflags>;
+using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_mask_and_flags_<masksize, nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED

@@ -179,8 +179,8 @@ void testPtrStructsWithZombieProperty()
 	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_>( dummy );
 	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_ptr_with_zombie_property_>( dummy );
 
-	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_<32,1>, true>( dummy );
-	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_struct_allocated_ptr_and_ptr_and_data_and_flags_<32,1>, true>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<32,1>, true>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_and_ptr_and_data_and_flags_<32,1>, true>( dummy );
 
 	delete dummy;
 }

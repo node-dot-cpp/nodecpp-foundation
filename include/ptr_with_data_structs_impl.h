@@ -62,7 +62,7 @@ public:
 ///////  allocated_ptr_with_flags
 
 template< int nflags >
-struct optimized_struct_allocated_ptr_with_flags_ {
+struct optimized_allocated_ptr_with_flags_ {
 	static_assert(nflags > 0 && (1<<nflags) <= alignof(void*));//don't need more than 2 ATM
 private:
 	static constexpr uintptr_t lowerDataMask_ = alignof(void*) - 1;
@@ -82,12 +82,12 @@ public:
 	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
 };
 #ifdef NODECPP_X64
-static_assert( sizeof(optimized_struct_allocated_ptr_with_flags_<1>) == 8 );
-static_assert( sizeof(optimized_struct_allocated_ptr_with_flags_<2>) == 8 );
+static_assert( sizeof(optimized_allocated_ptr_with_flags_<1>) == 8 );
+static_assert( sizeof(optimized_allocated_ptr_with_flags_<2>) == 8 );
 #endif
 
 template< int nflags >
-struct generic_struct_allocated_ptr_with_flags_ {
+struct generic_allocated_ptr_with_flags_ {
 	static_assert(nflags > 0 && (1<<nflags) <= alignof(void*));//don't need more than 2 ATM
 private:
 	void* ptr;
@@ -108,7 +108,7 @@ public:
 ///////  allocated_ptr_with_mask_and_flags
 
 template< int masksize, int nflags >
-struct generic_struct_allocated_ptr_with_mask_and_flags_ {
+struct generic_allocated_ptr_with_mask_and_flags_ {
 #ifdef NODECPP_X64
 	static_assert(nflags <= 3);
 	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFF8ULL;
@@ -146,7 +146,7 @@ public:
 
 #ifdef NODECPP_X64
 template< int masksize, int nflags >
-struct optimized_struct_allocated_ptr_with_mask_and_flags_64_ {
+struct optimized_allocated_ptr_with_mask_and_flags_64_ {
 	static_assert((1<<nflags) <= alignof(void*));
 	static_assert(masksize <= 3);
 private:
@@ -181,14 +181,14 @@ public:
 };
 #else
 template< int masksize, int nflags >
-using optimized_struct_allocated_ptr_with_mask_and_flags_64_ = generic_struct_allocated_ptr_with_mask_and_flags_<masksize, nflags>; // TODO: consider writing optimized version for other platforms
+using optimized_allocated_ptr_with_mask_and_flags_64_ = generic_allocated_ptr_with_mask_and_flags_<masksize, nflags>; // TODO: consider writing optimized version for other platforms
 #endif // NODECPP_X64
 
 
 ///////  allocated_ptr_and_ptr_and_data_and_flags
 
 template< int dataminsize, int nflags >
-struct generic_struct_allocated_ptr_and_ptr_and_data_and_flags_ {
+struct generic_allocated_ptr_and_ptr_and_data_and_flags_ {
 	// space-ineffective implenetation for testing purposes
 	static_assert((1<<nflags) <= alignof(void*)); // current needs
 	static_assert(dataminsize <= 32);
@@ -266,7 +266,7 @@ public:
 };
 
 template< int dataminsize, int nflags >
-void generic_struct_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
+void generic_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
 	if ( isZombie )
 		throw nodecpp::error::zombie_pointer_access; 
 	else
@@ -274,13 +274,13 @@ void generic_struct_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nfla
 }
 
 template< int dataminsize, int nflags >
-void generic_struct_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwZombieAccess() const {
+void generic_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwZombieAccess() const {
 	throw nodecpp::error::zero_pointer_access; 
 }
 
 #ifdef NODECPP_X64
 template< int dataminsize, int nflags >
-struct optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_ {
+struct optimized_allocated_ptr_and_ptr_and_data_and_flags_64_ {
 	// implementation notes:
 	// for allocptr low (due to allocation alignment) and upper bits are available
 	// for ptr, only upper bits are available
@@ -401,12 +401,12 @@ public:
 };
 
 template< int dataminsize, int nflags >
-void optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwZombieAccess() const {
+void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwZombieAccess() const {
 	throw nodecpp::error::zero_pointer_access; 
 }
 
 template< int dataminsize, int nflags >
-void optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
+void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
 	if ( is_zombie() )
 		throw nodecpp::error::zombie_pointer_access; 
 	else
@@ -415,7 +415,7 @@ void optimized_struct_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize,
 
 #else
 template< int dataminsize, int nflags >
-using allocated_ptr_and_ptr_and_data_and_flags = generic_struct_allocated_ptr_and_ptr_and_data_and_flags_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
+using allocated_ptr_and_ptr_and_data_and_flags = generic_allocated_ptr_and_ptr_and_data_and_flags_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
 #endif // NODECPP_X64
 
 } // nodecpp::platform::ptrwithdatastructsdefs

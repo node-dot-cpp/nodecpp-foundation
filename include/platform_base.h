@@ -93,7 +93,7 @@ static_assert(sizeof(void*) == 4);
 #include <utility>
 
 //MMU-BASED SYSTEMS IN PROTECTED MODE
-#if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
+#if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 
 #if defined(NODECPP_X86) || defined(NODECPP_X64)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
@@ -128,7 +128,7 @@ bool is_guaranteed_on_stack( void* ptr )
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define nodecpp_guaranteed_malloc_alignment 1
 
-#endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
+#endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 
 #ifndef NODECPP_MINIMUM_CPU_PAGE_SIZE
 namespace nodecpp::platform { 

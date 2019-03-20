@@ -57,6 +57,8 @@ static_assert(sizeof(void*) == 4);
 #define NODECPP_LINUX
 #elif (defined __WINDOWS__) || (defined _WIN32) || (defined _WIN64)
 #define NODECPP_WINDOWS
+#elif (defined __OSX__)
+#define NODECPP_MAC
 #else
 #pragma message( "Unknown Operating System. We'll try our best but...") 
 #endif
@@ -85,6 +87,11 @@ static_assert(sizeof(void*) == 4);
 
 //PLATFORM PROPERTIES
 
+// inevitable headers
+#include <stddef.h>
+#include <cstdint>
+#include <utility>
+
 //MMU-BASED SYSTEMS IN PROTECTED MODE
 #if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
 
@@ -92,11 +99,6 @@ static_assert(sizeof(void*) == 4);
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
 #define nodecpp_guaranteed_malloc_alignment 8
-
-// inevitable headers
-#include <stddef.h>
-#include <cstdint>
-#include <utility>
 
 namespace nodecpp::platform { 
 NODECPP_FORCEINLINE
@@ -119,6 +121,12 @@ bool is_guaranteed_on_stack( void* ptr )
 #define nodecpp_guaranteed_malloc_alignment 1
 
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64)
+
+#else // other OSs
+
+#define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
+#define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
+#define nodecpp_guaranteed_malloc_alignment 1
 
 #endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS)
 

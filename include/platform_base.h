@@ -57,7 +57,7 @@ static_assert(sizeof(void*) == 4);
 #define NODECPP_LINUX
 #elif (defined __WINDOWS__) || (defined _WIN32) || (defined _WIN64)
 #define NODECPP_WINDOWS
-#elif (defined __OSX__)
+#elif (defined __OSX__) || (defined __APPLE__)
 #define NODECPP_MAC
 #else
 #pragma message( "Unknown Operating System. We'll try our best but...") 

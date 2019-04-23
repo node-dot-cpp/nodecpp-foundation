@@ -25,7 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "safe_memory_error.h"
+#include "../include/safe_memory_error.h"
 
 namespace nodecpp::error {
 

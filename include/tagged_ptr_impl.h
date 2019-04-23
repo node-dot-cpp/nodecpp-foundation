@@ -221,6 +221,7 @@ struct generic_allocated_ptr_and_ptr_and_data_and_flags_ {
 	// space-ineffective implenetation for testing purposes
 	static_assert((1<<nflags) <= nodecpp_guaranteed_malloc_alignment); // current needs
 	static_assert(dataminsize <= 32);
+	static_assert(dataminsize >= 0);
 private:
 	void* ptr;
 	void* allocptr;
@@ -233,7 +234,7 @@ private:
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 
 public:
-	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
+	static constexpr size_t max_data = dataminsize < 32 ? ((size_t)1 << dataminsize ) - 1 : 0xFFFFFFFF;
 
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }

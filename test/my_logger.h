@@ -50,7 +50,7 @@ struct ShouldLog<1, level>
 template<LogLevel level>
 struct ShouldLog<2, level>
 {
-	static constexpr bool value = level <= nodecpp::log::LogLevel::info;
+	static constexpr bool value = level <= ::nodecpp::log::LogLevel::info;
 };
 
 #include "../include/file_console_sink.h"

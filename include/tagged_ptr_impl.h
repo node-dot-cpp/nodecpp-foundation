@@ -298,7 +298,7 @@ private:
 public:
 	static constexpr size_t max_data = dataminsize < 32 ? ((size_t)1 << dataminsize ) - 1 : 0xFFFFFFFF;
 
-	generic_allocated_ptr_and_ptr_and_data_and_flags_() {}
+	generic_allocated_ptr_and_ptr_and_data_and_flags_() {init();}
 	generic_allocated_ptr_and_ptr_and_data_and_flags_( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) = delete;
 	generic_allocated_ptr_and_ptr_and_data_and_flags_& operator =( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) = delete;
 	generic_allocated_ptr_and_ptr_and_data_and_flags_( generic_allocated_ptr_and_ptr_and_data_and_flags_&& other ) = delete;
@@ -460,7 +460,7 @@ private:
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
 
-	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_() {}
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_() {init();}
 	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_( const optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) = delete;
 	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& operator =( const optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) = delete;
 	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&& other ) = delete;

@@ -296,7 +296,7 @@ private:
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 
 public:
-	static constexpr size_t max_data = dataminsize < 32 ? ((size_t)1 << dataminsize ) - 1 : 0xFFFFFFFF;
+	static constexpr size_t max_data = dataminsize < 32 ? (size_t)(((uint64_t)1 << dataminsize ) - 1) : 0xFFFFFFFF;
 
 	generic_allocated_ptr_and_ptr_and_data_and_flags_() {init();}
 	generic_allocated_ptr_and_ptr_and_data_and_flags_( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) = delete;

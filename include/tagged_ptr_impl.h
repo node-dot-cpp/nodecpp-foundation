@@ -204,7 +204,7 @@ struct generic_allocated_ptr_with_mask_and_flags_ {
 	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFF8ULL;
 #else
 	static_assert(nflags <= 2);
-	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFFC;
+	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFC;
 #endif
 	static_assert(masksize <= 3);
 private:

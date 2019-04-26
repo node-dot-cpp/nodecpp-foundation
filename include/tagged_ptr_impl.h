@@ -65,6 +65,17 @@ public:
 		else
 			throwZombieAccess();
 	}
+	void swap( optimized_ptr_with_zombie_property_& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+		{
+			void* tmp = ptr;
+			ptr = other.ptr; 
+			other.ptr = tmp;
+		}
+		else
+			throwZombieAccess();
+	}
+
 	void init( void* ptr_ ) { ptr = ptr_; }
 	void set_zombie() { ptr = (void*)zombie_indicator; }
 	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
@@ -110,6 +121,17 @@ public:
 		else
 			throwZombieAccess();
 	}
+	void swap( generic_ptr_with_zombie_property_& other ) {
+		if ( !isZombie && !other.isZombie )
+		{
+			void* tmp = ptr;
+			ptr = other.ptr; 
+			other.ptr = tmp;
+		}
+		else
+			throwZombieAccess();
+	}
+
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
 	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
@@ -304,6 +326,25 @@ public:
 		else
 			throwZombieAccess();
 	}
+	void swap( generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) {
+		if ( !isZombie && !other.isZombie )
+		{
+			void* tmp = ptr;
+			ptr = other.ptr; 
+			other.ptr = tmp;
+			tmp = allocptr;
+			allocptr = other.allocptr; 
+			other.allocptr = tmp;
+			auto tmp_data = data;
+			data = other.data;
+			other.data = tmp_data;
+			auto tmp_flags = flags;
+			flags = other.flags;
+			other.flags = tmp_flags;
+		}
+		else
+			throwZombieAccess();
+	}
 
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
@@ -439,6 +480,19 @@ public:
 			ptr = other.ptr;
 			allocptr = other.allocptr;
 			other.init();
+		}
+		else
+			throwZombieAccess();
+	}
+	void swap( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) {
+		if ( !NODECPP_LIKELY( (ptr & ptrMask_) == zombie_indicator ) && !NODECPP_LIKELY( (other.ptr & ptrMask_) == zombie_indicator ) )
+		{
+			void* tmp = ptr;
+			ptr = other.ptr; 
+			other.ptr = tmp;
+			tmp = allocptr;
+			allocptr = other.allocptr; 
+			other.allocptr = tmp;
 		}
 		else
 			throwZombieAccess();

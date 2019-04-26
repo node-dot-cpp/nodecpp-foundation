@@ -35,18 +35,18 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 
 void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (((uintptr_t)ptr) == zombie_indicator)
-		throw ::nodecpp::error::zombie_pointer_access; 
+		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 	else
 		throw ::nodecpp::error::zero_pointer_access; 
 }
 
 void optimized_ptr_with_zombie_property_::throwZombieAccess() const {
-	throw ::nodecpp::error::zombie_pointer_access; 
+	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
 
 void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (isZombie)
-		throw ::nodecpp::error::zombie_pointer_access; 
+		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 	else
 	{
 		NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ptr == nullptr );
@@ -56,7 +56,7 @@ void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 
 void generic_ptr_with_zombie_property_::throwZombieAccess() const {
 	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isZombie );
-	throw ::nodecpp::error::zombie_pointer_access; 
+	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
 
 } // nodecpp::platform::ptrwithdatastructsdefs

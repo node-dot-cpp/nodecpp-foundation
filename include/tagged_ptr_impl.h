@@ -45,6 +45,26 @@ private:
 	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
+	optimized_ptr_with_zombie_property_() {}
+	optimized_ptr_with_zombie_property_( const optimized_ptr_with_zombie_property_& other ) = delete;
+	optimized_ptr_with_zombie_property_& operator =( const optimized_ptr_with_zombie_property_& other ) = delete;
+	optimized_ptr_with_zombie_property_( optimized_ptr_with_zombie_property_&& other ) = delete;
+	optimized_ptr_with_zombie_property_& operator =( optimized_ptr_with_zombie_property_&& other ) = delete;
+	void copy_from( const optimized_ptr_with_zombie_property_& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+			ptr = other.ptr; 
+		else
+			throwZombieAccess();
+	}
+	void move_from( optimized_ptr_with_zombie_property_&& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+		{
+			ptr = other.ptr; 
+			other.ptr = nullptr;
+		}
+		else
+			throwZombieAccess();
+	}
 	void init( void* ptr_ ) { ptr = ptr_; }
 	void set_zombie() { ptr = (void*)zombie_indicator; }
 	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
@@ -70,6 +90,26 @@ private:
 	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
 	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
 public:
+	generic_ptr_with_zombie_property_() {}
+	generic_ptr_with_zombie_property_( const generic_ptr_with_zombie_property_& other ) = delete;
+	generic_ptr_with_zombie_property_& operator =( const generic_ptr_with_zombie_property_& other ) = delete;
+	generic_ptr_with_zombie_property_( generic_ptr_with_zombie_property_&& other ) = delete;
+	generic_ptr_with_zombie_property_& operator =( generic_ptr_with_zombie_property_&& other ) = delete;
+	void copy_from( const generic_ptr_with_zombie_property_& other ) {
+		if ( !isZombie && !other.isZombie )
+			ptr = other.ptr; 
+		else
+			throwZombieAccess();
+	}
+	void move_from( generic_ptr_with_zombie_property_&& other ) {
+		if ( !isZombie && !other.isZombie )
+		{
+			ptr = other.ptr; 
+			other.ptr = nullptr;
+		}
+		else
+			throwZombieAccess();
+	}
 	void init( void* ptr_ ) { ptr = ptr_; isZombie = false;}
 	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
@@ -175,7 +215,7 @@ public:
 #ifdef NODECPP_X64
 template< int masksize, int nflags >
 struct optimized_allocated_ptr_with_mask_and_flags_64_ {
-	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
+//	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
 	static_assert((1<<nflags) <= nodecpp_guaranteed_malloc_alignment);
 	static_assert(masksize <= 3);
 private:
@@ -235,6 +275,35 @@ private:
 
 public:
 	static constexpr size_t max_data = dataminsize < 32 ? ((size_t)1 << dataminsize ) - 1 : 0xFFFFFFFF;
+
+	generic_allocated_ptr_and_ptr_and_data_and_flags_() {}
+	generic_allocated_ptr_and_ptr_and_data_and_flags_( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) = delete;
+	generic_allocated_ptr_and_ptr_and_data_and_flags_& operator =( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) = delete;
+	generic_allocated_ptr_and_ptr_and_data_and_flags_( generic_allocated_ptr_and_ptr_and_data_and_flags_&& other ) = delete;
+	generic_allocated_ptr_and_ptr_and_data_and_flags_& operator =( generic_allocated_ptr_and_ptr_and_data_and_flags_&& other ) = delete;
+	void copy_from( const generic_allocated_ptr_and_ptr_and_data_and_flags_& other ) {
+		if ( !isZombie && !other.isZombie )
+		{
+			ptr = other.ptr;
+			allocptr = other.allocptr;
+			data = other.data;
+			flags = other.flags;
+		}
+		else
+			throwZombieAccess();
+	}
+	void move_from( generic_allocated_ptr_and_ptr_and_data_and_flags_&& other ) {
+		if ( !isZombie && !other.isZombie )
+		{
+			ptr = other.ptr;
+			allocptr = other.allocptr;
+			data = other.data;
+			flags = other.flags;
+			other.init();
+		}
+		else
+			throwZombieAccess();
+	}
 
 	void init() { ptr = 0; allocptr = 0; data = 0; flags = 0; isZombie = false;}
 	void init( size_t data_ ) { init(); data = data_; isZombie = false; }
@@ -349,6 +418,31 @@ private:
 
 public:
 	static constexpr size_t max_data = ((size_t)1 << dataminsize ) - 1;
+
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_() {}
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_( const optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) = delete;
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& operator =( const optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) = delete;
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&& other ) = delete;
+	optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& operator =( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&& other ) = delete;
+	void copy_from( const optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) {
+		if ( !NODECPP_LIKELY( (ptr & ptrMask_) == zombie_indicator ) && !NODECPP_LIKELY( (other.ptr & ptrMask_) == zombie_indicator ) )
+		{
+			ptr = other.ptr;
+			allocptr = other.allocptr;
+		}
+		else
+			throwZombieAccess();
+	}
+	void move_from( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&& other ) {
+		if ( !NODECPP_LIKELY( (ptr & ptrMask_) == zombie_indicator ) && !NODECPP_LIKELY( (other.ptr & ptrMask_) == zombie_indicator ) )
+		{
+			ptr = other.ptr;
+			allocptr = other.allocptr;
+			other.init();
+		}
+		else
+			throwZombieAccess();
+	}
 
 	void init() { ptr = 0; allocptr = 0;}
 	void init( size_t data ) { init(); set_data( data ); }

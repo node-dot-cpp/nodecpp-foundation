@@ -588,7 +588,7 @@ void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags
 template< int dataminsize, int nflags >
 void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
 	if ( is_zombie() )
-		throw nodecpp::error::zombie_pointer_access; 
+		throw nodecpp::error::lately_detected_zombie_pointer_access; 
 	else
 		throw nodecpp::error::zero_pointer_access;
 }

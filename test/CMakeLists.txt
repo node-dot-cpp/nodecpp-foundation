@@ -7,7 +7,7 @@ if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Build type not specified: defaulting to release.")
 endif()
 
-file(GLOB SOURCE_EXE  "*.cpp" , "samples/*.cpp" )
+file(GLOB SOURCE_EXE  "main.cpp", "test_seh.cpp" , "samples/file_error.cpp" )
 
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../ build)
@@ -29,8 +29,8 @@ else()
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -fnon-call-exceptions")
 endif()
 
-add_executable(test_foundation ${SOURCE_EXE})
-target_link_libraries(test_foundation foundation )
+add_executable(${PROJ_NAME} ${SOURCE_EXE})
+target_link_libraries(${PROJ_NAME} foundation )
 
 if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
     message("Debug mode")

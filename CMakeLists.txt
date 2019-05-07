@@ -34,7 +34,24 @@ else()
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -fnon-call-exceptions")
 endif()
 
+
 add_library(${PROJ_NAME} STATIC ${SOURCE_LIB})
+
+file(GLOB SOURCE_EXE  "test/main.cpp", "test/test_seh.cpp" , "test/samples/file_error.cpp" )
+add_executable(test.bin EXCLUDE_FROM_ALL ${SOURCE_EXE})
+
+target_link_libraries(test.bin ${PROJ_NAME})
+
+set_target_properties( ${PROJ_NAME} 
+  PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/lib"
+)
+
+set_target_properties(test.bin
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build"
+)
 
 if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
     message("Debug mode")
@@ -42,13 +59,29 @@ if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
 	    ${PROJ_NAME}
 	    PROPERTIES
 	        OUTPUT_NAME "${PROJ_NAME}_debug"
+	        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/debug/lib"
+  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/debug/lib"
+	)
+	set_target_properties(
+    	test.bin
+    	PROPERTIES
+        	OUTPUT_NAME "test_debug.bin"
+        	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build/debug"
 	)
 else()
 	message("Release mode")
 	set_target_properties(
 	    ${PROJ_NAME}
 	    PROPERTIES
-	       OUTPUT_NAME "${PROJ_NAME}"
+	    	OUTPUT_NAME "${PROJ_NAME}"
+	    	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/release/lib"
+  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/release/lib"
+	 )
+ 	set_target_properties(
+    	test.bin
+    	PROPERTIES
+       		OUTPUT_NAME "test.bin"
+       		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build/release"
 	 )
 endif ( CMAKE_BUILD_TYPE STREQUAL  "Debug")
 

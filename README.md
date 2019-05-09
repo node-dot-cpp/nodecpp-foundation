@@ -1,6 +1,6 @@
 # nodecpp-foundation
 things valuable for a number of node-dot-cpp subprojects and outside
-##Getting Started
+## Getting Started
 Clone this repository with modules
 ```
 git clone --recursive https://github.com/node-dot-cpp/nodecpp-foundation.git
@@ -9,9 +9,9 @@ Enter to the poject directory :
 ```
 cd nodecpp-foundation
 ```
-###Build project
+### Build project
 
-####Linux
+#### Linux
 
 To build library in Linux
 
@@ -45,7 +45,7 @@ make test.bin
 
 `test_debug.bin` will be located in `nodecpp-foundation/test/build/debug `
 
-####Windows Visual Studio
+#### Windows Visual Studio
 Run in Visual Studio command line
 ```
 cmake -G "Visual Studio 15 2017 Win64" ..

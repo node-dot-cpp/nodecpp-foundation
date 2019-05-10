@@ -118,7 +118,7 @@ void testSEH()
 
     nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [2]" );
 	
-    try 
+    /*try 
 	{
 		badCallOuter_DivByZero();
 	}
@@ -127,5 +127,5 @@ void testSEH()
 		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "{}", e.what() );
 	}
 
-    nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [3]" );
+    nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [3]" );*/
 }

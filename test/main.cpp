@@ -146,9 +146,9 @@ void testPtrStructsWithZombieProperty_(int* dummy)
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );
 
 	if constexpr( secondPtr )
-		optimizedPtrWithZombiePproperty.init(&dummy, &dummy, 17);
+		optimizedPtrWithZombiePproperty.init(dummy, dummy, 17);
 	else
-		optimizedPtrWithZombiePproperty.init(&dummy);
+		optimizedPtrWithZombiePproperty.init(dummy);
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, !optimizedPtrWithZombiePproperty.is_zombie() );
 	try { optimizedPtrWithZombiePproperty.get_dereferencable_ptr(); } catch ( ... ) { OK = false; }
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, OK );

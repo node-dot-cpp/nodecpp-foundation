@@ -16,7 +16,11 @@ file(GLOB SOURCE_LIB 	"src/log.cpp",
 					 	)
 
 set(SOURCE_LIB ${SOURCE_LIB} 3rdparty/fmt/src/format.cc  test/samples/file_error.cpp )
-include_directories(include 3rdparty/fmt/include)
+include_directories(	${PROJECT_SOURCE_DIR}/include
+					 	${PROJECT_SOURCE_DIR}/3rdparty/fmt/include 
+					 	${PROJECT_SOURCE_DIR}/test 
+					 	${PROJECT_SOURCE_DIR}/test/samples
+					 	)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -28,6 +32,7 @@ if(MSVC OR MSYS OR MINGW)
 	 add_definitions(/W3)
 	 add_definitions(/EHa)
 else()
+	enable_testing()
 	add_definitions( -Wall )
 	add_definitions(-fexceptions)
 	add_definitions(-fnon-call-exceptions)
@@ -37,20 +42,22 @@ endif()
 
 add_library(${PROJ_NAME} STATIC ${SOURCE_LIB})
 
-file(GLOB SOURCE_EXE  "test/main.cpp", "test/test_seh.cpp" , "test/samples/file_error.cpp" )
+set(SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/main.cpp 
+				${PROJECT_SOURCE_DIR}/test/test_seh.cpp  
+				${PROJECT_SOURCE_DIR}/test/samples/file_error.cpp 
+				)
 add_executable(test.bin EXCLUDE_FROM_ALL ${SOURCE_EXE})
 
 target_link_libraries(test.bin ${PROJ_NAME})
 
 set_target_properties( ${PROJ_NAME} 
   PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/lib"
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/lib"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/lib"
 )
-
 set_target_properties(test.bin
   PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build"
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
@@ -59,14 +66,14 @@ if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
 	    ${PROJ_NAME}
 	    PROPERTIES
 	        OUTPUT_NAME "${PROJ_NAME}_debug"
-	        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/debug/lib"
-  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/debug/lib"
+	        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/debug/lib"
+  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/debug/lib"
 	)
 	set_target_properties(
     	test.bin
     	PROPERTIES
         	OUTPUT_NAME "test_debug.bin"
-        	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build/debug"
+        	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build/debug"
 	)
 else()
 	message("Release mode")
@@ -81,7 +88,10 @@ else()
     	test.bin
     	PROPERTIES
        		OUTPUT_NAME "test.bin"
-       		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test/build/release"
+       		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build/release"
 	 )
 endif ( CMAKE_BUILD_TYPE STREQUAL  "Debug")
-
+if(UNIX)
+	add_test( test_foundation1  make test.bin )
+	add_test( test_foundation2 "${CMAKE_SOURCE_DIR}/test/build/release/test.bin" )
+endif(UNIX)

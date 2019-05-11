@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(libfoundation)
-set(PROJ_NAME foundation)
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-    message(STATUS "Build type not specified: defaulting to release")
-endif()
-
+set(LIB_NAME foundation)
+set(LIB_NAME foundation)
+set(LIB_D_NAME foundation_d)
+set(TEST_BIN_NAME test_foundation.bin)
+set(TEST_D_BIN_NAME test_foundation_d.bin)
 
 file(GLOB SOURCE_LIB 	"src/log.cpp",
 					 	"src/cpu_exceptions_translator.cpp",
@@ -22,11 +21,17 @@ include_directories(	${PROJECT_SOURCE_DIR}/include
 					 	${PROJECT_SOURCE_DIR}/test/samples
 					 	)
 
+set(SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/main.cpp 
+				${PROJECT_SOURCE_DIR}/test/test_seh.cpp  
+				${PROJECT_SOURCE_DIR}/test/samples/file_error.cpp 
+				)
+
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
-set(CMAKE_CXX_FLAGS_DEBUG " ${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE}  -DNDEBUG")
-set(CMAKE_CXX_FLAGS  " ${CMAKE_CXX_FLAGS} -O2  -DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\" " )
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2  -DNDEBUG")
+set(CMAKE_CXX_FLAGS  " ${CMAKE_CXX_FLAGS} -DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\" " )
 
 if(MSVC OR MSYS OR MINGW)
 	 add_definitions(/W3)
@@ -39,59 +44,28 @@ else()
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -fnon-call-exceptions")
 endif()
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/bin)
+add_library(${LIB_NAME} STATIC ${SOURCE_LIB})
+add_library(${LIB_D_NAME} STATIC ${SOURCE_LIB})
 
-add_library(${PROJ_NAME} STATIC ${SOURCE_LIB})
 
-set(SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/main.cpp 
-				${PROJECT_SOURCE_DIR}/test/test_seh.cpp  
-				${PROJECT_SOURCE_DIR}/test/samples/file_error.cpp 
-				)
-add_executable(test.bin EXCLUDE_FROM_ALL ${SOURCE_EXE})
+add_executable(${TEST_BIN_NAME} EXCLUDE_FROM_ALL ${SOURCE_EXE})
+add_executable(${TEST_D_BIN_NAME} EXCLUDE_FROM_ALL ${SOURCE_EXE})
 
-target_link_libraries(test.bin ${PROJ_NAME})
+set_target_properties ( ${LIB_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
+set_target_properties ( ${LIB_D_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG} )
 
-set_target_properties( ${PROJ_NAME} 
-  PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/lib"
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/lib"
-)
-set_target_properties(test.bin
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build"
-)
+set_target_properties ( ${TEST_BIN_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
+set_target_properties ( ${TEST_D_BIN_NAME}  PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG})
 
-if (CMAKE_BUILD_TYPE STREQUAL  "Debug")
-    message("Debug mode")
-	set_target_properties(
-	    ${PROJ_NAME}
-	    PROPERTIES
-	        OUTPUT_NAME "${PROJ_NAME}_debug"
-	        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/debug/lib"
-  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/debug/lib"
-	)
-	set_target_properties(
-    	test.bin
-    	PROPERTIES
-        	OUTPUT_NAME "test_debug.bin"
-        	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build/debug"
-	)
-else()
-	message("Release mode")
-	set_target_properties(
-	    ${PROJ_NAME}
-	    PROPERTIES
-	    	OUTPUT_NAME "${PROJ_NAME}"
-	    	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/release/lib"
-  			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build/release/lib"
-	 )
- 	set_target_properties(
-    	test.bin
-    	PROPERTIES
-       		OUTPUT_NAME "test.bin"
-       		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/test/build/release"
-	 )
-endif ( CMAKE_BUILD_TYPE STREQUAL  "Debug")
+target_link_libraries(${TEST_BIN_NAME} ${LIB_NAME})
+target_link_libraries(${TEST_D_BIN_NAME} ${LIB_D_NAME})
+
 if(UNIX)
-	add_test( test_foundation1  make test.bin )
-	add_test( test_foundation2 "${CMAKE_SOURCE_DIR}/test/build/release/test.bin" )
+	add_test( Build_test  make ${TEST_BIN_NAME} )
+	add_test( Builf_test_d  make ${TEST_D_BIN_NAME} )
+	add_test( Run_test "${PROJECT_SOURCE_DIR}/build/bin/${TEST_BIN_NAME}" )
+	add_test( Rub_test_d "${PROJECT_SOURCE_DIR}/build/bin/${TEST_D_BIN_NAME}" )
 endif(UNIX)

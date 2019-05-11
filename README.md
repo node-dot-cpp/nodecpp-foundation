@@ -15,7 +15,7 @@ cd nodecpp-foundation
 
 To build library in Linux
 
-** Debug and Release version **
+**Debug and Release version**
 Run in console 
 ```
 cmake .
@@ -40,7 +40,8 @@ make test_foundation_d.bin
 ```
 All binaries will be located in `nodecpp-foundation/test/build/bin `
 
-** Runt tests **
+**Run tests**
+
 Run in console
 ```
 make test
@@ -55,6 +56,7 @@ Run in Visual Studio command line
 cmake -G "Visual Studio 15 2017 Win64" ..
 ```
 This will generate Visual Studio project. 
+
 **Release version**
 
 To build Release version of library run in command prompt line
@@ -63,6 +65,7 @@ msbuild foundation_test.sln /p:Configuration=Release
 ```
 
 **Debug version**
+
 To build Debug version of library run in command prompt line
 ```
 msbuild foundation_test.sln /p:Configuration=Debug

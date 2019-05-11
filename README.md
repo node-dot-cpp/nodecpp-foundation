@@ -15,35 +15,39 @@ cd nodecpp-foundation
 
 To build library in Linux
 
-**Release version**
+** Debug and Release version **
 Run in console 
 ```
 cmake .
 make
 ```
-And you will get library in `nodecpp-foundation/build/release/lib` folder
+or
+```
+mkdir build
+cd build 
+cmake ..
+```
+And you will get both debug and release library in `nodecpp-foundation/build/lib` folder
+
 
 If you want to build `test.bin` just run in console
 ```
-make test.bin
+make test_foundation.bin
 ```
-`test.bin` will be located in `nodecpp-foundation/test/build/release `
+If you want to build `test_foundation_d.bin` just run in console
+```
+make test_foundation_d.bin
+```
+All binaries will be located in `nodecpp-foundation/test/build/bin `
 
-**Debug version**
+** Runt tests **
+Run in console
+```
+make test
+```
+It must passed 4 tests.
 
-Run in console 
-```
-cmake -DCMAKE_BUILD_TYPE=Debug .
-make
-```
-And you will get library in `nodecpp-foundation/build/debug/lib` folder
 
-If you want to build `test.bin` just run in console
-```
-make test.bin
-```
-
-`test_debug.bin` will be located in `nodecpp-foundation/test/build/debug `
 
 #### Windows Visual Studio
 Run in Visual Studio command line

@@ -52,8 +52,8 @@ add_library(${LIB_NAME} STATIC ${SOURCE_LIB})
 add_library(${LIB_D_NAME} STATIC ${SOURCE_LIB})
 
 
-add_executable(${TEST_BIN_NAME} EXCLUDE_FROM_ALL ${SOURCE_EXE})
-add_executable(${TEST_D_BIN_NAME} EXCLUDE_FROM_ALL ${SOURCE_EXE})
+add_executable(${TEST_BIN_NAME}  ${SOURCE_EXE})
+add_executable(${TEST_D_BIN_NAME}  ${SOURCE_EXE})
 
 set_target_properties ( ${LIB_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
 set_target_properties ( ${LIB_D_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG} )
@@ -65,8 +65,8 @@ target_link_libraries(${TEST_BIN_NAME} ${LIB_NAME})
 target_link_libraries(${TEST_D_BIN_NAME} ${LIB_D_NAME})
 
 if(UNIX)
-	add_test( Build_test  make ${TEST_BIN_NAME} )
-	add_test( Build_test_d  make ${TEST_D_BIN_NAME} )
+	#add_test( Build_test  make ${TEST_BIN_NAME} )
+	#add_test( Build_test_d  make ${TEST_D_BIN_NAME} )
 	add_test( Run_test "${PROJECT_SOURCE_DIR}/build/bin/${TEST_BIN_NAME}" )
 	add_test( Run_test_d "${PROJECT_SOURCE_DIR}/build/bin/${TEST_D_BIN_NAME}" )
 endif(UNIX)

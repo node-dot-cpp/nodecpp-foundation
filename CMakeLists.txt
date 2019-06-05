@@ -62,7 +62,7 @@ set_target_properties ( ${TEST_D_BIN_NAME}  PROPERTIES COMPILE_FLAGS  ${CMAKE_CX
 
 target_link_libraries(${TEST_BIN_NAME} ${LIB_NAME})
 target_link_libraries(${TEST_D_BIN_NAME} ${LIB_D_NAME})
-
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_BIN_NAME})
 if(UNIX)
 	#add_test( Build_test  make ${TEST_BIN_NAME} )
 	#add_test( Build_test_d  make ${TEST_D_BIN_NAME} )

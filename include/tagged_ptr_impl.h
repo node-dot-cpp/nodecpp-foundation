@@ -487,7 +487,7 @@ public:
 	void swap( optimized_allocated_ptr_and_ptr_and_data_and_flags_64_& other ) {
 		if ( !NODECPP_LIKELY( (ptr & ptrMask_) == zombie_indicator ) && !NODECPP_LIKELY( (other.ptr & ptrMask_) == zombie_indicator ) )
 		{
-			void* tmp = ptr;
+			auto tmp = ptr;
 			ptr = other.ptr; 
 			other.ptr = tmp;
 			tmp = allocptr;

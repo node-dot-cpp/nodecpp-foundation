@@ -28,8 +28,8 @@
 #ifndef NODECPP_FILE_ERROR_H
 #define NODECPP_FILE_ERROR_H 
 
-#include "../../include/platform_base.h"
-#include "../../include/error.h"
+#include <platform_base.h>
+#include <error.h>
 #include <fmt/format.h>
 
 #include <cerrno>  // for error constants

@@ -174,4 +174,20 @@ constexpr std::pair<size_t, size_t> get_vmt_pointer_size_pos() { return std::mak
 #endif//defined(NODECPP_CLANG) || defined(NODECPP_GCC) || defined(NODECPP_MSVC)
 }//nodecpp::platform
 
+
+// Compiler bugs and limitations that mignt affect a wide number of implementations
+
+// As of mid 2019 GCC does not support coroutine staff
+#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
+#define NODECPP_NO_COROUTINES
+#endif
+
+// Earlier versions of GCC had problems with initializing non-trivial thread-local objects 
+// (see GCC bug 60702, https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60702)
+// TODO: check __GNUC_PATCHLEVEL__
+#if ((defined NODECPP_GCC) && (  (__GNUC__ < 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ < 4)) ))
+#define NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+#endif
+
+
 #endif // NODECPP_PLATFORM_BASE_H

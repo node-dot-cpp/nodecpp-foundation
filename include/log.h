@@ -48,6 +48,12 @@ namespace nodecpp::log {
 
 	std::unique_ptr<DefaultSink> create_sink();
 
+	inline
+	void init_log() { // create log object
+		if ( logObject == nullptr )
+			logObject = create_sink();
+	}
+
 	template< ModuleIDType module, LogLevel level, typename... ARGS>
 	void log( const char* formatStr, const ARGS& ... args ) {
 		if constexpr ( ShouldLog<module, level>::value )

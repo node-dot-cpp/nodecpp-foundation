@@ -49,7 +49,7 @@ namespace nodecpp::log {
 	std::unique_ptr<DefaultSink> create_sink();
 
 	inline
-	void touch_log() { // can be used to ensure the log object is created
+	void init_log() { // create log object
 		if ( logObject == nullptr )
 			logObject = create_sink();
 	}

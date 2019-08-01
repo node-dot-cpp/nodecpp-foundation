@@ -193,6 +193,8 @@ void testPtrStructsWithZombieProperty()
 
 int main(int argc, char *argv[])
 {
+	nodecpp::log::init_log();
+
 	printPlatform();
 	testSEH();
 

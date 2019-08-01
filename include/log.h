@@ -58,8 +58,6 @@ namespace nodecpp::log {
 	void log( const char* formatStr, const ARGS& ... args ) {
 		if constexpr ( ShouldLog<module, level>::value )
 		{
-			if ( logObject == nullptr )
-				logObject = create_sink();
 			constexpr size_t logBufSz = 1024;
 			char logBuf[logBufSz];
 			auto res = fmt::format_to_n( logBuf, logBufSz-1, formatStr, args... );

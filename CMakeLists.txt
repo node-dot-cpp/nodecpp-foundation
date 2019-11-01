@@ -29,6 +29,7 @@ set(SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/main.cpp
 if(MSVC OR MSYS OR MINGW)
 	 add_definitions(/W3)
 	 add_definitions(/EHa)
+	 add_definitions(/MD)
 else()
 	enable_testing()
 	add_definitions( -Wall )

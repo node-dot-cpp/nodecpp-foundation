@@ -35,32 +35,32 @@
 void printPlatform()
 {
 #if defined NODECPP_CLANG
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Compiler: clang" );
+	nodecpp::default_log::info(  "Compiler: clang" );
 #elif defined NODECPP_GCC
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Compiler: gcc" );
+	nodecpp::default_log::info(  "Compiler: gcc" );
 #elif defined NODECPP_MSVC
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Compiler: msvcv" );
+	nodecpp::default_log::info(  "Compiler: msvcv" );
 #else
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Compiler: unknown" );
+	nodecpp::default_log::info(  "Compiler: unknown" );
 #endif
 
 #if defined NODECPP_X64
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "64 bit" );
+	nodecpp::default_log::info(  "64 bit" );
 #elif defined NODECPP_X86
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "32 bit" );
+	nodecpp::default_log::info(  "32 bit" );
 #else
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "unknown platform" );
+	nodecpp::default_log::info(  "unknown platform" );
 #endif
 
 #if defined NODECPP_LINUX
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "OS: Linux" );
+	nodecpp::default_log::info(  "OS: Linux" );
 #elif (defined NODECPP_WINDOWS )
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "OS: Windows" );
+	nodecpp::default_log::info(  "OS: Windows" );
 #else
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "OS: unknown" );
+	nodecpp::default_log::info(  "OS: unknown" );
 #endif
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Minimum CPU page size: {} bytes", NODECPP_MINIMUM_CPU_PAGE_SIZE );
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Minimum Zero Guard page size: {} bytes", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
+	nodecpp::default_log::info(  "Minimum CPU page size: {} bytes", NODECPP_MINIMUM_CPU_PAGE_SIZE );
+	nodecpp::default_log::info(  "Minimum Zero Guard page size: {} bytes", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
 }
 
 void fnWithAssertion(int i)
@@ -95,37 +95,37 @@ int fnThatThrows( int n )
 void fnThatCatches()
 {
 	int ret = fnThatThrows(1);
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("fnThatThrows(1) = {}", ret);
+	nodecpp::default_log::info( "fnThatThrows(1) = {}", ret);
 	ret = 0;
 	try
 	{
 		ret = fnThatThrows(-1);
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
+		nodecpp::default_log::info( "fnThatThrows(-1): OK, ret = {}", ret);
 	}
 	catch (nodecpp::error::error e)
 	{
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		nodecpp::default_log::info( "error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
 		ret = 0;
 	}
 	try
 	{
 		ret = fnThatThrows(-2);
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("fnThatThrows(-1): OK, ret = {}", ret);
+		nodecpp::default_log::info( "fnThatThrows(-1): OK, ret = {}", ret);
 	}
 	catch (nodecpp::error::error e)
 	{
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		nodecpp::default_log::info( "error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
 		if ( e == nodecpp::error::bad_address )
-			nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error comparison: OK" );
+			nodecpp::default_log::info( "error comparison: OK" );
 		else
-			nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error comparison: FAILED" );
+			nodecpp::default_log::info( "error comparison: FAILED" );
 		if ( e == nodecpp::error::zero_pointer_access )
-			nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error comparison: OK" );
+			nodecpp::default_log::info( "error comparison: OK" );
 		else
-			nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error comparison: FAILED" );
+			nodecpp::default_log::info( "error comparison: FAILED" );
 		ret = 0;
 	}
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("fnThatCatches(), ret = {}", ret);
+	nodecpp::default_log::info( "fnThatCatches(), ret = {}", ret);
 }
 
 template<class TestStructT, bool secondPtr = false>
@@ -193,7 +193,15 @@ void testPtrStructsWithZombieProperty()
 
 int main(int argc, char *argv[])
 {
-	nodecpp::log::init_log();
+	nodecpp::Log log;
+	log.level = nodecpp::LogLevel::info;
+	log.add( stdout );
+	for ( size_t i=0; i<2000; ++i )
+		log.warning( "whatever warning # {}", i );
+	nodecpp::logging_impl::currentLog = &log;
+	for ( size_t i=0; i<2000; ++i )
+		nodecpp::default_log::warning( "whatever warning # {}", 2000+i );
+	return 0;
 
 	printPlatform();
 	testSEH();
@@ -206,7 +214,7 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error cought!");
+		nodecpp::default_log::info( "error cought!");
 	}
 	try
 	{
@@ -214,16 +222,13 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("error cought!");
+		nodecpp::default_log::info( "error cought!");
 	}
 
 
 	const char* testMsg = "some long message";
 	int fake = 17;
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>("[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<1, nodecpp::log::LogLevel::info>("[2] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::verbose>("[3] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
-	nodecpp::log::log<2, nodecpp::log::LogLevel::error>("[4] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::default_log::info( "[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 
 	testPtrStructsWithZombieProperty();
 

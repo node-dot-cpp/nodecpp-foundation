@@ -28,6 +28,10 @@
 #ifndef NODECPP_FOUNDATION_H
 #define NODECPP_FOUNDATION_H 
 
+#ifndef NODECPP_DEFAULT_LOG_MODULE
+#define NODECPP_DEFAULT_LOG_MODULE nullptr
+#endif
+
 #include "platform_base.h"
 #include "foundation_module.h"
 #include "log.h"

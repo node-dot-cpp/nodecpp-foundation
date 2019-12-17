@@ -49,7 +49,7 @@
 using namespace nodecpp;
 
 // limit below is single read or write op in linux
-static constexpr size_t MAX_LINUX = 0x7ffff000;
+//static constexpr size_t MAX_LINUX = 0x7ffff000;
 // [DI: what depends on what/] static_assert(MAX_LINUX <= MAX_CHUNK_SIZE, "Use of big chunks needs review.");
 
 /*static*/

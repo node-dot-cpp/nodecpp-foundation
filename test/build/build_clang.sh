@@ -1,2 +1,2 @@
-rm ./test.bin 
-clang++ ../main.cpp ../test_seh.cpp ../../3rdparty/fmt/src/format.cc ../../src/log.cpp ../../src/cpu_exceptions_translator.cpp ../../src/std_error.cpp ../samples/file_error.cpp ../../src/safe_memory_error.cpp ../../src/tagged_ptr_impl.cpp -I../../include -I../../3rdparty/fmt/include -DNODECPP_CUSTOM_LOG_PROCESSING="\"../test/my_logger.h\"" -Wall -fexceptions -fnon-call-exceptions -std=c++17 -o test.bin
+rm ./test.bin  
+clang++-9 ../main.cpp ../test_seh.cpp ../../3rdparty/fmt/src/format.cc ../../src/log.cpp ../../src/nodecpp_assert.cpp ../../src/page_allocator.cpp ../../src/cpu_exceptions_translator.cpp ../../src/std_error.cpp ../samples/file_error.cpp ../../src/safe_memory_error.cpp ../../src/tagged_ptr_impl.cpp -I../../include -I../../3rdparty/fmt/include -DNODECPP_CUSTOM_LOG_PROCESSING="\"../test/my_logger.h\"" -Wall -fexceptions -fnon-call-exceptions -lpthread -std=c++17 -o test.bin

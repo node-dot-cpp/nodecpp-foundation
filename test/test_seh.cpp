@@ -38,8 +38,8 @@ class TestBase
 {
 	int n1;
 public:
-	TestBase( int k ) { n1 = k; nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "TestBase::TestBase({})", k ); }
-	virtual ~TestBase() { nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "TestBase::~TestBase()" ); }
+	TestBase( int k ) { n1 = k; nodecpp::default_log::info("TestBase::TestBase({})", k ); }
+	virtual ~TestBase() { nodecpp::default_log::info("TestBase::~TestBase()" ); }
 
 };
 
@@ -47,8 +47,8 @@ class Test : public TestBase
 {
 	int n2;
 public:
-	Test( int k ) : TestBase(k+1) { n2 = k;  nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Test::Test({})", k ); }
-	virtual ~Test() { nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "Test::~Test()" ); }
+	Test( int k ) : TestBase(k+1) { n2 = k;  nodecpp::default_log::info("Test::Test({})", k ); }
+	virtual ~Test() { nodecpp::default_log::info("Test::~Test()" ); }
 
 };
 
@@ -62,7 +62,7 @@ void badCallOuter_Nullptr()
 {
 	TestBase tb( 1 );
 	badCallInner_Nullptr();
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "we must be dead here" );
+	nodecpp::default_log::info("we must be dead here" );
 }
 
 void badCallInner_AnyPtr()
@@ -75,21 +75,21 @@ void badCallOuter_AnyPtr()
 {
 	TestBase tb( 10 );
 	badCallInner_AnyPtr();
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "we must be dead here" );
+	nodecpp::default_log::info("we must be dead here" );
 }
 
 void badCallInner_DivByZero()
 {
 	volatile int a = 0;
 	volatile int b = 3 / a;
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "{}", b ); // dummy call to avoid optimizing out
+	nodecpp::default_log::info("{}", b ); // dummy call to avoid optimizing out
 }
 
 void badCallOuter_DivByZero()
 {
 	TestBase tb( 100 );
 	badCallInner_DivByZero();
-	nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "we must be dead here" );
+	nodecpp::default_log::info("we must be dead here" );
 }
 
 void testSEH()
@@ -102,10 +102,10 @@ void testSEH()
     }
     catch (std::exception& e)
     {
-        nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "{}", e.what() );
+        nodecpp::default_log::info("{}", e.what() );
     }
 
-    nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [1]" );
+    nodecpp::default_log::info("... and still working [1]" );
 
     try
     {
@@ -113,10 +113,10 @@ void testSEH()
 	}
     catch (std::exception& e)
     {
-        nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "{}", e.what() );
+        nodecpp::default_log::info("{}", e.what() );
     }
 
-    nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [2]" );
+    nodecpp::default_log::info("... and still working [2]" );
 	
     /*try 
 	{
@@ -124,8 +124,8 @@ void testSEH()
 	}
 	catch( std::exception& e )
 	{
-		nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "{}", e.what() );
+		nodecpp::default_log::info("{}", e.what() );
 	}
 
-    nodecpp::log::log<nodecpp::foundation::module_id, nodecpp::log::LogLevel::info>( "... and still working [3]" );*/
+    nodecpp::default_log::info("... and still working [3]" );*/
 }

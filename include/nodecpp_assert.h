@@ -30,7 +30,6 @@
 
 #include "platform_base.h"
 #include <fmt/format.h>
-#include "log.h"
 #include "error.h"
 
 
@@ -47,6 +46,8 @@ namespace nodecpp::assert { // pedantic regular critical
 #include "default_assert.h"
 #endif // NODECPP_CUSTOM_LOG_PROCESSING
 
+	NODECPP_NOINLINE void onAssertionFailed( const char* file, int line, const char* condString, const char* why, bool shouldThrow);
+	NODECPP_NOINLINE void onAssertionFailed( const char* file, int line, const char* condString, bool shouldThrow);
 	template< ModuleIDType module, AssertLevel level, class Expr, typename... ARGS>
 	void nodecpp_assert( const char* file, int line, const Expr& expr, const char* condString, const char* formatStr, const ARGS& ... args ) {
 		if constexpr ( ShouldAssert<module, level>::value != ActionType::ignoring )
@@ -65,11 +66,7 @@ namespace nodecpp::assert { // pedantic regular critical
 			}
 			else
 				logBuf[res.size] = 0;
-			nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString, logBuf );
-			if constexpr ( ShouldAssert<module, level>::value == ActionType::throwing )
-				throw std::exception();
-			else
-				std::abort();
+			onAssertionFailed( file, line, condString, logBuf, ShouldAssert<module, level>::value == ActionType::throwing );
 		}
 	}
 
@@ -79,11 +76,7 @@ namespace nodecpp::assert { // pedantic regular critical
 		{
 			if ( expr() )
 				return;
-			nodecpp::log::log<module, nodecpp::log::LogLevel::error>("File \"{}\", line {}: assertion \'{}\' failed", file, line, condString);
-			if constexpr ( ShouldAssert<module, level>::value == ActionType::throwing )
-				throw std::exception();
-			else
-				std::abort();
+			onAssertionFailed( file, line, condString, ShouldAssert<module, level>::value == ActionType::throwing );
 		}
 	}
 

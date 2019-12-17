@@ -31,7 +31,9 @@
 #include "platform_base.h"
 #include "foundation.h"
 #include <fmt/format.h>
+#include <thread>
 #include <mutex>
+#include <condition_variable>
 #include "page_allocator.h"
 #include "nodecpp_assert.h"
 
@@ -164,7 +166,6 @@ namespace nodecpp {
 
 		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs ) // under lock
 		{
-			size_t endoff = logData->end & (logData->buffSize - 1);
 			if ( ctrs.fullCount() )
 			{
 				char b[SkippedMsgCounters::reportMaxSize];

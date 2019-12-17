@@ -201,7 +201,6 @@ int main(int argc, char *argv[])
 	nodecpp::logging_impl::currentLog = &log;
 	for ( size_t i=0; i<2000; ++i )
 		nodecpp::default_log::warning( "whatever warning # {}", 2000+i );
-	return 0;
 
 	printPlatform();
 	testSEH();
@@ -231,6 +230,9 @@ int main(int argc, char *argv[])
 	nodecpp::default_log::info( "[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 
 	testPtrStructsWithZombieProperty();
+
+	for ( size_t i=0; i<200; ++i )
+		nodecpp::default_log::warning( "about to exit # {}", i );
 
     return 0;
 }

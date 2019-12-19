@@ -34,6 +34,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 #include "page_allocator.h"
 #include "nodecpp_assert.h"
 

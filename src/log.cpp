@@ -28,7 +28,11 @@
 #include "../include/log.h"
 
 namespace nodecpp::logging_impl {
+	using namespace nodecpp::log;
 
+	thread_local ::nodecpp::log::Log* currentLog = nullptr;
+	thread_local size_t instanceId = invalidInstanceID;
+	
 	class LogWriter
 	{
 		LogBufferBaseData* logData;
@@ -122,23 +126,21 @@ namespace nodecpp::logging_impl {
 
 	void logWriterThreadMain( void* pdata )
 	{
-		LogWriter writer( reinterpret_cast<::nodecpp::LogBufferBaseData*>( pdata ) );
+		LogWriter writer( reinterpret_cast<::nodecpp::log::LogBufferBaseData*>( pdata ) );
 		writer.runLoop();
 	}
 
-	thread_local ::nodecpp::Log* currentLog = nullptr;
-	
-	void createLogWriterThread( ::nodecpp::LogBufferBaseData* data )
+	void createLogWriterThread( ::nodecpp::log::LogBufferBaseData* data )
 	{
 		NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, data != nullptr ); 
-		nodecpp::default_log::info("about to start LogWriterThread..." );
+		nodecpp::log::default_log::info("about to start LogWriterThread..." );
 		std::thread t( logWriterThreadMain, (void*)(data) );
 		t.detach();
 	}
 
 } // nodecpp::logging_impl
 
-namespace nodecpp {
+namespace nodecpp::log {
 	void LogBufferBaseData::init( FILE* f )
 	{
 		NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, buff == nullptr ); 

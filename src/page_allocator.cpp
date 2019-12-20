@@ -74,7 +74,7 @@ void* VirtualMemory::allocate(size_t size)
 	if (ptr == (void*)(-1))
 	{
 		int e = errno;
-		nodecpp::default_log::error("mmap error at allocate({}), error = {} ({})", size, e, strerror(e) );
+		nodecpp::log::default_log::error("mmap error at allocate({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
 
@@ -88,8 +88,8 @@ void VirtualMemory::deallocate(void* ptr, size_t size)
  	if ( ret == -1 )
 	{
 		int e = errno;
-		nodecpp::default_log::error("munmap error at deallocate(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(ptr), size, e, strerror(e) );
-//		nodecpp::default_log::error("munmap error at deallocate({}), error = {} ({})", size, e, strerror(e) );
+		nodecpp::log::default_log::error("munmap error at deallocate(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(ptr), size, e, strerror(e) );
+//		nodecpp::log::default_log::error("munmap error at deallocate({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
 }
@@ -102,7 +102,7 @@ void* VirtualMemory::AllocateAddressSpace(size_t size)
 	if (ptr == (void*)(-1))
 	{
 		int e = errno;
-		nodecpp::default_log::error("mmap error at AllocateAddressSpace({}), error = {} ({})", size, e, strerror(e) );
+		nodecpp::log::default_log::error("mmap error at AllocateAddressSpace({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
  //   msync(ptr, size, MS_SYNC|MS_INVALIDATE);
@@ -116,8 +116,8 @@ void* VirtualMemory::CommitMemory(void* addr, size_t size)
 	if (ptr == (void*)(-1))
 	{
 		int e = errno;
-//		nodecpp::default_log::error("allocation error at CommitMemory(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
-		nodecpp::default_log::error("mmap error at CommitMemory({}), error = {} ({})", size, e, strerror(e) );
+//		nodecpp::log::default_log::error("allocation error at CommitMemory(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
+		nodecpp::log::default_log::error("mmap error at CommitMemory({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
 //    msync(addr, size, MS_SYNC|MS_INVALIDATE);
@@ -134,8 +134,8 @@ void VirtualMemory::DecommitMemory(void* addr, size_t size)
  	if (ptr == (void*)(-1))
 	{
 		int e = errno;
-//		nodecpp::default_log::error("allocation error at DecommitMemory(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
-		nodecpp::default_log::error("mmap error at DecommitMemory({}), error = {} ({})", size, e, strerror(e) );
+//		nodecpp::log::default_log::error("allocation error at DecommitMemory(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
+		nodecpp::log::default_log::error("mmap error at DecommitMemory({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
    msync(addr, size, MS_SYNC|MS_INVALIDATE);
@@ -147,16 +147,16 @@ void VirtualMemory::FreeAddressSpace(void* addr, size_t size)
   	if ( ret == -1 )
 	{
 		int e = errno;
-//		nodecpp::default_log::error("allocation error at FreeAddressSpace(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
-		nodecpp::default_log::error("msync error at FreeAddressSpace({}), error = {} ({})", size, e, strerror(e) );
+//		nodecpp::log::default_log::error("allocation error at FreeAddressSpace(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
+		nodecpp::log::default_log::error("msync error at FreeAddressSpace({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
 	ret = munmap(addr, size);
  	if ( ret == -1 )
 	{
 		int e = errno;
-//		nodecpp::default_log::error("allocation error at FreeAddressSpace(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
-		nodecpp::default_log::error("munmap error at FreeAddressSpace({}), error = {} ({})", size, e, strerror(e) );
+//		nodecpp::log::default_log::error("allocation error at FreeAddressSpace(0x{:x}, 0x{:x}), error = {} ({})", (size_t)(addr), size, e, strerror(e) );
+		nodecpp::log::default_log::error("munmap error at FreeAddressSpace({}), error = {} ({})", size, e, strerror(e) );
 		throw std::bad_alloc();
 	}
 }
@@ -200,7 +200,7 @@ void* VirtualMemory::allocate(size_t size)
 		return ret;
 	else
 	{
-		nodecpp::default_log::error("Reserving and commiting memory failed for size {} ({:x}), error = {}", size, size, GetLastError() );
+		nodecpp::log::default_log::error("Reserving and commiting memory failed for size {} ({:x}), error = {}", size, size, GetLastError() );
 		throw std::bad_alloc();
 		return ret;
 	}
@@ -214,7 +214,7 @@ void VirtualMemory::deallocate(void* ptr, size_t size)
 		return;
 	else
 	{
-		nodecpp::default_log::error("Releasing memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)ptr, GetLastError() );
+		nodecpp::log::default_log::error("Releasing memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)ptr, GetLastError() );
 		throw std::bad_alloc();
 		return;
 	}
@@ -229,7 +229,7 @@ void* VirtualMemory::AllocateAddressSpace(size_t size)
 		return ret;
 	else
 	{
-		nodecpp::default_log::error("Reserving memory failed for size {} ({:x}), error = {}", size, size, GetLastError() );
+		nodecpp::log::default_log::error("Reserving memory failed for size {} ({:x}), error = {}", size, size, GetLastError() );
 		throw std::bad_alloc();
 		return ret;
 	}
@@ -243,7 +243,7 @@ void* VirtualMemory::CommitMemory(void* addr, size_t size)
 		return ret;
 	else
 	{
-		nodecpp::default_log::error("Commiting memory failed for size {} ({:x}) and addr 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
+		nodecpp::log::default_log::error("Commiting memory failed for size {} ({:x}) and addr 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
 		throw std::bad_alloc();
 		return ret;
 	}
@@ -257,7 +257,7 @@ void VirtualMemory::DecommitMemory(void* addr, size_t size)
 		return;
 	else
 	{
-		nodecpp::default_log::error("Decommiting memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
+		nodecpp::log::default_log::error("Decommiting memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
 		throw std::bad_alloc();
 		return;
 	}
@@ -271,7 +271,7 @@ void VirtualMemory::FreeAddressSpace(void* addr, size_t size)
 		return;
 	else
 	{
-		nodecpp::default_log::error("Releasing memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
+		nodecpp::log::default_log::error("Releasing memory failed for size {} ({:x}) at address 0x{:x}, error = {}", size, size, (size_t)addr, GetLastError() );
 		throw std::bad_alloc();
 		return;
 	}

@@ -35,32 +35,32 @@
 void printPlatform()
 {
 #if defined NODECPP_CLANG
-	nodecpp::default_log::info(  "Compiler: clang" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Compiler: clang" );
 #elif defined NODECPP_GCC
-	nodecpp::default_log::info(  "Compiler: gcc" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Compiler: gcc" );
 #elif defined NODECPP_MSVC
-	nodecpp::default_log::info(  "Compiler: msvcv" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Compiler: msvcv" );
 #else
-	nodecpp::default_log::info(  "Compiler: unknown" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Compiler: unknown" );
 #endif
 
 #if defined NODECPP_X64
-	nodecpp::default_log::info(  "64 bit" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "64 bit" );
 #elif defined NODECPP_X86
-	nodecpp::default_log::info(  "32 bit" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "32 bit" );
 #else
-	nodecpp::default_log::info(  "unknown platform" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "unknown platform" );
 #endif
 
 #if defined NODECPP_LINUX
-	nodecpp::default_log::info(  "OS: Linux" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: Linux" );
 #elif (defined NODECPP_WINDOWS )
-	nodecpp::default_log::info(  "OS: Windows" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: Windows" );
 #else
-	nodecpp::default_log::info(  "OS: unknown" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: unknown" );
 #endif
-	nodecpp::default_log::info(  "Minimum CPU page size: {} bytes", NODECPP_MINIMUM_CPU_PAGE_SIZE );
-	nodecpp::default_log::info(  "Minimum Zero Guard page size: {} bytes", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Minimum CPU page size: {} bytes", NODECPP_MINIMUM_CPU_PAGE_SIZE );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Minimum Zero Guard page size: {} bytes", NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE );
 }
 
 void fnWithAssertion(int i)
@@ -95,37 +95,37 @@ int fnThatThrows( int n )
 void fnThatCatches()
 {
 	int ret = fnThatThrows(1);
-	nodecpp::default_log::info( "fnThatThrows(1) = {}", ret);
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"fnThatThrows(1) = {}", ret);
 	ret = 0;
 	try
 	{
 		ret = fnThatThrows(-1);
-		nodecpp::default_log::info( "fnThatThrows(-1): OK, ret = {}", ret);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"fnThatThrows(-1): OK, ret = {}", ret);
 	}
 	catch (nodecpp::error::error e)
 	{
-		nodecpp::default_log::info( "error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
 		ret = 0;
 	}
 	try
 	{
 		ret = fnThatThrows(-2);
-		nodecpp::default_log::info( "fnThatThrows(-1): OK, ret = {}", ret);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"fnThatThrows(-1): OK, ret = {}", ret);
 	}
 	catch (nodecpp::error::error e)
 	{
-		nodecpp::default_log::info( "error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() );
 		if ( e == nodecpp::error::bad_address )
-			nodecpp::default_log::info( "error comparison: OK" );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error comparison: OK" );
 		else
-			nodecpp::default_log::info( "error comparison: FAILED" );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error comparison: FAILED" );
 		if ( e == nodecpp::error::zero_pointer_access )
-			nodecpp::default_log::info( "error comparison: OK" );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error comparison: OK" );
 		else
-			nodecpp::default_log::info( "error comparison: FAILED" );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error comparison: FAILED" );
 		ret = 0;
 	}
-	nodecpp::default_log::info( "fnThatCatches(), ret = {}", ret);
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"fnThatCatches(), ret = {}", ret);
 }
 
 template<class TestStructT, bool secondPtr = false>
@@ -193,14 +193,14 @@ void testPtrStructsWithZombieProperty()
 
 int main(int argc, char *argv[])
 {
-	nodecpp::Log log;
-	log.level = nodecpp::LogLevel::info;
+	nodecpp::log::Log log;
+	log.level = nodecpp::log::LogLevel::info;
 	log.add( stdout );
 	for ( size_t i=0; i<2000; ++i )
 		log.warning( "whatever warning # {}", i );
 	nodecpp::logging_impl::currentLog = &log;
 	for ( size_t i=0; i<2000; ++i )
-		nodecpp::default_log::warning( "whatever warning # {}", 2000+i );
+		nodecpp::log::default_log::warning( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "whatever warning # {}", 2000+i );
 
 	printPlatform();
 	testSEH();
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		nodecpp::default_log::info( "error cought!");
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error cought!");
 	}
 	try
 	{
@@ -221,17 +221,17 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		nodecpp::default_log::info( "error cought!");
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"error cought!");
 	}
 
 
 	const char* testMsg = "some long message";
 	int fake = 17;
-	nodecpp::default_log::info( "[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"[1] Hi! msg = \'{}\', fake = {} <end>", testMsg, fake );
 
 	testPtrStructsWithZombieProperty();
 
-	nodecpp::default_log::info( "about to exit...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         " );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"about to exit...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         " );
 
     return 0;
 }

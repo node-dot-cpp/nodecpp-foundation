@@ -39,7 +39,13 @@
 #include "nodecpp_assert.h"
 
 
-namespace nodecpp {
+
+namespace nodecpp::logging_impl {
+	constexpr size_t invalidInstanceID = ((size_t)0 - 2);
+	extern thread_local size_t instanceId;
+} // namespace logging_impl
+
+namespace nodecpp::log {
 
 	class ModuleID
 	{
@@ -279,8 +285,12 @@ namespace nodecpp {
 		void writoToLog( ModuleID mid, const char* msg, size_t sz, LogLevel severity ) {
 			char msgFormatted[LogBufferBaseData::maxMessageSize];
 			auto formatRet = mid.id() != nullptr ?
-				::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], msg ) :
-				::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}] {}\n", LogLevelNames[(size_t)severity], msg );
+				( logging_impl::instanceId != logging_impl::invalidInstanceID ?
+					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}:{}][{}] {}\n", mid.id(), logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
+					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], msg ) ) :
+				( logging_impl::instanceId != logging_impl::invalidInstanceID ?
+					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[:{}][{}] {}\n", logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
+					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[:][{}] {}\n", LogLevelNames[(size_t)severity], msg ) );
 			if ( formatRet.size >= LogBufferBaseData::maxMessageSize )
 			{
 				msgFormatted[LogBufferBaseData::maxMessageSize-4] = '.';
@@ -393,11 +403,13 @@ namespace nodecpp {
 		}
 		//TODO::add: remove()
 	};
+} // namespace nodecpp::log
 
-	namespace logging_impl {
-		extern thread_local ::nodecpp::Log* currentLog;
-	} // namespace logging_impl
+namespace nodecpp::logging_impl {
+	extern thread_local ::nodecpp::log::Log* currentLog;
+} // namespace logging_impl
 
+namespace nodecpp::log {
 	namespace default_log
 	{
 		template<class StringT, class ... Objects>
@@ -433,6 +445,6 @@ namespace nodecpp {
 		template<class StringT, class ... Objects>
 		void debug( ModuleID mid, StringT format_str, Objects ... obj ) { log( mid, LogLevel::debug, format_str, obj ... ); }
 	} // namespace default_log
-} //namespace nodecpp
+} //namespace nodecpp::log
 
 #endif // NODECPP_LOGGING_H

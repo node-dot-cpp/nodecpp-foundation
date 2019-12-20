@@ -35,5 +35,10 @@ namespace nodecpp::foundation
 	constexpr uint64_t module_id = 0;
 }
 
+namespace nodecpp
+{
+	constexpr const char* foundation_module_id = "foundation";
+}
+
 
 #endif // FOUNDATION_MODULE_H

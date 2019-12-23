@@ -352,6 +352,8 @@ namespace nodecpp::log {
 
 	class Log
 	{
+		LogLevel levelCouldBeSkipped = LogLevel::info;
+
 	public:
 		LogLevel level = LogLevel::info;
 
@@ -361,11 +363,17 @@ namespace nodecpp::log {
 		//TODO::add: format
 		//TODO::add: exitOnError
 
-		size_t transportIdx = 0; // for adding purposes in case of clustering
-
 	public:
 		Log() {}
 		virtual ~Log() {}
+
+		void setGuaranteedLevel( LogLevel l )
+		{
+			levelCouldBeSkipped = LogLevel((size_t)l + 1);
+			for ( auto& t : transports )
+				t.logData->levelCouldBeSkipped = levelCouldBeSkipped;
+		}
+		void resetGuaranteedLevel() { setGuaranteedLevel( LogLevel::fatal ); }
 
 		template<class StringT, class ... Objects>
 		void log( ModuleID mid, LogLevel l, StringT format_str, Objects ... obj ) {
@@ -415,6 +423,7 @@ namespace nodecpp::log {
 			LogBufferBaseData* data = reinterpret_cast<LogBufferBaseData*>( malloc( sizeof(LogBufferBaseData) ) );
 			new (data) LogBufferBaseData();
 			data->init( path.c_str() );
+			data->levelCouldBeSkipped = levelCouldBeSkipped;
 			transports.emplace_back( data ); 
 //			::nodecpp::logging_impl::logDataStructures.push_back( data );
 			return true; // TODO
@@ -425,6 +434,7 @@ namespace nodecpp::log {
 			LogBufferBaseData* data = reinterpret_cast<LogBufferBaseData*>( malloc( sizeof(LogBufferBaseData) ) );
 			new (data) LogBufferBaseData();
 			data->init( cons );
+			data->levelCouldBeSkipped = levelCouldBeSkipped;
 			transports.emplace_back( data ); 
 //			::nodecpp::logging_impl::logDataStructures.push_back( data );
 			return true; // TODO

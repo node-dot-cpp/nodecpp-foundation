@@ -109,12 +109,13 @@ namespace nodecpp::log {
 		static constexpr size_t pageCount = 4; // so far it is not obvious why we really need something else
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
-		uint64_t start = 0; // writable by a thread writing to a file; readable: all
-		uint64_t writerPromisedNextStart = 0; // writable: logging threads; readable: all
-		uint64_t end = 0; // writable: logging threads; readable: all
-		static constexpr size_t skippedCntMsgSz = 128;
-		SkippedMsgCounters skippedCtrs; // accessible by log-writing threads
+		uint64_t start = 0; // mx-protected; writable by a thread writing to a file; readable: all
+		uint64_t writerPromisedNextStart = 0; // mx-protected; writable: writing thread; readable: all
+		uint64_t end = 0; // mx-protected; writable: logging threads, writing thread(in case of periodic flushing); readable: all
+		static constexpr size_t skippedCntMsgSz = 128; // an upper estimation for quick calculations
+		SkippedMsgCounters skippedCtrs; // mx-protected; accessible by log-writing threads
 		std::condition_variable waitWriter;
+		size_t refCounter = 0; // mx-protected
 		std::mutex mx;
 
 		ChainedWaitingData* firstToRelease = nullptr; // for writer
@@ -146,6 +147,14 @@ namespace nodecpp::log {
 			}
 		}
 		size_t availableSize() { return buffSize - (end - start); }
+		size_t addRef() {
+			std::unique_lock<std::mutex> lock(mx);
+			return ++refCounter;
+		}
+		size_t removeRef() {
+			std::unique_lock<std::mutex> lock(mx);
+			return --refCounter;
+		}
 	};
 
 	class LogTransport
@@ -304,7 +313,7 @@ namespace nodecpp::log {
 		}
 
 	public:
-		LogTransport( LogBufferBaseData* data ) : logData( data ) {}
+		LogTransport( LogBufferBaseData* data ) : logData( data ) { data->addRef(); }
 		LogTransport( const LogTransport& ) = delete;
 		LogTransport& operator = ( const LogTransport& ) = delete;
 		LogTransport( LogTransport&& other ) {
@@ -319,6 +328,11 @@ namespace nodecpp::log {
 		}
 		~LogTransport()
 		{
+			size_t refCtr = logData->removeRef();
+			if ( refCtr == 0 && logData != nullptr ) 
+			{
+				logData->deinit();
+			}
 		}
 	};
 

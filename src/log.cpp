@@ -38,10 +38,7 @@ namespace nodecpp::logging_impl {
 	{
 		LogBufferBaseData* logData;
 
-	public:
-		LogWriter( LogBufferBaseData* logData_ ) : logData( logData_ ) {}
-
-		void runLoop()
+		void runLoop_()
 		{
 			for (;;)
 			{
@@ -131,6 +128,22 @@ namespace nodecpp::logging_impl {
 						p->w.notify_one();
 					}
 				}
+			}
+		}
+
+	public:
+		LogWriter( LogBufferBaseData* logData_ ) : logData( logData_ ) {}
+
+		void runLoop()
+		{
+			NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData != nullptr );
+			logData->addRef();
+			try { runLoop_(); }
+			catch ( ... ) {}
+			size_t refCtr = logData->removeRef();
+			if ( refCtr == 0 && logData != nullptr ) 
+			{
+				logData->deinit();
 			}
 		}
 	};

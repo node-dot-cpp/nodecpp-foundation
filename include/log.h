@@ -80,15 +80,27 @@ namespace nodecpp::log {
 		size_t fullCount() { return fullCnt_; }
 		size_t toStr( char* buff, size_t sz) {
 			NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, sz >= reportMaxSize ); 
-			memcpy( buff, "<skipped:", 9 );
+			memcpy( buff, "<skipped: ", 9 );
 			size_t pos = 9;
+			bool added = false;
 			for ( size_t i=0; i<log_level_count; ++i )
 				if ( skippedCtrs[i] && pos < sz )					
 				{
-					auto r = ::fmt::format_to_n( buff + pos, sz - pos, " {}: {}", LogLevelNames[i], skippedCtrs[i] );
+					auto r = ::fmt::format_to_n( buff + pos, sz - pos, "{}:{}, ", LogLevelNames[i], skippedCtrs[i] );
 					pos += r.size;
+					added = true;
 				}
-			return pos;
+			if ( added )
+			{
+				buff[pos - 2] = '>';
+				buff[pos - 1] = '\n';
+				return pos;
+			}
+			else
+			{
+				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, fullCnt_ == 0, "indeed: {}", fullCnt_ ); 
+				return 0;
+			}
 		}
 	};
 
@@ -185,7 +197,7 @@ namespace nodecpp::log {
 			if ( ctrs.fullCount() )
 			{
 				char b[SkippedMsgCounters::reportMaxSize];
-				size_t bsz = logData->skippedCtrs.toStr( b, SkippedMsgCounters::reportMaxSize );
+				size_t bsz = ctrs.toStr( b, SkippedMsgCounters::reportMaxSize );
 				static_assert( SkippedMsgCounters::reportMaxSize <= LogBufferBaseData::skippedCntMsgSz );
 				insertSingleMsg( b, bsz );
 				ctrs.clear();
@@ -199,7 +211,6 @@ namespace nodecpp::log {
 
 		bool addMsg( const char* msg, size_t sz, LogLevel l )
 		{
-			bool ret = true;
 			bool waitAgain = false;
 			ChainedWaitingData d;
 			{
@@ -210,7 +221,7 @@ namespace nodecpp::log {
 					if (l >= logData->levelCouldBeSkipped)
 					{
 						logData->nextToAdd->skippedCtrs.increment(l);
-						ret = false;
+						return false;
 					}
 					else
 					{
@@ -228,7 +239,7 @@ namespace nodecpp::log {
 					if ( l >= logData->levelCouldBeSkipped ) // skip
 					{
 						logData->skippedCtrs.increment(l);
-						ret = false;
+						return false;
 					}
 					else // add to waiting list
 					{
@@ -288,7 +299,7 @@ namespace nodecpp::log {
 					d.next->w.notify_one();
 				}
 			}
-			return ret;
+			return true;
 		}
 
 		void writoToLog( ModuleID mid, const char* msg, size_t sz, LogLevel severity ) {
@@ -328,10 +339,13 @@ namespace nodecpp::log {
 		}
 		~LogTransport()
 		{
-			size_t refCtr = logData->removeRef();
-			if ( refCtr == 0 && logData != nullptr ) 
+			if ( logData != nullptr )
 			{
-				logData->deinit();
+				size_t refCtr = logData->removeRef();
+				if ( refCtr == 0 && logData != nullptr ) 
+				{
+					logData->deinit();
+				}
 			}
 		}
 	};

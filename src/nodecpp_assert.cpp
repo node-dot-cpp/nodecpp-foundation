@@ -31,7 +31,7 @@
 namespace nodecpp::assert {
 	void onAssertionFailed( const char* file, int line, const char* condString, const char* why, bool shouldThrow)
 	{
-		nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString, why );
+		nodecpp::log::default_log::error( "File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString, why );
 		if ( shouldThrow )
 			throw std::exception();
 		else
@@ -39,7 +39,7 @@ namespace nodecpp::assert {
 	}
 	void onAssertionFailed( const char* file, int line, const char* condString, bool shouldThrow)
 	{
-		nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString );
+		nodecpp::log::default_log::error( "File \"{}\", line {}: assertion \'{}\' failed, message: \"{}\"", file, line, condString );
 		if ( shouldThrow )
 			throw std::exception();
 		else

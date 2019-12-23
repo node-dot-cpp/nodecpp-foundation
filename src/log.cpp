@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "../include/log.h"
+#include <chrono>
 
 namespace nodecpp::logging_impl {
 	using namespace nodecpp::log;
@@ -45,8 +46,10 @@ namespace nodecpp::logging_impl {
 			for (;;)
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				while ( logData->action == LogBufferBaseData::Action::proceed && (logData->end & ~( logData->pageSize - 1)) == logData->start )
-					logData->waitWriter.wait(lock);
+//				while ( logData->action == LogBufferBaseData::Action::proceed && (logData->end & ~( logData->pageSize - 1)) == logData->start )
+				while ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start )
+//					logData->waitWriter.wait(lock);
+					logData->waitWriter.wait_for(lock, std::chrono::milliseconds(200));
 				lock.unlock();
 
 				if ( logData->action != LogBufferBaseData::Action::proceed )
@@ -62,11 +65,15 @@ namespace nodecpp::logging_impl {
 				// 2. release a thread waiting for free size in buffer (if any)
 
 				size_t pageRoundedEnd;
+				size_t end;
 				ChainedWaitingData* p = nullptr;
 				{
 					std::unique_lock<std::mutex> lock(logData->mx);
-					pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+					end = logData->end;
+//					pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+					pageRoundedEnd = ( (logData->end - 1) & ~( logData->pageSize - 1) ) + logData->pageSize;
 					logData->writerPromisedNextStart = pageRoundedEnd;
+					logData->end = pageRoundedEnd;
 
 					if ( logData->start == pageRoundedEnd && logData->firstToRelease != nullptr )
 					{
@@ -89,7 +96,8 @@ namespace nodecpp::logging_impl {
 				while ( logData->start != pageRoundedEnd )
 				{
 					size_t startoff = logData->start & (logData->buffSize - 1);
-					size_t endoff = pageRoundedEnd & (logData->buffSize - 1);
+//					size_t endoff = pageRoundedEnd & (logData->buffSize - 1);
+					size_t endoff = end & (logData->buffSize - 1);
 					if ( endoff > startoff )
 						fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
 					else
@@ -107,8 +115,11 @@ namespace nodecpp::logging_impl {
 							p = logData->firstToRelease;
 							logData->firstToRelease = nullptr;
 						}
-						pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+						end = logData->end;
+//						pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+						pageRoundedEnd = ( (logData->end - 1) & ~( logData->pageSize - 1) ) + logData->pageSize;
 						logData->writerPromisedNextStart = pageRoundedEnd;
+						logData->end = pageRoundedEnd;
 					} // unlocking
 					if ( p )
 					{

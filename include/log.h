@@ -142,6 +142,7 @@ namespace nodecpp::log {
 		void init( const char* path )
 		{
 			FILE* f = fopen( path, "ab" );
+			setbuf( f, nullptr ); // no bufferig
 			init( f );
 		}
 		void deinit()

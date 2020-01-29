@@ -27,6 +27,7 @@
     <ClCompile Include="..\..\src\safe_memory_error.cpp" />
     <ClCompile Include="..\..\src\std_error.cpp" />
     <ClCompile Include="..\..\src\log.cpp" />
+    <ClCompile Include="..\..\src\vector_of_pages.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\samples\file_error.cpp" />
     <ClCompile Include="..\test_seh.cpp" />
@@ -36,7 +37,6 @@
     <ClInclude Include="..\..\include\nodecpp_assert.h" />
     <ClInclude Include="..\..\include\cpu_exceptions_translator.h" />
     <ClInclude Include="..\..\include\default_assert.h" />
-    <ClInclude Include="..\..\include\_default_log.h" />
     <ClInclude Include="..\..\include\error.h" />
     <ClInclude Include="..\..\include\page_allocator.h" />
     <ClInclude Include="..\..\include\tagged_ptr_impl.h" />
@@ -45,7 +45,7 @@
     <ClInclude Include="..\..\include\file_console_sink.h" />
     <ClInclude Include="..\..\include\foundation.h" />
     <ClInclude Include="..\..\include\platform_base.h" />
-    <ClInclude Include="..\_my_logger.h" />
+    <ClInclude Include="..\..\include\vector_of_pages.h" />
     <ClInclude Include="..\samples\file_error.h" />
     <ClInclude Include="..\test.h" />
   </ItemGroup>

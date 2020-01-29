@@ -41,26 +41,41 @@ namespace nodecpp {
 		void releasePage( uint8_t* page ) { VirtualMemory::deallocate( page, pageSize ); }
 	};
 
-	template<class PageProvider>
-	class VectorOfPagesBase
+	class GlobalPagePool
 	{
-		static constexpr size_t localStorageSize = 4;
-		uint8_t* firstPages[ localStorageSize ];
-		PageProvider& pageProvider;
+		static constexpr size_t pageSize = 0x1000;
+		uint8_t* firstPage = nullptr;
+		size_t pageCnt = 0;
+		static constexpr size_t highWatermark = 16;
 	public:
-		VectorOfPagesBase( PageProvider& pageProvider_ ) : pageProvider( pageProvider_ ) { memset( firstPages, 0, sizeof( firstPages ) ); }
-		~VectorOfPagesBase() { /*TODO: release all pages*/ }
-	};
-
-	class GlobalPagePool : public VectorOfPagesBase<OSPageProvider>
-	{
-		OSPageProvider pageProvider;
-		uint8_t** firstPage = nullptr;
-		uint8_t** lastPage = nullptr;
-	public:
-		GlobalPagePool() : VectorOfPagesBase<OSPageProvider>( pageProvider ) {}
-		uint8_t* acquirePage() { return nullptr; }
-		void releasePage( uint8_t* page ) { ; }
+		GlobalPagePool() {}
+		uint8_t* acquirePage() {
+			// TODO: thread-sync
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ( pageCnt == 0 && firstPage == nullptr ) || ( pageCnt != 0 && firstPage != nullptr ) );
+			uint8_t* page;
+			if ( pageCnt != 0 )
+			{
+				page = firstPage;
+				firstPage = *reinterpret_cast<uint8_t**>(firstPage);
+				*reinterpret_cast<uint8_t**>(firstPage) = nullptr;
+				--pageCnt;
+			}
+			else
+				page = reinterpret_cast<uint8_t*>( VirtualMemory::allocate( pageSize ) );
+			return page;
+		}
+		void releasePage( uint8_t* page ) {
+			// TODO: thread-sync
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ( pageCnt == 0 && firstPage == nullptr ) || ( pageCnt != 0 && firstPage != nullptr ) );
+			if ( pageCnt < highWatermark )
+			{
+				*reinterpret_cast<uint8_t**>(page) = firstPage;
+				firstPage = page;
+				++pageCnt;
+			}
+			else
+				VirtualMemory::deallocate( page, pageSize );
+		}
 	};
 	extern GlobalPagePool globalPagePool;
 
@@ -73,20 +88,17 @@ namespace nodecpp {
 		ThreadLocalPagePool() {}
 		uint8_t* acquirePage() {
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ( pageCnt == 0 && firstPage == nullptr ) || ( pageCnt != 0 && firstPage != nullptr ) );
+			uint8_t* page;
 			if ( pageCnt != 0 )
 			{
+				page = firstPage;
 				firstPage = *reinterpret_cast<uint8_t**>(firstPage);
 				*reinterpret_cast<uint8_t**>(firstPage) = nullptr;
 				--pageCnt;
 			}
 			else
-			{
-				uint8_t* page = globalPagePool.acquirePage();
-				*reinterpret_cast<uint8_t**>(page) = firstPage;
-				firstPage = page;
-				++pageCnt;
-				return page;
-			}
+				page = globalPagePool.acquirePage();
+			return page;
 		}
 		void releasePage( uint8_t* page ) {
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ( pageCnt == 0 && firstPage == nullptr ) || ( pageCnt != 0 && firstPage != nullptr ) );
@@ -102,10 +114,13 @@ namespace nodecpp {
 	};
 	extern thread_local ThreadLocalPagePool threadLocalPagePool;
 
-	class VectorOfPages : public VectorOfPagesBase<ThreadLocalPagePool>
+	class VectorOfPages
 	{
+		static constexpr size_t localStorageSize = 4;
+		uint8_t* firstPages[ localStorageSize ];
 	public:
-		VectorOfPages() : VectorOfPagesBase<ThreadLocalPagePool>( threadLocalPagePool ) {}
+		VectorOfPages() { memset( firstPages, 0, sizeof( firstPages ) ); }
+		~VectorOfPages() { /*TODO: release all pages*/ }
 	};
 
 } // nodecpp

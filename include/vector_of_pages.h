@@ -120,21 +120,27 @@ namespace nodecpp {
 	{
 		struct IndexPageHeader
 		{
-			static constexpr size_t maxAddressed = ( GlobalPagePool::pageSize - sizeof( IndexPageHeader* ) ) / sizeof( uint8_t*);
 			IndexPageHeader* next;
+			size_t usedCnt;
 			uint8_t* pages[1];
-			void init() { next = nullptr; pages[0] = nullptr; }
+			void init() { next = nullptr; usedCnt = 0; pages[0] = nullptr;}
+			void init(uint8_t* page) { next = nullptr; usedCnt = 1; pages[0] = page;}
+			static constexpr size_t maxAddressed = ( GlobalPagePool::pageSize - sizeof( next ) - sizeof( usedCnt ) ) / sizeof( uint8_t*);
 		};
+		static_assert( sizeof( IndexPageHeader ) == sizeof( IndexPageHeader::next ) + sizeof( IndexPageHeader::usedCnt ) + sizeof( IndexPageHeader::pages ) );
+
 		static constexpr size_t localStorageSize = 4;
 		uint8_t* firstPages[ localStorageSize ];
-		size_t pageCnt = 0;
+		size_t pageCnt = 0; // payload pages (es not include index pages)
 		IndexPageHeader* firstIndexPage = nullptr;
 		IndexPageHeader* lastIndexPage = nullptr;
 		uint8_t* currentPage = nullptr;
 		size_t size = 0;
 
 		size_t offsetInCurrentPage() { return size & ( GlobalPagePool::pageSize - 1 ); }
-		void implReleaseAllPages() {
+		size_t remainingSizeInCurrentPage() { return GlobalPagePool::pageSize - offsetInCurrentPage(); }
+		void implReleaseAllPages()
+		{
 			size_t i;
 			for ( i=0; i<localStorageSize && i<pageCnt; ++i )
 				threadLocalPagePool.releasePage( firstPages[i] );
@@ -145,9 +151,10 @@ namespace nodecpp {
 				while ( firstIndexPage != nullptr )
 				{
 					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt > localStorageSize || firstIndexPage->next == nullptr );
-					for ( size_t i=0; i<IndexPageHeader::maxAddressed && i<pageCnt; ++i )
+					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage->usedCnt <= pageCnt );
+					for ( size_t i=0; i<firstIndexPage->usedCnt; ++i )
 						threadLocalPagePool.releasePage( firstIndexPage->pages[i] );
-					pageCnt -= i;
+					pageCnt -= firstIndexPage->usedCnt;
 					uint8_t* page = reinterpret_cast<uint8_t*>(firstIndexPage);
 					firstIndexPage = firstIndexPage->next;
 					threadLocalPagePool.releasePage( page );
@@ -155,9 +162,72 @@ namespace nodecpp {
 			}
 		}
 
+		void implAddPage()
+		{
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage == nullptr );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offsetInCurrentPage() == 0 );
+			if ( pageCnt < localStorageSize )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage == nullptr );
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, lastIndexPage == nullptr );
+				firstPages[pageCnt] = threadLocalPagePool.acquirePage();
+				currentPage = firstPages[pageCnt];
+			}
+			else if ( lastIndexPage == nullptr )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage == nullptr );
+				firstIndexPage = lastIndexPage = reinterpret_cast<IndexPageHeader*>(threadLocalPagePool.acquirePage());
+				currentPage = threadLocalPagePool.acquirePage();
+				lastIndexPage->init( currentPage );
+			}
+			else if ( lastIndexPage->usedCnt == IndexPageHeader::maxAddressed )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage != nullptr );
+				IndexPageHeader* nextip = reinterpret_cast<IndexPageHeader*>(threadLocalPagePool.acquirePage());
+				currentPage = threadLocalPagePool.acquirePage();
+				nextip->init( currentPage );
+				lastIndexPage->next = nextip;
+				lastIndexPage = nextip;
+			}
+			else
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage != nullptr );
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, lastIndexPage->usedCnt < IndexPageHeader::maxAddressed );
+				currentPage = threadLocalPagePool.acquirePage();
+				lastIndexPage->pages[lastIndexPage->usedCnt] = currentPage;
+				++(lastIndexPage->usedCnt);
+			}
+			++pageCnt;
+		}
+
 	public:
 		VectorOfPages() { memset( firstPages, 0, sizeof( firstPages ) ); }
-		~VectorOfPages() { /*TODO: release all pages*/ }
+		void append( void* buff_, size_t sz )
+		{
+			uint8_t* buff = reinterpret_cast<uint8_t*>(buff_);
+			while( sz != 0 )
+			{
+				if ( currentPage == nullptr )
+				{
+					implAddPage();
+					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage != nullptr );
+				}
+				size_t sz2copy = sz <= remainingSizeInCurrentPage() ? sz : remainingSizeInCurrentPage();
+				memcpy( currentPage, buff, sz2copy );
+				sz -= sz2copy;
+				buff += sz2copy;
+			}
+		}
+		void clear() 
+		{
+			implReleaseAllPages();
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt == 0 );
+			firstIndexPage = nullptr;
+			lastIndexPage = nullptr;
+			currentPage = nullptr;
+			size = 0;
+		}
+		~VectorOfPages() { implReleaseAllPages(); }
 	};
 
 } // nodecpp

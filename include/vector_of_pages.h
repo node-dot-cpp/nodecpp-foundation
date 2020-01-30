@@ -43,7 +43,9 @@ namespace nodecpp {
 
 	class GlobalPagePool
 	{
+	public:
 		static constexpr size_t pageSize = 0x1000;
+	private:
 		uint8_t* firstPage = nullptr;
 		size_t pageCnt = 0;
 		static constexpr size_t highWatermark = 16;
@@ -116,8 +118,43 @@ namespace nodecpp {
 
 	class VectorOfPages
 	{
+		struct IndexPageHeader
+		{
+			static constexpr size_t maxAddressed = ( GlobalPagePool::pageSize - sizeof( IndexPageHeader* ) ) / sizeof( uint8_t*);
+			IndexPageHeader* next;
+			uint8_t* pages[1];
+			void init() { next = nullptr; pages[0] = nullptr; }
+		};
 		static constexpr size_t localStorageSize = 4;
 		uint8_t* firstPages[ localStorageSize ];
+		size_t pageCnt = 0;
+		IndexPageHeader* firstIndexPage = nullptr;
+		IndexPageHeader* lastIndexPage = nullptr;
+		uint8_t* currentPage = nullptr;
+		size_t size = 0;
+
+		size_t offsetInCurrentPage() { return size & ( GlobalPagePool::pageSize - 1 ); }
+		void implReleaseAllPages() {
+			size_t i;
+			for ( i=0; i<localStorageSize && i<pageCnt; ++i )
+				threadLocalPagePool.releasePage( firstPages[i] );
+			pageCnt -= i;
+			if ( pageCnt )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstIndexPage != nullptr );
+				while ( firstIndexPage != nullptr )
+				{
+					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt > localStorageSize || firstIndexPage->next == nullptr );
+					for ( size_t i=0; i<IndexPageHeader::maxAddressed && i<pageCnt; ++i )
+						threadLocalPagePool.releasePage( firstIndexPage->pages[i] );
+					pageCnt -= i;
+					uint8_t* page = reinterpret_cast<uint8_t*>(firstIndexPage);
+					firstIndexPage = firstIndexPage->next;
+					threadLocalPagePool.releasePage( page );
+				}
+			}
+		}
+
 	public:
 		VectorOfPages() { memset( firstPages, 0, sizeof( firstPages ) ); }
 		~VectorOfPages() { /*TODO: release all pages*/ }

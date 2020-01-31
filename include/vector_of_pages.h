@@ -257,20 +257,25 @@ namespace nodecpp {
 					implAddPage();
 					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage != nullptr );
 				}
-				if ( sz <= remainingSizeInCurrentPage() )
+				size_t remainingInPage = remainingSizeInCurrentPage();
+				if ( sz <= remainingInPage )
 				{
 					memcpy( currentPage + offsetInCurrentPage(), buff, sz );
 					totalSz += sz;
-					if( sz == remainingSizeInCurrentPage() )
+					if( sz == remainingInPage )
+					{
+						NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offsetInCurrentPage() == 0 );
 						currentPage = nullptr;
+					}
 					break;
 				}
 				else
 				{
-					memcpy( currentPage + offsetInCurrentPage(), buff, remainingSizeInCurrentPage() );
-					sz -= remainingSizeInCurrentPage();
-					totalSz += remainingSizeInCurrentPage();
-					buff += remainingSizeInCurrentPage();
+					memcpy( currentPage + offsetInCurrentPage(), buff, remainingInPage );
+					sz -= remainingInPage;
+					buff += remainingInPage;
+					totalSz += remainingInPage;
+					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offsetInCurrentPage() == 0 );
 					currentPage = nullptr;
 				}
 			}

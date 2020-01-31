@@ -195,27 +195,17 @@ void testPtrStructsWithZombieProperty()
 void testVectorOfPages()
 {
 	nodecpp::VectorOfPages vop;
-	constexpr size_t maxSz = 0x10000;
+	constexpr size_t maxSz = 0x4000;
 	uint64_t buff[maxSz];
 	uint64_t ctr1 = 0;
-	for ( size_t j=0; j<maxSz;j++ )
-		buff[j] = ctr1++;
-	vop.append( buff, maxSz * sizeof( uint64_t) );
-	/*for ( size_t i=1; i<0x20; ++i )
+
+	for ( size_t i=1; i<=maxSz; ++i )
 	{
-		for ( size_t j=0; j<i;j++ )
+		for ( size_t j=0; j<i; j++ )
 			buff[j] = ctr1++;
 		vop.append( buff, i * sizeof( uint64_t) );
 	}
-		for ( size_t j=0; j<0x20;j++ )
-			buff[j] = ctr1++;
-		vop.append( buff, 0x20 * sizeof( uint64_t) );
-	for ( size_t i=0x21; i<=0x100; ++i )
-	{
-		for ( size_t j=0; j<i;j++ )
-			buff[j] = ctr1++;
-		vop.append( buff, i * sizeof( uint64_t) );
-	}*/
+
 	uint64_t ctr2 = 0;
 	auto it = vop.getReadIter();
 	size_t available = it.availableSize();

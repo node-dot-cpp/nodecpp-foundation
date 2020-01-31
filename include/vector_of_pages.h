@@ -143,7 +143,7 @@ namespace nodecpp {
 			const uint8_t* page;
 			size_t totalSz;
 			size_t sizeRemainingInBlock;
-			size_t idxInIndexPage = 0;
+			size_t idxInIndexPage;
 			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
 				sizeRemainingInBlock = sz <= GlobalPagePool::pageSize ? sz : GlobalPagePool::pageSize;
@@ -160,13 +160,15 @@ namespace nodecpp {
 				const uint8_t* ret = page;
 				if ( totalSz && sizeRemainingInBlock == 0 )
 				{
-					if ( idxInIndexPage >= ip->usedCnt )
+					if ( idxInIndexPage + 1 >= ip->usedCnt )
 					{
 						ip = ip->next;
 						idxInIndexPage = 0;
+						page = ip->pages()[idxInIndexPage];
 					}
-					page = ip->pages()[idxInIndexPage++];
-					sizeRemainingInBlock = totalSz & (GlobalPagePool::pageSize - 1);
+					else
+						page = ip->pages()[++idxInIndexPage];
+					sizeRemainingInBlock = totalSz <= GlobalPagePool::pageSize ? totalSz : GlobalPagePool::pageSize;
 				}
 				else
 					page += sz;
@@ -204,7 +206,7 @@ namespace nodecpp {
 			}
 		}
 
-		void implAddPage()
+		void implAddPage() // TODO: revise
 		{
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage == nullptr );
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offsetInCurrentPage() == 0 );
@@ -214,6 +216,7 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, lastIndexPage == nullptr );
 				firstHeader.firstPages[pageCnt] = threadLocalPagePool.acquirePage();
 				currentPage = firstHeader.firstPages[pageCnt];
+				++(firstHeader.usedCnt);
 			}
 			else if ( lastIndexPage == nullptr )
 			{

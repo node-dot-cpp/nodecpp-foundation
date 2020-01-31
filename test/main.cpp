@@ -195,18 +195,27 @@ void testPtrStructsWithZombieProperty()
 void testVectorOfPages()
 {
 	nodecpp::VectorOfPages vop;
-	constexpr size_t maxSz = 0x1000;
+	constexpr size_t maxSz = 0x10000;
 	uint64_t buff[maxSz];
 	uint64_t ctr1 = 0;
 	for ( size_t j=0; j<maxSz;j++ )
 		buff[j] = ctr1++;
 	vop.append( buff, maxSz * sizeof( uint64_t) );
-	for ( size_t i=1; i<=maxSz; ++i )
+	/*for ( size_t i=1; i<0x20; ++i )
 	{
 		for ( size_t j=0; j<i;j++ )
 			buff[j] = ctr1++;
 		vop.append( buff, i * sizeof( uint64_t) );
 	}
+		for ( size_t j=0; j<0x20;j++ )
+			buff[j] = ctr1++;
+		vop.append( buff, 0x20 * sizeof( uint64_t) );
+	for ( size_t i=0x21; i<=0x100; ++i )
+	{
+		for ( size_t j=0; j<i;j++ )
+			buff[j] = ctr1++;
+		vop.append( buff, i * sizeof( uint64_t) );
+	}*/
 	uint64_t ctr2 = 0;
 	auto it = vop.getReadIter();
 	size_t available = it.availableSize();
@@ -216,7 +225,7 @@ void testVectorOfPages()
 		available /= sizeof( uint64_t );
 		for ( size_t i=0; i<available; ++i )
 		{
-			uint64_t val = buff[i];
+			uint64_t val = ptr[i];
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
 			++ctr2;
 		}
@@ -224,6 +233,7 @@ void testVectorOfPages()
 	}
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+	printf( "ctr1 = 0x%llx, ctr2 = 0x%llx\n", ctr1, ctr2 );
 }
 
 int main(int argc, char *argv[])

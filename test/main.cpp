@@ -191,16 +191,56 @@ void testPtrStructsWithZombieProperty()
 	delete dummy;
 }
 
+#include <vector_of_pages.h>
+void testVectorOfPages()
+{
+	nodecpp::VectorOfPages vop;
+	constexpr size_t maxSz = 0x1000;
+	uint64_t buff[maxSz];
+	uint64_t ctr1 = 0;
+	for ( size_t j=0; j<maxSz;j++ )
+		buff[j] = ctr1++;
+	vop.append( buff, maxSz * sizeof( uint64_t) );
+	for ( size_t i=1; i<=maxSz; ++i )
+	{
+		for ( size_t j=0; j<i;j++ )
+			buff[j] = ctr1++;
+		vop.append( buff, i * sizeof( uint64_t) );
+	}
+	uint64_t ctr2 = 0;
+	auto it = vop.getReadIter();
+	size_t available = it.availableSize();
+	while ( available )
+	{
+		const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
+		available /= sizeof( uint64_t );
+		for ( size_t i=0; i<available; ++i )
+		{
+			uint64_t val = buff[i];
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
+			++ctr2;
+		}
+		available = it.availableSize();
+	}
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+}
+
 int main(int argc, char *argv[])
 {
 	nodecpp::log::Log log;
 	log.level = nodecpp::log::LogLevel::info;
 	log.add( stdout );
+
 	for ( size_t i=0; i<2000; ++i )
 		log.warning( "whatever warning # {}", i );
 	nodecpp::logging_impl::currentLog = &log;
+
 	for ( size_t i=0; i<2000; ++i )
 		nodecpp::log::default_log::warning( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "whatever warning # {}", 2000+i );
+
+	testVectorOfPages();
+	return 0;
 
 	printPlatform();
 	testSEH();

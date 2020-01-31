@@ -177,9 +177,9 @@ namespace nodecpp {
 		size_t pageCnt = 0; // payload pages (es not include index pages)
 		IndexPageHeader* lastIndexPage = nullptr;
 		uint8_t* currentPage = nullptr;
-		size_t size = 0;
+		size_t totalSz = 0;
 
-		size_t offsetInCurrentPage() { return size & ( GlobalPagePool::pageSize - 1 ); }
+		size_t offsetInCurrentPage() { return totalSz & ( GlobalPagePool::pageSize - 1 ); }
 		size_t remainingSizeInCurrentPage() { return GlobalPagePool::pageSize - offsetInCurrentPage(); }
 		void implReleaseAllPages()
 		{
@@ -254,16 +254,28 @@ namespace nodecpp {
 					implAddPage();
 					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage != nullptr );
 				}
-				size_t sz2copy = sz <= remainingSizeInCurrentPage() ? sz : remainingSizeInCurrentPage();
-				memcpy( currentPage, buff, sz2copy );
-				sz -= sz2copy;
-				buff += sz2copy;
+				if ( sz <= remainingSizeInCurrentPage() )
+				{
+					memcpy( currentPage + offsetInCurrentPage(), buff, sz );
+					totalSz += sz;
+					if( sz == remainingSizeInCurrentPage() )
+						currentPage = nullptr;
+					break;
+				}
+				else
+				{
+					memcpy( currentPage + offsetInCurrentPage(), buff, remainingSizeInCurrentPage() );
+					sz -= remainingSizeInCurrentPage();
+					totalSz += remainingSizeInCurrentPage();
+					buff += remainingSizeInCurrentPage();
+					currentPage = nullptr;
+				}
 			}
 		}
 
 		ReadIter getReadIter()
 		{
-			return ReadIter( &firstHeader, firstHeader.pages()[0], size );
+			return ReadIter( &firstHeader, firstHeader.pages()[0], totalSz );
 		}
 
 		void clear() 
@@ -273,7 +285,7 @@ namespace nodecpp {
 			firstHeader.next = nullptr;
 			lastIndexPage = nullptr;
 			currentPage = nullptr;
-			size = 0;
+			totalSz = 0;
 		}
 		~VectorOfPages() { implReleaseAllPages(); }
 	};

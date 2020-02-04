@@ -195,8 +195,8 @@ void testPtrStructsWithZombieProperty()
 void testVectorOfPages()
 {
 	nodecpp::VectorOfPages vop;
-	constexpr size_t maxSz = 0x4000;
-	uint64_t buff[maxSz];
+	constexpr size_t maxSz = 0x1000;
+	uint64_t* buff = new uint64_t[maxSz];
 	uint64_t ctr1 = 0;
 
 	for ( size_t i=1; i<=maxSz; ++i )
@@ -205,6 +205,7 @@ void testVectorOfPages()
 			buff[j] = ctr1++;
 		vop.append( buff, i * sizeof( uint64_t) );
 	}
+	delete [] buff;
 
 	uint64_t ctr2 = 0;
 	auto it = vop.getReadIter();
@@ -223,7 +224,6 @@ void testVectorOfPages()
 	}
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
-	printf( "ctr1 = 0x%llx, ctr2 = 0x%llx\n", ctr1, ctr2 );
 }
 
 int main(int argc, char *argv[])

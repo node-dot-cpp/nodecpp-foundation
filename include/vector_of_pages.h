@@ -30,15 +30,96 @@
 
 #include "foundation.h"
 #include "page_allocator.h"
+#ifdef NODECPP_MSVC
+#include <intrin.h>
+#endif
 
 namespace nodecpp { 
+
+	struct BasePageBlockHedaer
+	{
+		static constexpr size_t pageSize = 0x1000;
+		uint8_t* segmentBlock = nullptr;
+		uint8_t* firstFree = nullptr;
+		void init( uint8_t* segmentBlock_, size_t pageCnt )
+		{
+			segmentBlock = segmentBlock_;
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt );
+			firstFree = segmentBlock;
+			uint8_t* page = segmentBlock;
+			for ( ; page < segmentBlock + (pageCnt - 1) * pageSize; page += pageSize )
+				*reinterpret_cast<uint8_t**>(page) = page + pageSize;
+			*reinterpret_cast<uint8_t**>(page) = nullptr;
+		}
+		uint8_t* acquirePage() { 
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstFree );
+			uint8_t* ret = firstFree;
+			firstFree = *reinterpret_cast<uint8_t**>(firstFree);
+			return ret;
+		}
+		void releasePage( size_t pagesInBlock, uint8_t* page ) { 
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, page >= segmentBlock && page < segmentBlock + pagesInBlock * pageSize );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, (((uintptr_t)page) & (pageSize - 1)) == 0 ); // page-aligned address
+			*reinterpret_cast<uint8_t**>(page) = firstFree;
+			firstFree = page;
+		}
+	};
+
+	struct SegmentLevelOne
+	{
+		// availability MASK legend: 
+		// bit value of 1 means adding is possible ( UINT64_MAX is a starting value, and 0 means all occupied (no acquiring is possible))
+		// particularly: availabilityMask == 0 => no further acquiring action is expected
+		uint64_t availabilityMask; 
+		uint64_t allocMask;
+		size_t allocCnt = 0;
+		size_t pagesPerBlock;
+		uint8_t* segmentStart;
+		void addBlock( size_t idx ) // so far: already commited
+		{
+//			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, page >= segmentBlock && page < segmentBlock + pagesInBlock * BasePageBlockHedaer::pageSize );
+		}
+		static size_t firstNonzero64( uint64_t mask )
+		{
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, mask != 0 );
+#if defined NODECPP_MSVC
+			unsigned long ix = 0;
+			uint8_t r = _BitScanForward64(&ix, mask);
+			return r;
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+			return __builtin_ctzll( mask );
+#else
+			size_t ret = 0;
+			for( ; ret<64; ++ret )
+				if ( (((uint64_t)1)<<ret) & mask )
+					return ret;
+			return ret;
+#endif
+		}
+		static size_t firstNonzero32( uint32_t mask )
+		{
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, mask != 0 );
+#if defined NODECPP_MSVC
+			unsigned long ix = 0;
+			uint8_t r = _BitScanForward(&ix, mask);
+			return r;
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+			return __builtin_ctz( mask );
+#else
+			size_t ret = 0;
+			for( ; ret<32; ++ret )
+				if ( (((uint32_t)1)<<ret) & mask )
+					return ret;
+			return ret;
+#endif
+		}
+	};
 
 	class OSPageProvider // used just for interface purposes
 	{
 	public:
-		static constexpr size_t pageSize = 0x1000;
-		uint8_t* acquirePage() { return reinterpret_cast<uint8_t*>( VirtualMemory::allocate( pageSize ) ); }
-		void releasePage( uint8_t* page ) { VirtualMemory::deallocate( page, pageSize ); }
+		uint8_t* acquirePage() { return reinterpret_cast<uint8_t*>( VirtualMemory::allocate( BasePageBlockHedaer::pageSize ) ); }
+		void releasePage( uint8_t* page ) { VirtualMemory::deallocate( page, BasePageBlockHedaer::pageSize ); }
 	};
 
 	class GlobalPagePool

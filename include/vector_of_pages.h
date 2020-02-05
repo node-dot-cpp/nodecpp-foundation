@@ -328,8 +328,8 @@ namespace nodecpp::platform::internal_msg {
 	class MallocPageProvider // used just for interface purposes
 	{
 	public:
-		static PagePointer acquirePage() { return PagePointer( VirtualMemory::allocate( BasePageBlockHedaer::pageSize ) ); }
-		static void releasePage( PagePointer page ) { VirtualMemory::deallocate( page.page(), BasePageBlockHedaer::pageSize ); }
+		static PagePointer acquirePage() { return PagePointer( ::malloc( BasePageBlockHedaer::pageSize ) ); }
+		static void releasePage( PagePointer page ) { ::free( page.page() ); }
 	};
 
 	class InternalMsg

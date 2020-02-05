@@ -34,9 +34,87 @@
 #include <intrin.h>
 #endif
 
-namespace nodecpp { 
+namespace nodecpp::vector_of_pages { 
 
-	struct BasePageBlockHedaer
+///////  allocated_ptr_and_ptr_and_data_and_flags
+
+constexpr size_t pageSize = 0x1000;
+constexpr size_t pageSizeExp = 12;
+static_assert( (1<<pageSizeExp) == pageSize );
+
+struct generic_page_ptr_and_data_ {
+private:
+	uint8_t* page_;
+	size_t data_;
+
+public:
+#ifdef NODECPP_X64
+	static constexpr size_t max_data_exp = pageSizeExp + 16;
+#else
+	static constexpr size_t max_data_exp = pageSizeExp;
+#endif
+
+	generic_page_ptr_and_data_() {page_ = nullptr; data_ = 0;}
+	generic_page_ptr_and_data_( void* page, size_t data) {page_ = reinterpret_cast<uint8_t*>(page); data_ = data;}
+	generic_page_ptr_and_data_( const generic_page_ptr_and_data_& other ) { page_ = other.page_; data_ = other.data_; }
+	generic_page_ptr_and_data_& operator =( const generic_page_ptr_and_data_& other ) { page_ = other.page_; data_ = other.data_; return *this; }
+	generic_page_ptr_and_data_( generic_page_ptr_and_data_&& other ) { page_ = other.page_; data_ = other.data_; }
+	generic_page_ptr_and_data_& operator =( generic_page_ptr_and_data_&& other ) { page_ = other.page_; data_ = other.data_; return *this; }
+	uint8_t* page() { return page_; }
+	size_t data() { return data_; }
+};
+
+#ifdef NODECPP_X64
+struct optimized_page_ptr_and_data_64_ {
+private:
+	uintptr_t ptr;
+
+public:
+	static constexpr size_t max_data_exp = pageSizeExp + 16;
+	static constexpr size_t upper_data_offset = 48;
+	static constexpr uint64_t data_low_mask = (1 << pageSizeExp) - 1;
+	static constexpr uint64_t data_high_mask = 0xFFFF000000000000ULL;
+	static constexpr uint64_t page_ptr_mask = 0xFFFFFFFFFFFFULL & ~data_low_mask;
+	static_assert( (data_low_mask | data_high_mask | page_ptr_mask) == ~((uint64_t)0) );
+	static_assert( (data_low_mask & page_ptr_mask) == 0 );
+	static_assert( (data_high_mask & page_ptr_mask) == 0 );
+
+	optimized_page_ptr_and_data_64_() {ptr = 0;}
+	optimized_page_ptr_and_data_64_( void* page, size_t data )
+	{
+        NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ( ((uintptr_t)page) & ((1<<pageSizeExp)-1) ) == 0 ); 
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data < (1<<max_data_exp) ); 
+		ptr = (uintptr_t)page & page_ptr_mask; 
+		ptr |= data & data_low_mask;
+		ptr |= (data >> pageSizeExp) << upper_data_offset;
+	}
+	optimized_page_ptr_and_data_64_( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; }
+	optimized_page_ptr_and_data_64_& operator =( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; return *this; }
+	optimized_page_ptr_and_data_64_( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; }
+	optimized_page_ptr_and_data_64_& operator =( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; return *this; }
+	uint8_t* page() { return reinterpret_cast<uint8_t*>( ptr & page_ptr_mask ); }
+	size_t data() { return (ptr & data_low_mask) | ((ptr & data_high_mask) >> (upper_data_offset - pageSizeExp)); }
+};
+
+#else
+using page_ptr_and_data = generic_page_ptr_and_data_<dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
+#endif // NODECPP_X64
+
+#ifdef NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
+using page_ptr_and_data = optimized_page_ptr_and_data_64_;
+#elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
+using page_ptr_and_data = ::nodecpp::platform::ptrwithdatastructsdefs::generic_page_ptr_and_data_<dataminsize, nflags>;
+#else
+#error Unsupported configuration
+#endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
+
+
+
+
+
+
+
+struct BasePageBlockHedaer
 	{
 		// NOTE: typical size is 1^(page_size + pageCntExp) = 250K - 4M
 		static constexpr size_t pageSize = 0x1000;

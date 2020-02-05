@@ -28,7 +28,7 @@
 #include "../include/foundation.h"
 #include "../include/vector_of_pages.h"
 
-namespace nodecpp::vector_of_pages { 
+namespace nodecpp::platform::internal_msg { 
 	GlobalPagePool globalPagePool;
 #if 0
 	thread_local ThreadLocalPagePool threadLocalPagePool;

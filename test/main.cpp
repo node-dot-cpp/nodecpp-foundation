@@ -194,7 +194,7 @@ void testPtrStructsWithZombieProperty()
 #include <vector_of_pages.h>
 void testVectorOfPages()
 {
-	nodecpp::vector_of_pages::internal_msg vop;
+	nodecpp::platform::internal_msg::InternalMsg vop;
 	constexpr size_t maxSz = 0x1000;
 	uint64_t* buff = new uint64_t[maxSz];
 	uint64_t ctr1 = 0;

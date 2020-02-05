@@ -34,7 +34,7 @@
 #include <intrin.h>
 #endif
 
-namespace nodecpp::vector_of_pages { 
+namespace nodecpp::platform::internal_msg { 
 
 	constexpr size_t pageSize = 0x1000;
 	constexpr size_t pageSizeExp = 12;
@@ -332,7 +332,7 @@ namespace nodecpp::vector_of_pages {
 		static void releasePage( PagePointer page ) { VirtualMemory::deallocate( page.page(), BasePageBlockHedaer::pageSize ); }
 	};
 
-	class internal_msg
+	class InternalMsg
 	{
 		PagePointer implAcquirePageWrapper()
 		{
@@ -366,7 +366,7 @@ namespace nodecpp::vector_of_pages {
 
 		class ReadIter
 		{
-			friend class internal_msg;
+			friend class InternalMsg;
 			IndexPageHeader* ip;
 			const uint8_t* page;
 			size_t totalSz;
@@ -479,7 +479,7 @@ namespace nodecpp::vector_of_pages {
 		}
 
 	public:
-		internal_msg() { firstHeader.init(); memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) ); }
+		InternalMsg() { firstHeader.init(); memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) ); }
 		void append( void* buff_, size_t sz )
 		{
 			uint8_t* buff = reinterpret_cast<uint8_t*>(buff_);
@@ -528,7 +528,7 @@ namespace nodecpp::vector_of_pages {
 			currentPage.init();
 			totalSz = 0;
 		}
-		~internal_msg() { implReleaseAllPages(); }
+		~InternalMsg() { implReleaseAllPages(); }
 	};
 
 } // nodecpp

@@ -30,5 +30,7 @@
 
 namespace nodecpp::vector_of_pages { 
 	GlobalPagePool globalPagePool;
+#if 0
 	thread_local ThreadLocalPagePool threadLocalPagePool;
+#endif // 0
 } // namespace nodecpp

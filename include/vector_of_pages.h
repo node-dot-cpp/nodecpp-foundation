@@ -54,14 +54,16 @@ public:
 	static constexpr size_t max_data_exp = pageSizeExp;
 #endif
 
-	generic_page_ptr_and_data_() {page_ = nullptr; data_ = 0;}
-	generic_page_ptr_and_data_( void* page, size_t data) {page_ = reinterpret_cast<uint8_t*>(page); data_ = data;}
+	generic_page_ptr_and_data_() {init();}
+	generic_page_ptr_and_data_( void* page, size_t data) { init(page, data); }
 	generic_page_ptr_and_data_( const generic_page_ptr_and_data_& other ) { page_ = other.page_; data_ = other.data_; }
 	generic_page_ptr_and_data_& operator =( const generic_page_ptr_and_data_& other ) { page_ = other.page_; data_ = other.data_; return *this; }
 	generic_page_ptr_and_data_( generic_page_ptr_and_data_&& other ) { page_ = other.page_; data_ = other.data_; }
 	generic_page_ptr_and_data_& operator =( generic_page_ptr_and_data_&& other ) { page_ = other.page_; data_ = other.data_; return *this; }
 	uint8_t* page() { return page_; }
 	size_t data() { return data_; }
+	void init() {page_ = nullptr; data_ = 0;}
+	void init( void* page, size_t data) {page_ = reinterpret_cast<uint8_t*>(page); data_ = data;}
 };
 
 #ifdef NODECPP_X64
@@ -79,8 +81,16 @@ public:
 	static_assert( (data_low_mask & page_ptr_mask) == 0 );
 	static_assert( (data_high_mask & page_ptr_mask) == 0 );
 
-	optimized_page_ptr_and_data_64_() {ptr = 0;}
-	optimized_page_ptr_and_data_64_( void* page, size_t data )
+	optimized_page_ptr_and_data_64_() {init();}
+	optimized_page_ptr_and_data_64_( void* page, size_t data ) {init( page, data );}
+	optimized_page_ptr_and_data_64_( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; }
+	optimized_page_ptr_and_data_64_& operator =( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; return *this; }
+	optimized_page_ptr_and_data_64_( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; }
+	optimized_page_ptr_and_data_64_& operator =( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; return *this; }
+	uint8_t* page() { return reinterpret_cast<uint8_t*>( ptr & page_ptr_mask ); }
+	size_t data() { return (ptr & data_low_mask) | ((ptr & data_high_mask) >> (upper_data_offset - pageSizeExp)); }
+	void init() {ptr = 0;}
+	void init( void* page, size_t data )
 	{
         NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ( ((uintptr_t)page) & ((1<<pageSizeExp)-1) ) == 0 ); 
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data < (1<<max_data_exp) ); 
@@ -88,12 +98,6 @@ public:
 		ptr |= data & data_low_mask;
 		ptr |= (data >> pageSizeExp) << upper_data_offset;
 	}
-	optimized_page_ptr_and_data_64_( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; }
-	optimized_page_ptr_and_data_64_& operator =( const optimized_page_ptr_and_data_64_& other ) { ptr = other.ptr; return *this; }
-	optimized_page_ptr_and_data_64_( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; }
-	optimized_page_ptr_and_data_64_& operator =( optimized_page_ptr_and_data_64_&& other ) { ptr = other.ptr; return *this; }
-	uint8_t* page() { return reinterpret_cast<uint8_t*>( ptr & page_ptr_mask ); }
-	size_t data() { return (ptr & data_low_mask) | ((ptr & data_high_mask) >> (upper_data_offset - pageSizeExp)); }
 };
 
 #else

@@ -38,16 +38,17 @@ namespace nodecpp {
 
 	struct BasePageBlockHedaer
 	{
+		// NOTE: typical size is 1^(page_size + pageCntExp) = 250K - 4M
 		static constexpr size_t pageSize = 0x1000;
-		uint8_t* segmentBlock = nullptr;
+//		uint8_t* segmentBlock = nullptr;
 		uint8_t* firstFree = nullptr;
 		void init( uint8_t* segmentBlock_, size_t pageCnt )
 		{
-			segmentBlock = segmentBlock_;
+//			segmentBlock = segmentBlock_;
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt );
-			firstFree = segmentBlock;
-			uint8_t* page = segmentBlock;
-			for ( ; page < segmentBlock + (pageCnt - 1) * pageSize; page += pageSize )
+			firstFree = segmentBlock_;
+			uint8_t* page = segmentBlock_;
+			for ( ; page < segmentBlock_ + (pageCnt - 1) * pageSize; page += pageSize )
 				*reinterpret_cast<uint8_t**>(page) = page + pageSize;
 			*reinterpret_cast<uint8_t**>(page) = nullptr;
 		}
@@ -58,27 +59,21 @@ namespace nodecpp {
 			return ret;
 		}
 		void releasePage( size_t pagesInBlock, uint8_t* page ) { 
-			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, page >= segmentBlock && page < segmentBlock + pagesInBlock * pageSize );
+//			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, page >= segmentBlock && page < segmentBlock + pagesInBlock * pageSize );
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, (((uintptr_t)page) & (pageSize - 1)) == 0 ); // page-aligned address
 			*reinterpret_cast<uint8_t**>(page) = firstFree;
 			firstFree = page;
 		}
 	};
+	static_assert( sizeof(BasePageBlockHedaer) == sizeof(uint8_t*) );
 
-	struct SegmentLevelOne
+	struct LevelBase
 	{
 		// availability MASK legend: 
 		// bit value of 1 means adding is possible ( UINT64_MAX is a starting value, and 0 means all occupied (no acquiring is possible))
 		// particularly: availabilityMask == 0 => no further acquiring action is expected
+		static constexpr size_t itemsPerLevel = 64;
 		uint64_t availabilityMask; 
-		uint64_t allocMask;
-		size_t allocCnt = 0;
-		size_t pagesPerBlock;
-		uint8_t* segmentStart;
-		void addBlock( size_t idx ) // so far: already commited
-		{
-//			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, page >= segmentBlock && page < segmentBlock + pagesInBlock * BasePageBlockHedaer::pageSize );
-		}
 		static size_t firstNonzero64( uint64_t mask )
 		{
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, mask != 0 );
@@ -96,24 +91,58 @@ namespace nodecpp {
 			return ret;
 #endif
 		}
-		static size_t firstNonzero32( uint32_t mask )
-		{
-			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, mask != 0 );
-#if defined NODECPP_MSVC
-			unsigned long ix = 0;
-			uint8_t r = _BitScanForward(&ix, mask);
-			return r;
-#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
-			return __builtin_ctz( mask );
-#else
-			size_t ret = 0;
-			for( ; ret<32; ++ret )
-				if ( (((uint32_t)1)<<ret) & mask )
-					return ret;
-			return ret;
-#endif
+		void markAvailable(size_t idx)
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, idx < 64 );
+			availabilityMask |= ((uint64_t)1) << idx;
+		}
+		bool isAnyAvailable() { return availabilityMask != 0; }
+		size_t getFirstAvailable()
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isAnyAvailable() );
+			return firstNonzero64( availabilityMask );
+		}
+		void markInavailable(size_t idx)
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, idx < 64 );
+			availabilityMask &= ~((uint64_t)1) << idx;
 		}
 	};
+	static_assert( sizeof(LevelBase) * 8 == LevelBase::itemsPerLevel );
+
+	struct SegmentLevelOne : public LevelBase
+	{
+		// commited MASK legend: 
+		// bit value of 1 means yet to be commited
+		// particularly: commitedMask == 0 => none is yet commited
+		uint64_t commitedMask;
+//		size_t allocCnt = 0;
+//		size_t pagesPerBlock;
+//		uint8_t* segmentStart;
+		void markCommited(size_t idx)
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, idx < 64 );
+			commitedMask &= ~((uint64_t)1) << idx;
+		}
+		bool areAllCommited() { return commitedMask != 0; }
+		size_t getFirstNotCommited()
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isAnyAvailable() );
+			return firstNonzero64( commitedMask );
+		}
+		void markDecommited(size_t idx)
+		{ 
+			static_assert( itemsPerLevel == 64 );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, idx < 64 );
+			commitedMask |= ((uint64_t)1) << idx;
+		}
+	};
+	static_assert( sizeof(SegmentLevelOne) == 16 );
 
 	class OSPageProvider // used just for interface purposes
 	{

@@ -27,7 +27,7 @@
     <ClCompile Include="..\..\src\safe_memory_error.cpp" />
     <ClCompile Include="..\..\src\std_error.cpp" />
     <ClCompile Include="..\..\src\log.cpp" />
-    <ClCompile Include="..\..\src\vector_of_pages.cpp" />
+    <ClCompile Include="..\..\src\internal_msg.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\samples\file_error.cpp" />
     <ClCompile Include="..\test_seh.cpp" />
@@ -45,7 +45,7 @@
     <ClInclude Include="..\..\include\file_console_sink.h" />
     <ClInclude Include="..\..\include\foundation.h" />
     <ClInclude Include="..\..\include\platform_base.h" />
-    <ClInclude Include="..\..\include\vector_of_pages.h" />
+    <ClInclude Include="..\..\include\internal_msg.h" />
     <ClInclude Include="..\samples\file_error.h" />
     <ClInclude Include="..\test.h" />
   </ItemGroup>

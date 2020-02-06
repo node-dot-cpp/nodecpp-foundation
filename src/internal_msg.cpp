@@ -26,7 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "../include/foundation.h"
-#include "../include/vector_of_pages.h"
+#include "../include/internal_msg.h"
 
 namespace nodecpp::platform::internal_msg { 
 } // namespace nodecpp

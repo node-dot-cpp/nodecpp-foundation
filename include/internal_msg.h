@@ -25,8 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef VECTOR_OF_PAGES_H
-#define VECTOR_OF_PAGES_H
+#ifndef INTERNAL_MSG_H
+#define INTERNAL_MSG_H
 
 #include "foundation.h"
 #include "page_allocator.h"
@@ -83,6 +83,24 @@ namespace nodecpp::platform::internal_msg {
 			PagePointer next_;
 			size_t usedCnt;
 			PagePointer* pages() { return reinterpret_cast<PagePointer*>(this+1); }
+			IndexPageHeader() { init(); }
+			IndexPageHeader( const IndexPageHeader& ) = delete;
+			IndexPageHeader& operator = ( const IndexPageHeader& ) = delete;
+			IndexPageHeader( IndexPageHeader&& other )
+			{
+				usedCnt = other.usedCnt;
+				other.usedCnt = 0;
+				next_ = other.next_;
+				other.next_.init();
+			}
+			IndexPageHeader& operator = ( IndexPageHeader&& other )
+			{
+				usedCnt = other.usedCnt;
+				other.usedCnt = 0;
+				next_ = other.next_;
+				other.next_.init();
+				return *this;
+			}
 			void init() { next_.init(); usedCnt = 0; pages()[0].init();}
 			void init(PagePointer page) { next_.init(); usedCnt = 1; pages()[0] = page;}
 			void setNext( PagePointer n ) { next_ = n; }
@@ -94,6 +112,27 @@ namespace nodecpp::platform::internal_msg {
 		struct FirstHeader : public IndexPageHeader
 		{
 			PagePointer firstPages[ localStorageSize ];
+			FirstHeader() : IndexPageHeader() {}
+			FirstHeader( const FirstHeader& ) = delete;
+			FirstHeader& operator = ( const FirstHeader& ) = delete;
+			FirstHeader( FirstHeader&& other ) : IndexPageHeader( std::move( other ) )
+			{
+				for ( size_t i=0; i<localStorageSize;++i )
+				{
+					firstPages[i] = other.firstPages[i];
+					other.firstPages[i].init();
+				}
+			}
+			FirstHeader& operator = ( FirstHeader&& other )
+			{
+				IndexPageHeader::operator = ( std::move( other ) );
+				for ( size_t i=0; i<localStorageSize;++i )
+				{
+					firstPages[i] = other.firstPages[i];
+					other.firstPages[i].init();
+				}
+				return *this;
+			}
 		};
 		static_assert( sizeof( IndexPageHeader ) + sizeof( PagePointer ) * localStorageSize == sizeof(FirstHeader) );
 		FirstHeader firstHeader;
@@ -138,7 +177,7 @@ namespace nodecpp::platform::internal_msg {
 			}
 		};
 
-		size_t pageCnt = 0; // payload pages (es not include index pages)
+		size_t pageCnt = 0; // payload pages (that is, not include index pages)
 		PagePointer lip;
 		IndexPageHeader* lastIndexPage() { return reinterpret_cast<IndexPageHeader*>( lip.page() ); }
 		PagePointer currentPage;
@@ -213,6 +252,33 @@ namespace nodecpp::platform::internal_msg {
 
 	public:
 		InternalMsg() { firstHeader.init(); memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) ); }
+		InternalMsg( const InternalMsg& ) = delete;
+		InternalMsg& operator = ( const InternalMsg& ) = delete;
+		InternalMsg( InternalMsg&& other )
+		{
+			firstHeader = std::move( other.firstHeader );
+			pageCnt = other.pageCnt;
+			other.pageCnt = 0;
+			lip = other.lip;
+			other.lip.init();
+			currentPage = other.currentPage;
+			other.currentPage.init();
+			totalSz = other.totalSz;
+			other.totalSz = 0;
+		}
+		InternalMsg& operator = ( InternalMsg&& other )
+		{
+			firstHeader = std::move( other.firstHeader );
+			pageCnt = other.pageCnt;
+			other.pageCnt = 0;
+			lip = other.lip;
+			other.lip.init();
+			currentPage = other.currentPage;
+			other.currentPage.init();
+			totalSz = other.totalSz;
+			other.totalSz = 0;
+			return *this;
+		}
 		void append( void* buff_, size_t sz )
 		{
 			uint8_t* buff = reinterpret_cast<uint8_t*>(buff_);
@@ -267,4 +333,4 @@ namespace nodecpp::platform::internal_msg {
 } // nodecpp
 
 
-#endif // VECTOR_OF_PAGES_H
+#endif // INTERNAL_MSG_H

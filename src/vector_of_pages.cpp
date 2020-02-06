@@ -29,8 +29,4 @@
 #include "../include/vector_of_pages.h"
 
 namespace nodecpp::platform::internal_msg { 
-	GlobalPagePool globalPagePool;
-#if 0
-	thread_local ThreadLocalPagePool threadLocalPagePool;
-#endif // 0
 } // namespace nodecpp

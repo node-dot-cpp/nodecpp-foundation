@@ -191,10 +191,10 @@ void testPtrStructsWithZombieProperty()
 	delete dummy;
 }
 
-#include <vector_of_pages.h>
+#include <internal_msg.h>
 void testVectorOfPages()
 {
-	nodecpp::platform::internal_msg::InternalMsg vop;
+	nodecpp::platform::internal_msg::InternalMsg imsg;
 	constexpr size_t maxSz = 0x1000;
 	uint64_t* buff = new uint64_t[maxSz];
 	uint64_t ctr1 = 0;
@@ -203,27 +203,72 @@ void testVectorOfPages()
 	{
 		for ( size_t j=0; j<i; j++ )
 			buff[j] = ctr1++;
-		vop.append( buff, i * sizeof( uint64_t) );
+		imsg.append( buff, i * sizeof( uint64_t) );
 	}
 	delete [] buff;
 
-	uint64_t ctr2 = 0;
-	auto it = vop.getReadIter();
-	size_t available = it.availableSize();
-	while ( available )
 	{
-		const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
-		available /= sizeof( uint64_t );
-		for ( size_t i=0; i<available; ++i )
+		uint64_t ctr2 = 0;
+		auto it = imsg.getReadIter();
+		size_t available = it.availableSize();
+		while ( available )
 		{
-			uint64_t val = ptr[i];
-			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
-			++ctr2;
+			const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
+			available /= sizeof( uint64_t );
+			for ( size_t i=0; i<available; ++i )
+			{
+				uint64_t val = ptr[i];
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
+				++ctr2;
+			}
+			available = it.availableSize();
 		}
-		available = it.availableSize();
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
 	}
-	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+
+	nodecpp::platform::internal_msg::InternalMsg imsg1( std::move( imsg ) );
+
+	{
+		uint64_t ctr2 = 0;
+		auto it = imsg1.getReadIter();
+		size_t available = it.availableSize();
+		while ( available )
+		{
+			const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
+			available /= sizeof( uint64_t );
+			for ( size_t i=0; i<available; ++i )
+			{
+				uint64_t val = ptr[i];
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
+				++ctr2;
+			}
+			available = it.availableSize();
+		}
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+	}
+
+	{
+		uint64_t ctr2 = 0;
+		auto it = imsg.getReadIter();
+		size_t available = it.availableSize();
+		while ( available )
+		{
+			const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
+			available /= sizeof( uint64_t );
+			for ( size_t i=0; i<available; ++i )
+			{
+				uint64_t val = ptr[i];
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
+				++ctr2;
+			}
+			available = it.availableSize();
+		}
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, 0 == ctr2, "indeed: {:x}", ctr2 );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+	}
+
 }
 
 int main(int argc, char *argv[])

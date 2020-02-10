@@ -47,10 +47,11 @@ namespace nodecpp::platform::internal_msg {
 	public:
 		PagePtrWrapper() {init();}
 		PagePtrWrapper( void* page ) {init( page );}
-		PagePtrWrapper( const PagePtrWrapper& other ) { ptr = other.ptr; }
-		PagePtrWrapper& operator =( const PagePtrWrapper& other ) { ptr = other.ptr; return *this; }
-		PagePtrWrapper( PagePtrWrapper&& other ) { ptr = other.ptr; }
-		PagePtrWrapper& operator =( PagePtrWrapper&& other ) { ptr = other.ptr; return *this; }
+		PagePtrWrapper( const PagePtrWrapper& other ) = default;
+		PagePtrWrapper& operator =( const PagePtrWrapper& other ) = default;
+		PagePtrWrapper( PagePtrWrapper&& other ) = default;
+		PagePtrWrapper& operator =( PagePtrWrapper&& other ) = default;
+		~PagePtrWrapper() {}
 		uint8_t* page() { return ptr; }
 		void init() {ptr = 0;}
 		void init( void* page ) {ptr = reinterpret_cast<uint8_t*>(page); }
@@ -268,6 +269,7 @@ namespace nodecpp::platform::internal_msg {
 		}
 		InternalMsg& operator = ( InternalMsg&& other )
 		{
+			if ( this == &other ) return *this;
 			firstHeader = std::move( other.firstHeader );
 			pageCnt = other.pageCnt;
 			other.pageCnt = 0;
@@ -327,6 +329,8 @@ namespace nodecpp::platform::internal_msg {
 			currentPage.init();
 			totalSz = 0;
 		}
+
+		size_t size() { return totalSz; }
 		~InternalMsg() { implReleaseAllPages(); }
 	};
 

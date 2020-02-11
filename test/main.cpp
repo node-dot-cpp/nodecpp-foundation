@@ -207,8 +207,8 @@ void testVectorOfPages()
 	}
 	delete [] buff;
 
-	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg.size() == ctr1, "{:x} vs. {:x}", imsg.size(), ctr1 );
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, msg.size() = {:x}", ctr1, imsg.size() );
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg.size() == ctr1 * sizeof( uint64_t), "{:x} vs. {:x}", imsg.size(), ctr1 * sizeof( uint64_t) );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, msg.size() = {:x}", ctr1 * sizeof( uint64_t), imsg.size() );
 
 	{
 		uint64_t ctr2 = 0;
@@ -235,8 +235,8 @@ void testVectorOfPages()
 
 	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg.size() == 0, "indeed: {:x}", imsg.size() );
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "after move msg.size() = {:x}", ctr1, imsg.size() );
-	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg1.size() == ctr1, "{:x} vs. {:x}", imsg1.size(), ctr1 );
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, msg.size() = {:x}", ctr1, imsg1.size() );
+	NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg1.size() == ctr1 * sizeof( uint64_t), "{:x} vs. {:x}", imsg1.size(), ctr1 * sizeof( uint64_t) );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 * sizeof( uint64_t) = {:x}, msg.size() = {:x}", ctr1 * sizeof( uint64_t), imsg1.size() );
 
 	{
 		uint64_t ctr2 = 0;
@@ -299,7 +299,6 @@ void testVectorOfPages()
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, 0 == ctr2, "indeed: {:x}", ctr2 );
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
 	}
-
 }
 
 int main(int argc, char *argv[])
@@ -316,7 +315,7 @@ int main(int argc, char *argv[])
 		nodecpp::log::default_log::warning( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "whatever warning # {}", 2000+i );
 
 	testVectorOfPages();
-	return 0;
+//	return 0;
 
 	printPlatform();
 	testSEH();

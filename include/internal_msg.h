@@ -281,9 +281,9 @@ namespace nodecpp::platform::internal_msg {
 			other.totalSz = 0;
 			return *this;
 		}
-		void append( void* buff_, size_t sz )
+		void append( const void* buff_, size_t sz )
 		{
-			uint8_t* buff = reinterpret_cast<uint8_t*>(buff_);
+			const uint8_t* buff = reinterpret_cast<const uint8_t*>(buff_);
 			while( sz != 0 )
 			{
 				if ( currentPage.page() == nullptr )

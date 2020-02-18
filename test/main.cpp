@@ -212,7 +212,7 @@ void testVectorOfPages()
 
 	{
 		uint64_t ctr2 = 0;
-		auto it = imsg.getReadIter();
+		nodecpp::platform::internal_msg::InternalMsg::ReadIter it = imsg.getReadIter();
 		size_t available = it.availableSize();
 		while ( available )
 		{

@@ -138,46 +138,6 @@ namespace nodecpp::platform::internal_msg {
 		static_assert( sizeof( IndexPageHeader ) + sizeof( PagePointer ) * localStorageSize == sizeof(FirstHeader) );
 		FirstHeader firstHeader;
 
-		class ReadIter
-		{
-			friend class InternalMsg;
-			IndexPageHeader* ip;
-			const uint8_t* page;
-			size_t totalSz;
-			size_t sizeRemainingInBlock;
-			size_t idxInIndexPage;
-			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
-			{
-				sizeRemainingInBlock = sz <= pageSize ? sz : pageSize;
-				idxInIndexPage = 0;
-			}
-		public:
-			size_t availableSize() {return sizeRemainingInBlock;}
-			const uint8_t* read( size_t sz )
-			{
-				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz <= sizeRemainingInBlock );
-				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ip != nullptr );
-				sizeRemainingInBlock -= sz;
-				totalSz -= sz;
-				const uint8_t* ret = page;
-				if ( totalSz && sizeRemainingInBlock == 0 )
-				{
-					if ( idxInIndexPage + 1 >= ip->usedCnt )
-					{
-						ip = ip->next();
-						idxInIndexPage = 0;
-						page = ip->pages()[idxInIndexPage].page();
-					}
-					else
-						page = ip->pages()[++idxInIndexPage].page();
-					sizeRemainingInBlock = totalSz <= pageSize ? totalSz : pageSize;
-				}
-				else
-					page += sz;
-				return ret;
-			}
-		};
-
 		size_t pageCnt = 0; // payload pages (that is, not include index pages)
 		PagePointer lip;
 		IndexPageHeader* lastIndexPage() { return reinterpret_cast<IndexPageHeader*>( lip.page() ); }
@@ -250,6 +210,47 @@ namespace nodecpp::platform::internal_msg {
 			}
 			++pageCnt;
 		}
+
+	public:
+		class ReadIter
+		{
+			friend class InternalMsg;
+			IndexPageHeader* ip;
+			const uint8_t* page;
+			size_t totalSz;
+			size_t sizeRemainingInBlock;
+			size_t idxInIndexPage;
+			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
+			{
+				sizeRemainingInBlock = sz <= pageSize ? sz : pageSize;
+				idxInIndexPage = 0;
+			}
+		public:
+			size_t availableSize() {return sizeRemainingInBlock;}
+			const uint8_t* read( size_t sz )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz <= sizeRemainingInBlock );
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ip != nullptr );
+				sizeRemainingInBlock -= sz;
+				totalSz -= sz;
+				const uint8_t* ret = page;
+				if ( totalSz && sizeRemainingInBlock == 0 )
+				{
+					if ( idxInIndexPage + 1 >= ip->usedCnt )
+					{
+						ip = ip->next();
+						idxInIndexPage = 0;
+						page = ip->pages()[idxInIndexPage].page();
+					}
+					else
+						page = ip->pages()[++idxInIndexPage].page();
+					sizeRemainingInBlock = totalSz <= pageSize ? totalSz : pageSize;
+				}
+				else
+					page += sz;
+				return ret;
+			}
+		};
 
 	public:
 		InternalMsg() { firstHeader.init(); memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) ); }

@@ -12,8 +12,11 @@ set(SOURCE_LIB 			${PROJECT_SOURCE_DIR}/3rdparty/fmt/src/format.cc
 					 	${PROJECT_SOURCE_DIR}/src/std_error.cpp 
 					 	${PROJECT_SOURCE_DIR}/src/tagged_ptr_impl.cpp 
 					 	${PROJECT_SOURCE_DIR}/src/safe_memory_error.cpp 
-					 	${PROJECT_SOURCE_DIR}/src/cpu_exceptions_translator.cpp 
-					 	)
+					 	${PROJECT_SOURCE_DIR}/src/cpu_exceptions_translator.cpp
+						${PROJECT_SOURCE_DIR}/src/nodecpp_assert.cpp
+						${PROJECT_SOURCE_DIR}/src/page_allocator.cpp
+						${PROJECT_SOURCE_DIR}/src/tagged_ptr_impl.cpp
+		)
 
 include_directories(	${PROJECT_SOURCE_DIR}/include
 					 	${PROJECT_SOURCE_DIR}/3rdparty/fmt/include 
@@ -40,13 +43,15 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
-set(CMAKE_CXX_FLAGS  " ${CMAKE_CXX_FLAGS}  -DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\" " )
+set(CMAKE_CXX_FLAGS  " ${CMAKE_CXX_FLAGS}    -DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\" " )
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -DNDEBUG")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
+
+find_package( Threads )
 
 add_library(${LIB_NAME} STATIC ${SOURCE_LIB})
 add_library(${LIB_D_NAME} STATIC ${SOURCE_LIB})
@@ -61,8 +66,8 @@ set_target_properties ( ${LIB_D_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAG
 set_target_properties ( ${TEST_BIN_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
 set_target_properties ( ${TEST_D_BIN_NAME}  PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG})
 
-target_link_libraries(${TEST_BIN_NAME} ${LIB_NAME})
-target_link_libraries(${TEST_D_BIN_NAME} ${LIB_D_NAME})
+target_link_libraries(${TEST_BIN_NAME} ${LIB_NAME}  ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TEST_D_BIN_NAME} ${LIB_D_NAME}  ${CMAKE_THREAD_LIBS_INIT})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_BIN_NAME})
 if(UNIX)
 	#add_test( Build_test  make ${TEST_BIN_NAME} )

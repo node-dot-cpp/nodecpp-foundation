@@ -29,9 +29,9 @@ script:
     else
       cmake .. ;
     fi
-  - cmake --build .
+  - cmake --build . --config Release;
   - if [ $TRAVIS_OS_NAME == "windows" ] ; then
-      build\\bin\\Debug\\test_foundation.bin.exe ;
+      ctest -C Release;
     else
       make test ;
     fi

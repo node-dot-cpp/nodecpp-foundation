@@ -6,8 +6,9 @@ set(LIB_D_NAME foundation_d)
 set(TEST_BIN_NAME test_foundation.bin)
 set(TEST_D_BIN_NAME test_foundation_d.bin)
 
-set(SOURCE_LIB 			${PROJECT_SOURCE_DIR}/3rdparty/fmt/src/format.cc 
-					 	${PROJECT_SOURCE_DIR}/test/samples/file_error.cpp
+add_subdirectory(${PROJECT_SOURCE_DIR}/3rdparty/fmt)
+
+set(SOURCE_LIB 			${PROJECT_SOURCE_DIR}/test/samples/file_error.cpp
 						${PROJECT_SOURCE_DIR}/src/log.cpp 
 					 	${PROJECT_SOURCE_DIR}/src/std_error.cpp 
 					 	${PROJECT_SOURCE_DIR}/src/tagged_ptr_impl.cpp 
@@ -19,7 +20,6 @@ set(SOURCE_LIB 			${PROJECT_SOURCE_DIR}/3rdparty/fmt/src/format.cc
 		)
 
 include_directories(	${PROJECT_SOURCE_DIR}/include
-					 	${PROJECT_SOURCE_DIR}/3rdparty/fmt/include 
 					 	${PROJECT_SOURCE_DIR}/test 
 					 	${PROJECT_SOURCE_DIR}/test/samples
 					 	)
@@ -62,6 +62,9 @@ add_executable(${TEST_D_BIN_NAME}  ${SOURCE_EXE})
 
 set_target_properties ( ${LIB_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
 set_target_properties ( ${LIB_D_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG} )
+
+target_link_libraries( ${LIB_NAME} fmt::fmt)
+target_link_libraries( ${LIB_D_NAME} fmt::fmt)
 
 set_target_properties ( ${TEST_BIN_NAME} PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_RELEASE})
 set_target_properties ( ${TEST_D_BIN_NAME}  PROPERTIES COMPILE_FLAGS  ${CMAKE_CXX_FLAGS_DEBUG})

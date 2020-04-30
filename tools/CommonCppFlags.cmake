@@ -6,6 +6,9 @@
 # Compiler Flags
 #-------------------------------------------------------------------------------------------
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+set(CMAKE_CXX_STANDARD 17)
+
 if (MSVC)
   # we need async exceptions on foundation
   string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
@@ -36,6 +39,5 @@ else ()
   add_compile_options( -Wno-empty-body )
   add_compile_options( -fexceptions )
   add_compile_options( -fnon-call-exceptions )
-  add_compile_options(-lto )
 endif()
 

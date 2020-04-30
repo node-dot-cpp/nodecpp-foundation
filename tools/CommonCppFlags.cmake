@@ -6,7 +6,7 @@
 # Compiler Flags
 #-------------------------------------------------------------------------------------------
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 set(CMAKE_CXX_STANDARD 17)
 
 if (MSVC)

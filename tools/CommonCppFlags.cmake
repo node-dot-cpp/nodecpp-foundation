@@ -2,6 +2,9 @@
 # Copyright (c) 2020, OLogN Technologies AG
 #-------------------------------------------------------------------------------------------
 
+# mb: This file is used by all projects depending on foundation so all share
+# the same set of compiler flags and switches
+
 #-------------------------------------------------------------------------------------------
 # Compiler Flags
 #-------------------------------------------------------------------------------------------

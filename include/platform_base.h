@@ -31,7 +31,10 @@
 // PLATFORM SELECTION
 
 //COMPILER
-#if defined(__clang__)
+#if defined(__clang__) && defined(_MSC_VER)
+//mb: clang under windows defines both. Treat as MSVC for now
+#define NODECPP_MSVC
+#elif defined(__clang__)
 #define NODECPP_CLANG
 #elif defined(__GNUC__) || defined(__GNUG__)
 #define NODECPP_GCC

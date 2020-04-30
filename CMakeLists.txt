@@ -6,28 +6,16 @@ project(libfoundation CXX)
 set(CMAKE_CXX_STANDARD 17)
 include(CTest)
 
+set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/tools")
+include(CommonCppFlags)
+
+
 #-------------------------------------------------------------------------------------------
 # Defines
 #-------------------------------------------------------------------------------------------
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-add_definitions(-D_CRT_NONSTDC_NO_WARNINGS)
 
 #add_definitions(-DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\")
 
-#-------------------------------------------------------------------------------------------
-# Compiler Flags
-#-------------------------------------------------------------------------------------------
-if(MSVC)
-	 add_compile_options(/W3)
-	 add_compile_options(/EHa)
-#	 add_compile_options(/MD)
-else()
-	#enable_testing()
-	add_compile_options( -Wall )
-	add_compile_options(-fexceptions)
-	add_compile_options(-fnon-call-exceptions)
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -fnon-call-exceptions")
-endif()
 
 #-------------------------------------------------------------------------------------------
 # Library definition
@@ -69,6 +57,12 @@ add_executable(test_foundation
 	test/test_seh.cpp
 	test/samples/file_error.cpp
 )
+
+if (MSVC AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+  # emulating clang-cl specifics
+  target_compile_options(test_foundation PRIVATE -Wno-self-move)
+endif()
+
 
 target_link_libraries(test_foundation foundation)
 add_test(Run_test_foundation test_foundation)

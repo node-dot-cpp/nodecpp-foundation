@@ -64,4 +64,7 @@ endif()
 
 
 target_link_libraries(test_foundation foundation)
-add_test(Run_test_foundation test_foundation)
+
+if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+  add_test(Run_test_foundation test_foundation)
+endif()

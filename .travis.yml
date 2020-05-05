@@ -27,3 +27,4 @@ jobs:
       script: ./tools/travis-windows-clang.bat
     - name: macOS Clang
       os: osx
+      compiler: clang

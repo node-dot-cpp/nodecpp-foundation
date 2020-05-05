@@ -30,7 +30,7 @@
 
 #include "foundation.h"
 #include "page_allocator.h"
-#ifdef NODECPP_MSVC
+#ifdef NODECPP_WINDOWS
 #include <intrin.h>
 #endif
 

@@ -28,7 +28,19 @@
 #include "../include/foundation.h"
 #include "../include/cpu_exceptions_translator.h"
 
-#if defined __GNUC__ && __linux__
+
+#if defined __clang__
+
+void initTranslator()
+{
+  // TODO clang doesn't handle cpu exceptions well yet
+  // https://github.com/node-dot-cpp/nodecpp-foundation/issues/1
+
+  // This is here to make things build under clang, and be able
+  // to test other features.
+}
+
+#elif defined __GNUC__ && __linux__
 
 #include <signal.h>
 #include <unistd.h>
@@ -90,7 +102,7 @@ void initTranslator()
     syscall (SYS_rt_sigaction, SIGSEGV, &ks, NULL, _NSIG / 8);
 }
 
-#else // assuming windows; // TODO: check explicitly
+#elif defined _MSC_VER
 
 #include <stdio.h>
 #include <windows.h>
@@ -116,4 +128,4 @@ void initTranslator()
 }
 
 
-#endif // __GNUC__ && __linux
+#endif

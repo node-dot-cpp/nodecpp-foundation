@@ -18,4 +18,3 @@ cmake --build .
 
 ctest
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
-

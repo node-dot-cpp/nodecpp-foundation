@@ -31,7 +31,7 @@
 #include "platform_base.h"
 
 // quick workaround TODO: address properly ASAP!
-#if defined NODECPP_MSVC
+#if defined NODECPP_WINDOWS
 #include <string.h>
 #define strdup _strdup 
 #else

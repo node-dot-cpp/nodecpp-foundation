@@ -58,11 +58,13 @@ add_executable(test_foundation
 	test/samples/file_error.cpp
 )
 
-if (MSVC AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-  # emulating clang-cl specifics
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(test_foundation PRIVATE -Wno-self-move)
 endif()
 
 
 target_link_libraries(test_foundation foundation)
-add_test(Run_test_foundation test_foundation)
+
+if (NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  add_test(Run_test_foundation test_foundation)
+endif()

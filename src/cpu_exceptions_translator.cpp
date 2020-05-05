@@ -31,8 +31,14 @@
 
 #if defined __clang__
 
-// TODO clang doesn't handle cpu exceptions well yet
-// https://github.com/node-dot-cpp/nodecpp-foundation/issues/1
+void initTranslator()
+{
+  // TODO clang doesn't handle cpu exceptions well yet
+  // https://github.com/node-dot-cpp/nodecpp-foundation/issues/1
+
+  // This is here to make things build under clang, and be able
+  // to test other features.
+}
 
 #elif defined __GNUC__ && __linux__
 

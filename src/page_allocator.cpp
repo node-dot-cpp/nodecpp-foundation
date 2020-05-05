@@ -33,7 +33,7 @@
 #include "../include/foundation.h"
 #include "../include/page_allocator.h"
 
-#ifdef NODECPP_LINUX
+#ifdef NODECPP_LINUX || NODECPP_MAC
 
 #include <cstdlib>
 #include <cstddef>

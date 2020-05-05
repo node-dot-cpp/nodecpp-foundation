@@ -19,7 +19,7 @@ jobs:
         - cmake -G "Visual Studio 15 2017 Win64" ..
         - cmake --build . --config Release
         - ctest -C Release
-    - name: Linux Clang
+    - name: Linux Clang (no test)
       compiler: clang
       script:
         - mkdir build
@@ -27,11 +27,11 @@ jobs:
         - cmake -DCMAKE_BUILD_TYPE=Release ..
         - cmake --build .
         - #ctest
-    - name: Windows Clang
+    - name: Windows Clang (no test)
       os: windows
       install: choco install ninja
       script: ./tools/travis-windows-clang.bat
-    - name: macOS Clang
+    - name: macOS Clang (no test)
       os: osx
       script:
         - mkdir build
@@ -39,7 +39,3 @@ jobs:
         - cmake -DCMAKE_BUILD_TYPE=Release ..
         - cmake --build .
         - #ctest
-  allow_failures:        
-    - name: Linux Clang
-    - name: macOS Clang
-    - name: Windows Clang

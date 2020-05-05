@@ -28,5 +28,6 @@ jobs:
     - name: macOS Clang
       os: osx
   allow_failures:        
+    - name: Linux Clang
     - name: macOS Clang
     - name: Windows Clang

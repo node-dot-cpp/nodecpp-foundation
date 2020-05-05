@@ -16,6 +16,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
 cmake --build .
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
-ctest
-@if ERRORLEVEL 1 exit /b %ERRORLEVEL%
+rem ctest
+rem @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 

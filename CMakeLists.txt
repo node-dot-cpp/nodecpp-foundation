@@ -58,8 +58,7 @@ add_executable(test_foundation
 	test/samples/file_error.cpp
 )
 
-if (MSVC AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-  # emulating clang-cl specifics
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_options(test_foundation PRIVATE -Wno-self-move)
 endif()
 

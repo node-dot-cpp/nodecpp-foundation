@@ -146,7 +146,7 @@ namespace nodecpp::log {
 		ChainedWaitingForGuaranteedWrite* firstToReleaseGuaranteed = nullptr; // for writer
 		ChainedWaitingForGuaranteedWrite* nextToAddGuaranteed = nullptr; // for loggers
 
-		enum Action { proceed = 0, processAsCritical, proceedToTermination, terminationAllowed };
+		enum Action { proceed = 0, proceedToTermination, terminationAllowed };
 		Action action = Action::proceed;
 
 		FILE* target = nullptr; // so far...
@@ -191,9 +191,9 @@ namespace nodecpp::log {
 			action = Action::terminationAllowed;
 			waitWriter.notify_one();
 		}
-		bool writerOnlyTerminateIfAlone() {
+		bool _writerOnly_TerminateIfAlone() {
 			std::unique_lock<std::mutex> lock(mx);
-			if ( action == Action::terminationAllowed && refCounter == 1 )
+			if ( action == Action::terminationAllowed && refCounter == 1 && start == end )
 			{
 				refCounter = 0;
 				deinit();

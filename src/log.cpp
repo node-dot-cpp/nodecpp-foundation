@@ -56,19 +56,19 @@ namespace nodecpp::logging_impl {
 			for (;;)
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				while ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start )
+				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start ) ||
+						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start ) )
 //					logData->waitWriter.wait(lock);
 					logData->waitWriter.wait_for(lock, std::chrono::milliseconds(200));
 				lock.unlock();
 
 				// there are two things we can do here:
-				// 1. write data of the amount exceeding some threshold
+				// 1. write data of the amount exceeding some threshold or required to be written immediately
 				// 2. release a thread waiting for free size in buffer (if any) or guaranteed write
 
 				size_t end;
 				ChainedWaitingData* p = nullptr;
 				ChainedWaitingForGuaranteedWrite* gww = nullptr;
-				bool forceWriting = false;
 				{
 					std::unique_lock<std::mutex> lock(logData->mx);
 					end = logData->end;
@@ -87,6 +87,7 @@ namespace nodecpp::logging_impl {
 
 				} // unlocking
 
+				// perform guaranteed writing, if necessary, and let waiting threads go
 				if ( logData->mustBeWrittenImmediately > logData->start )
 				{
 					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, gww != nullptr );
@@ -114,12 +115,7 @@ namespace nodecpp::logging_impl {
 					}
 					p->w.notify_one();
 					if ( logData->start == end )
-					{
-						if ( logData->writerOnlyTerminateIfAlone() )
-							return;
-						else
-							continue;
-					}
+						continue; // Note: we let it to add some data, and, therefore, we won't be in an infinite waiting loop in the beginning of this processing cycle
 				}
 
 				while ( logData->start != end )
@@ -149,7 +145,7 @@ namespace nodecpp::logging_impl {
 					}
 				}
 
-				if ( logData->writerOnlyTerminateIfAlone() )
+				if ( logData->_writerOnly_TerminateIfAlone() )
 					return;
 			}
 		}

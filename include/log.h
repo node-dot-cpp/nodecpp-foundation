@@ -113,10 +113,20 @@ namespace nodecpp::log {
 		ChainedWaitingData* next = nullptr;
 	};
 
+	struct ChainedWaitingForGuaranteedWrite
+	{
+		std::condition_variable w;
+		std::mutex mx;
+		uint64_t end;
+		bool canRun = false;
+		ChainedWaitingForGuaranteedWrite* next = nullptr;
+	};
+
 	struct LogBufferBaseData
 	{
 		static constexpr size_t maxMessageSize = 0x1000;
 		LogLevel levelCouldBeSkipped = LogLevel::info;
+		LogLevel levelGuaranteedWrite = LogLevel::fatal;
 		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
 		static constexpr size_t pageCount = 4; // so far it is not obvious why we really need something else
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
@@ -124,6 +134,7 @@ namespace nodecpp::log {
 		uint64_t start = 0; // mx-protected; writable by a thread writing to a file; readable: all
 		uint64_t writerPromisedNextStart = 0; // mx-protected; writable: writing thread; readable: all
 		uint64_t end = 0; // mx-protected; writable: logging threads, writing thread(in case of periodic flushing); readable: all
+		uint64_t mustBeWrittenImmediately = 0; // mx-protected; writable: logging threads, writing thread(in case of periodic flushing); readable: all
 		static constexpr size_t skippedCntMsgSz = 128; // an upper estimation for quick calculations
 		SkippedMsgCounters skippedCtrs; // mx-protected; accessible by log-writing threads
 		std::condition_variable waitWriter;
@@ -132,8 +143,10 @@ namespace nodecpp::log {
 
 		ChainedWaitingData* firstToRelease = nullptr; // for writer
 		ChainedWaitingData* nextToAdd = nullptr; // for loggers
+		ChainedWaitingForGuaranteedWrite* firstToReleaseGuaranteed = nullptr; // for writer
+		ChainedWaitingForGuaranteedWrite* nextToAddGuaranteed = nullptr; // for loggers
 
-		enum Action { proceed = 0, flushAndExit };
+		enum Action { proceed = 0, processAsCritical, proceedToTermination, terminationAllowed };
 		Action action = Action::proceed;
 
 		FILE* target = nullptr; // so far...
@@ -168,6 +181,26 @@ namespace nodecpp::log {
 			std::unique_lock<std::mutex> lock(mx);
 			return --refCounter;
 		}
+		void setEnterTerminatingPhase() {
+			std::unique_lock<std::mutex> lock(mx);
+			action = Action::proceedToTermination;
+			waitWriter.notify_one();
+		}
+		void setTerminationAllowed() {
+			std::unique_lock<std::mutex> lock(mx);
+			action = Action::terminationAllowed;
+			waitWriter.notify_one();
+		}
+		bool writerOnlyTerminateIfAlone() {
+			std::unique_lock<std::mutex> lock(mx);
+			if ( action == Action::terminationAllowed && refCounter == 1 )
+			{
+				refCounter = 0;
+				deinit();
+				return true;
+			}
+			return false;
+		}
 	};
 
 	class LogTransport
@@ -176,6 +209,7 @@ namespace nodecpp::log {
 		friend class Log;
 
 		LogBufferBaseData* logData;
+		ChainedWaitingForGuaranteedWrite gww;
 
 		void insertSingleMsg( const char* msg, size_t sz ) // under lock
 		{
@@ -193,7 +227,7 @@ namespace nodecpp::log {
 			logData->end += sz;
 		}
 
-		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs ) // under lock
+		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs, bool isCritical ) // under lock
 		{
 			if ( ctrs.fullCount() )
 			{
@@ -204,7 +238,15 @@ namespace nodecpp::log {
 				ctrs.clear();
 			}
 			insertSingleMsg( msg, sz );
-			if (logData->end - logData->writerPromisedNextStart >= logData->pageSize)
+			if ( isCritical || logData->action == LogBufferBaseData::Action::proceedToTermination )
+			{
+				logData->mustBeWrittenImmediately = logData->end;
+				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !gww.canRun );
+				logData->nextToAddGuaranteed->next = &gww;
+				logData->nextToAddGuaranteed = &gww;
+				logData->waitWriter.notify_one();
+			}
+			else if ( logData->end - logData->writerPromisedNextStart >= logData->pageSize )
 			{
 				logData->waitWriter.notify_one();
 			}
@@ -212,6 +254,8 @@ namespace nodecpp::log {
 
 		bool addMsg( const char* msg, size_t sz, LogLevel l )
 		{
+			bool isCritical = l <= logData->levelGuaranteedWrite;
+			bool wait4critialWrt = false;
 			bool waitAgain = false;
 			ChainedWaitingData d;
 			{
@@ -233,7 +277,9 @@ namespace nodecpp::log {
 				}
 				else if ( logData->end + fullSzRequired <= logData->start + logData->buffSize ) // can copy
 				{
-					insertMessage( msg, sz, logData->skippedCtrs );
+					if ( isCritical )
+						wait4critialWrt = true;
+					insertMessage( msg, sz, logData->skippedCtrs, isCritical );
 				}
 				else
 				{
@@ -253,6 +299,17 @@ namespace nodecpp::log {
 					}
 				}
 			} // unlocking
+
+			if ( wait4critialWrt )
+			{
+				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !waitAgain );
+				std::unique_lock<std::mutex> lock(gww.mx);
+				while (!gww.canRun)
+					gww.w.wait(lock);
+				gww.canRun = false;
+				lock.unlock();
+				return true;
+			}
 
 			while ( waitAgain )
 			{
@@ -277,7 +334,7 @@ namespace nodecpp::log {
 						continue;
 					}
 
-					insertMessage( msg, sz, d.skippedCtrs );
+					insertMessage( msg, sz, d.skippedCtrs, l <= logData->levelGuaranteedWrite );
 
 					if ( logData->nextToAdd == &d )
 					{
@@ -303,6 +360,9 @@ namespace nodecpp::log {
 			return true;
 		}
 
+		void setEnterTerminatingPhase() { if ( logData ) logData->setEnterTerminatingPhase(); }
+		void setTerminationAllowed() { if ( logData ) logData->setTerminationAllowed(); }
+
 		void writoToLog( ModuleID mid, const char* msg, size_t sz, LogLevel severity ) {
 			char msgFormatted[LogBufferBaseData::maxMessageSize];
 			auto formatRet = mid.id() != nullptr ?
@@ -321,7 +381,8 @@ namespace nodecpp::log {
 			}
 			else
 				msgFormatted[formatRet.size] = 0;
-			addMsg( msgFormatted, formatRet.size, severity );
+//			addMsg( msgFormatted, formatRet.size, severity );
+			printf( "%s", msgFormatted );
 		}
 
 	public:
@@ -366,7 +427,10 @@ namespace nodecpp::log {
 
 	public:
 		Log() {}
-		virtual ~Log() {}
+		virtual ~Log()
+		{
+			setEnterTerminatingPhase();
+		}
 
 		void setGuaranteedLevel( LogLevel l )
 		{
@@ -374,7 +438,24 @@ namespace nodecpp::log {
 			for ( auto& t : transports )
 				t.logData->levelCouldBeSkipped = levelCouldBeSkipped;
 		}
+		void setCriticalLevel( LogLevel l )
+		{
+			for ( auto& t : transports )
+				t.logData->levelGuaranteedWrite = l;
+		}
 		void resetGuaranteedLevel() { setGuaranteedLevel( LogLevel::fatal ); }
+		void resetCriticalLevel() { setCriticalLevel( LogLevel::fatal ); }
+
+		void setEnterTerminatingPhase()
+		{
+			for ( auto& t : transports )
+				t.logData->setEnterTerminatingPhase();
+		}
+		void setTerminationAllowed()
+		{
+			for ( auto& t : transports )
+				t.logData->setTerminationAllowed();
+		}
 
 		template<class StringT, class ... Objects>
 		void log( ModuleID mid, LogLevel l, StringT format_str, Objects ... obj ) {

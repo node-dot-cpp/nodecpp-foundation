@@ -39,10 +39,6 @@
 
 namespace nodecpp::platform { 
 
-#ifndef assert // TODO: replace by our own means ASAP
-#define assert(x) 
-#endif//X64
-
 #ifdef NODECPP_X64
 #define nodecpp_memory_size_bits 47
 #else
@@ -98,10 +94,6 @@ using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdat
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 
 }//nodecpp:platform
-
-#ifndef assert // TODO: replace by our own means ASAP
-#define assert(x) 
-#endif
 
 #if defined _MSC_VER
 class SE_Exception  

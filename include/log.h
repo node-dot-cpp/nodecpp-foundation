@@ -530,6 +530,8 @@ namespace nodecpp::log {
 		}
 		//TODO::add: remove()
 	};
+
+	uint64_t logTime() { return logging_impl::getCurrentTime(); }
 } // namespace nodecpp::log
 
 namespace nodecpp::logging_impl {

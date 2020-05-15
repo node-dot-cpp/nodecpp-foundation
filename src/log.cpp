@@ -25,6 +25,12 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifdef _MSC_VER
+#include <windows.h>
+#else
+#include <time.h>
+#endif
+
 #include "../include/log.h"
 #include <chrono>
 
@@ -34,6 +40,18 @@ namespace nodecpp::logging_impl {
 	thread_local ::nodecpp::log::Log* currentLog = nullptr;
 	thread_local size_t instanceId = invalidInstanceID;
 	
+	uint64_t getCurrentTime()
+	{
+	#ifdef _MSC_VER
+		return GetTickCount64() * 1000; // mks
+	#else
+		struct timespec ts;
+	//    timespec_get(&ts, TIME_UTC);
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
+	#endif
+	}
+
 	class LogWriter
 	{
 		LogBufferBaseData* logData;

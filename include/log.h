@@ -43,6 +43,7 @@
 namespace nodecpp::logging_impl {
 	constexpr size_t invalidInstanceID = ((size_t)0 - 2);
 	extern thread_local size_t instanceId;
+	uint64_t getCurrentTime();
 } // namespace logging_impl
 
 namespace nodecpp::log {
@@ -363,16 +364,22 @@ namespace nodecpp::log {
 		void setEnterTerminatingPhase() { if ( logData ) logData->setEnterTerminatingPhase(); }
 		void setTerminationAllowed() { if ( logData ) logData->setTerminationAllowed(); }
 
-		void writoToLog( ModuleID mid, const char* msg, size_t sz, LogLevel severity ) {
+		void writoToLog( ModuleID mid, const char* msg, size_t sz, LogLevel severity, bool addTimeStamp ) {
 			char msgFormatted[LogBufferBaseData::maxMessageSize];
+			size_t wrtPos = 0;
+			if ( addTimeStamp )
+			{
+				auto formatRet = ::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{:.06f}]", logging_impl::getCurrentTime() / 1000000.0 );
+				wrtPos = formatRet.size;
+			}
 			auto formatRet = mid.id() != nullptr ?
 				( logging_impl::instanceId != logging_impl::invalidInstanceID ?
-					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}:{}][{}] {}\n", mid.id(), logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
-					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], msg ) ) :
+					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[{}:{}][{}] {}\n", mid.id(), logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
+					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], msg ) ) :
 				( logging_impl::instanceId != logging_impl::invalidInstanceID ?
-					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[:{}][{}] {}\n", logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
-					::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[:][{}] {}\n", LogLevelNames[(size_t)severity], msg ) );
-			if ( formatRet.size >= LogBufferBaseData::maxMessageSize )
+					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[:{}][{}] {}\n", logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
+					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[:][{}] {}\n", LogLevelNames[(size_t)severity], msg ) );
+			if ( formatRet.size + wrtPos >= LogBufferBaseData::maxMessageSize )
 			{
 				msgFormatted[LogBufferBaseData::maxMessageSize-4] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-3] = '.';
@@ -380,9 +387,8 @@ namespace nodecpp::log {
 				msgFormatted[LogBufferBaseData::maxMessageSize-1] = 0;
 			}
 			else
-				msgFormatted[formatRet.size] = 0;
-//			addMsg( msgFormatted, formatRet.size, severity );
-			printf( "%s", msgFormatted );
+				msgFormatted[formatRet.size + wrtPos] = 0;
+			addMsg( msgFormatted, formatRet.size + wrtPos, severity );
 		}
 
 	public:
@@ -421,6 +427,7 @@ namespace nodecpp::log {
 
 		std::vector<LogTransport> transports;
 		bool silent = false;
+		bool addTimeStamp = true;
 
 		//TODO::add: format
 		//TODO::add: exitOnError
@@ -467,7 +474,7 @@ namespace nodecpp::log {
 				else
 					msgFormatted[r.size] = 0;
 				for ( auto& transport : transports )
-					transport.writoToLog( mid, msgFormatted, r.size, l );
+					transport.writoToLog( mid, msgFormatted, r.size, l, addTimeStamp );
 			}				 
 		}
 

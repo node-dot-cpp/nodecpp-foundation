@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
 	testPtrStructsWithZombieProperty();
 
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id),"({:.06f}) about to exit...", nodecpp::log::logTime() / 1000000.0 );
+	nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "({:.06f}) about to exit...", nodecpp::log::logTime() / 1000000.0 );
 
     return 0;
 }

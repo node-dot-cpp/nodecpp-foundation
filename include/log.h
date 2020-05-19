@@ -243,8 +243,19 @@ namespace nodecpp::log {
 			{
 				logData->mustBeWrittenImmediately = logData->end;
 				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !gww.canRun );
-				logData->nextToAddGuaranteed->next = &gww;
-				logData->nextToAddGuaranteed = &gww;
+				gww.next = nullptr;
+				if ( logData->nextToAddGuaranteed == nullptr ) 
+				{
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToReleaseGuaranteed == nullptr ); 
+					logData->firstToReleaseGuaranteed = &gww;
+					logData->nextToAddGuaranteed = &gww;
+				}
+				else
+				{
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToReleaseGuaranteed != nullptr ); 
+					logData->nextToAddGuaranteed->next = &gww;
+					logData->nextToAddGuaranteed = &gww;
+				}
 				logData->waitWriter.notify_one();
 			}
 			else if ( logData->end - logData->writerPromisedNextStart >= logData->pageSize )
@@ -264,6 +275,7 @@ namespace nodecpp::log {
 				size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
 				if ( logData->nextToAdd != nullptr)
 				{
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToRelease != nullptr ); 
 					if (l >= logData->levelCouldBeSkipped)
 					{
 						logData->nextToAdd->skippedCtrs.increment(l);
@@ -530,6 +542,8 @@ namespace nodecpp::log {
 		}
 		//TODO::add: remove()
 	};
+
+	inline uint64_t logTime() { return logging_impl::getCurrentTime(); }
 } // namespace nodecpp::log
 
 namespace nodecpp::logging_impl {
@@ -542,12 +556,12 @@ namespace nodecpp::log {
 		template<class StringT, class ... Objects>
 		void log( ModuleID mid, LogLevel l, StringT format_str, Objects ... obj ) {
 			if ( ::nodecpp::logging_impl::currentLog )
-				::nodecpp::logging_impl::currentLog->log( mid, l, format_str, obj... );
+				::nodecpp::logging_impl::currentLog->log<StringT, Objects ...>( mid, l, format_str, obj... );
 		}
 
 		template<class StringT, class ... Objects>
 		void log( LogLevel l, StringT format_str, Objects ... obj ) {
-			log( ModuleID( NODECPP_DEFAULT_LOG_MODULE ), l, format_str, obj ... );
+			log<StringT, Objects ...>( ModuleID( NODECPP_DEFAULT_LOG_MODULE ), l, format_str, obj ... );
 		}
 
 		template<class StringT, class ... Objects>

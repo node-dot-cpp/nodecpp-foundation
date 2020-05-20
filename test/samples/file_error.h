@@ -72,7 +72,7 @@ namespace nodecpp::error {
 		constexpr file_error_domain() {}
 		using Valuetype = file_error_value;
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "file error" ); }
-		virtual string_ref value_to_meaasage(error_value* value) const { 
+		virtual string_ref value_to_message(error_value* value) const { 
 			file_error_value* myData = reinterpret_cast<file_error_value*>(value);
 			switch ( myData->errorCode )
 			{

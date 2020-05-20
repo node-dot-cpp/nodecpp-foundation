@@ -74,7 +74,7 @@ namespace nodecpp::error {
 		constexpr std_error_domain() {}
 		using Valuetype = errc;
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
-		virtual string_ref value_to_meaasage(error_value* value) const { 
+		virtual string_ref value_to_message(error_value* value) const { 
 			constexpr generic_code_messages msgs;
 			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}

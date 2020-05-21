@@ -62,15 +62,15 @@ namespace nodecpp {
 		{
 			DWORD64 address = (DWORD64)(stack[i]);
 			bool addrOK = false;
-#ifndef DEBUG_
+#ifndef _DEBUG
 			addrOK = SymFromAddr(process, address, NULL, symbol);
 #endif
 			bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, line);
 			if ( addrOK && fileLineOK )
 				out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line->FileName, line->LineNumber );
 			else if ( fileLineOK )
-				out += fmt::format( "\tat {}, line {}\n", symbol->Name, line->FileName, line->LineNumber );
-			else if ( addrOK && fileLineOK )
+				out += fmt::format( "\tat {}, line {}\n", line->FileName, line->LineNumber );
+			else if ( addrOK )
 				out += fmt::format( "\tat {}\n", symbol->Name );
 			else
 				out += fmt::format( "\tat <...>\n" );

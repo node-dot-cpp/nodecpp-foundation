@@ -87,6 +87,7 @@ namespace nodecpp {
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { return info.whereTaken; }
 		extern uint64_t whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
+		extern bool isDataStackInfo( const StackInfo& info ) { return info.timeStamp != 0; }
 	} // namespace impl
 
 } //namespace nodecpp

@@ -42,12 +42,14 @@ namespace nodecpp {
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info );
 		extern uint64_t whenTakenStackInfo( const StackInfo& info );
+		extern bool isDataStackInfo( const StackInfo& info );
 	} // namespace impl
 
 	class StackInfo
 	{
 		friend const error::string_ref& impl::whereTakenStackInfo( const StackInfo& info );
 		friend uint64_t impl::whenTakenStackInfo( const StackInfo& info );
+		friend bool impl::isDataStackInfo( const StackInfo& info );
 
 		uint64_t timeStamp = 0;
 		error::string_ref whereTaken;
@@ -64,7 +66,6 @@ namespace nodecpp {
 		void init() { init_(); }
 		void log( log::LogLevel l) { log::default_log::log( l, "{}", whereTaken.c_str() ); }
 		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "{}", whereTaken.c_str() ); }
-		bool isdata() { return timeStamp != 0; }
 	};
 
 } //namespace nodecpp

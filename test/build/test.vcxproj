@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\src\nodecpp_assert.cpp" />
     <ClCompile Include="..\..\src\cpu_exceptions_translator.cpp" />
     <ClCompile Include="..\..\src\page_allocator.cpp" />
+    <ClCompile Include="..\..\src\stack_info.cpp" />
     <ClCompile Include="..\..\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\src\safe_memory_error.cpp" />
     <ClCompile Include="..\..\src\std_error.cpp" />

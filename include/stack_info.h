@@ -43,6 +43,7 @@
 #define TRACE_MAX_STACK_FRAMES 1024
 #define TRACE_MAX_FUNCTION_NAME_LENGTH 1024
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
+#error not yet supported
 #else
 #error not (yet) supported
 #endif
@@ -51,11 +52,14 @@ namespace nodecpp {
 
 	class StackInfo
 	{
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+		friend class error::nodecpp_error_value;
+		friend class error::nodecpp_error_domain;
+
 		uint64_t timeStamp = 0;
 		error::string_ref whereTaken;
 		void init_()
 		{
+#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 			void *stack[TRACE_MAX_STACK_FRAMES];
 			HANDLE process = GetCurrentProcess();
 			SymInitialize(process, NULL, TRUE);
@@ -87,11 +91,11 @@ namespace nodecpp {
 			}
 			whereTaken = out.c_str();
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
+#error not yet supported
 #else
 #error not (yet) supported
 #endif
 		}
-		const char* c_str() { return whereTaken.c_str(); } // for internal purposes only: this value is non-deterministic and cannot be used except as for (future) logging
 
 	public:
 		StackInfo() : whereTaken( "" ) {}
@@ -104,6 +108,7 @@ namespace nodecpp {
 		void init() { init_(); }
 		void log( log::LogLevel l) { log::default_log::log( l, "{}", whereTaken.c_str() ); }
 		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "{}", whereTaken.c_str() ); }
+		bool isdata() { return timeStamp != 0; }
 	};
 
 } //namespace nodecpp

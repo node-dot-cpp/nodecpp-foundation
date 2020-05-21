@@ -39,6 +39,7 @@
     <ClInclude Include="..\..\include\default_assert.h" />
     <ClInclude Include="..\..\include\error.h" />
     <ClInclude Include="..\..\include\page_allocator.h" />
+    <ClInclude Include="..\..\include\stack_info.h" />
     <ClInclude Include="..\..\include\tagged_ptr_impl.h" />
     <ClInclude Include="..\..\include\safe_memory_error.h" />
     <ClInclude Include="..\..\include\std_error.h" />

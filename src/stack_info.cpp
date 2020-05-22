@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "stack_info.h"
+#include "log.h"
 
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 #include <process.h>
@@ -81,6 +82,7 @@ namespace nodecpp {
 #else
 #error not (yet) supported
 #endif
+		timeStamp = ::nodecpp::log::logTime();
 	}
 
 	namespace impl

@@ -106,7 +106,7 @@ namespace nodecpp::error {
 	public:
 		constexpr error_domain() {}
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "unknown domain" ); }
-		virtual string_ref value_to_meaasage(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
+		virtual string_ref value_to_message(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
 		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }
@@ -155,7 +155,7 @@ namespace nodecpp::error {
 			return *this;
 		}
 		string_ref name() const { return domain_->name(); }
-		string_ref description() const { return domain_->value_to_meaasage(value_); }
+		string_ref description() const { return domain_->value_to_message(value_); }
 		~error() {
 			if ( domain_ )
 				domain_->destroy_value( value_ );

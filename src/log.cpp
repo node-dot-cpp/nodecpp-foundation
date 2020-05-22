@@ -74,8 +74,8 @@ namespace nodecpp::logging_impl {
 			for (;;)
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start ) ||
-						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start ) )
+				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start && logData->firstToReleaseGuaranteed == nullptr ) ||
+						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start && logData->firstToReleaseGuaranteed == nullptr ) )
 //					logData->waitWriter.wait(lock);
 					logData->waitWriter.wait_for(lock, std::chrono::milliseconds(200));
 				lock.unlock();
@@ -84,33 +84,48 @@ namespace nodecpp::logging_impl {
 				// 1. write data of the amount exceeding some threshold or required to be written immediately
 				// 2. release a thread waiting for free size in buffer (if any) or guaranteed write
 
-				size_t end;
+				uint64_t start;
+				uint64_t end;
 				ChainedWaitingData* p = nullptr;
 				ChainedWaitingForGuaranteedWrite* gww = nullptr;
+				uint64_t mustBeWrittenImmediately = 0;
 				{
 					std::unique_lock<std::mutex> lock(logData->mx);
+					mustBeWrittenImmediately = logData->mustBeWrittenImmediately;
+					start = logData->start;
 					end = logData->end;
 					logData->writerPromisedNextStart = end;
+
+					if ( logData->firstToReleaseGuaranteed != nullptr )
+					{
+						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, mustBeWrittenImmediately > start );
+						gww = logData->firstToReleaseGuaranteed;
+						logData->firstToReleaseGuaranteed = nullptr;
+						logData->nextToAddGuaranteed = nullptr;
+					}
 
 					if ( logData->firstToRelease != nullptr && logData->availableSize() >= LogBufferBaseData::maxMessageSize )
 					{
 						p = logData->firstToRelease;
 						logData->firstToRelease = nullptr;
 					}
-					if ( logData->firstToReleaseGuaranteed != nullptr )
-					{
-						gww = logData->firstToReleaseGuaranteed;
-						logData->firstToReleaseGuaranteed = nullptr;
-					}
 
 				} // unlocking
 
-				// perform guaranteed writing, if necessary, and let waiting threads go
-				if ( logData->mustBeWrittenImmediately > logData->start )
+				
+				if ( gww ) // perform guaranteed writing, if necessary, and let waiting threads go
 				{
-					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, gww != nullptr );
-					justWrite( logData->start, end );
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, p == nullptr );
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, mustBeWrittenImmediately > start );
+					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, mustBeWrittenImmediately <= end );
+					justWrite( start, end );
 					fflush( logData->target );
+					{
+						std::unique_lock<std::mutex> lock(logData->mx);
+						logData->start = end;
+						logData->writerPromisedNextStart = end;
+						start = end;
+					} // unlocking
 					while ( gww )
 					{
 						{
@@ -118,10 +133,20 @@ namespace nodecpp::logging_impl {
 							NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !gww->canRun );
 							gww->canRun = true;
 						}
-						auto tmp = gww;
+						auto tmp = gww->next;
 						gww->w.notify_one();
-						gww = tmp->next; // yes, former gww could now be destroyed/reused in the respective thread
+						gww = tmp; // yes, former gww could now be destroyed/reused in the respective thread
 					}
+				}
+				else
+				{
+					justWrite( start, end );
+					{
+						std::unique_lock<std::mutex> lock(logData->mx);
+						logData->start = end;
+						start = end;
+						logData->writerPromisedNextStart = end;
+					} // unlocking
 				}
 
 				if ( p )
@@ -132,35 +157,8 @@ namespace nodecpp::logging_impl {
 						p->canRun = true;
 					}
 					p->w.notify_one();
-					if ( logData->start == end )
+					if ( start == end )
 						continue; // Note: we let it to add some data, and, therefore, we won't be in an infinite waiting loop in the beginning of this processing cycle
-				}
-
-				while ( logData->start != end )
-				{
-					justWrite( logData->start, end );
-
-					ChainedWaitingData* p = nullptr;
-					{
-						std::unique_lock<std::mutex> lock(logData->mx);
-						logData->start = end;
-						if ( logData->firstToRelease )
-						{
-							p = logData->firstToRelease;
-							logData->firstToRelease = nullptr;
-						}
-						end = logData->end;
-						logData->writerPromisedNextStart = end;
-					} // unlocking
-					if ( p )
-					{
-						{
-							std::unique_lock<std::mutex> lock(p->mx);
-							NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
-							p->canRun = true;
-						}
-						p->w.notify_one();
-					}
 				}
 
 				if ( logData->_writerOnly_TerminateIfAlone() )

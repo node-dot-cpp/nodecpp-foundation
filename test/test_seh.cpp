@@ -31,6 +31,7 @@
 #include <foundation.h>
 #include <cpu_exceptions_translator.h>
 #include <log.h>
+#include <stack_info.h>
 
 using namespace std;
 
@@ -55,6 +56,9 @@ public:
 void badCallInner_Nullptr()
 {
 	volatile int * ptr = nullptr;
+	nodecpp::log::default_log::info("about to attempt to dereference a null pointer" );
+	nodecpp::StackInfo si(true);
+	si.log( nodecpp::log::LogLevel::fatal );
     *ptr = 0;
 }
 

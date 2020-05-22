@@ -71,14 +71,14 @@ namespace nodecpp::error {
 			return *this;
 		}
 		string_ref( string_ref&& other ) {
-			other.str = nullptr;
 			str = other.str;
+			other.str = nullptr;
 			fromLiteral = other.fromLiteral;
 			other.fromLiteral = false;
 		}
 		string_ref operator = ( string_ref&& other ) {
-			other.str = nullptr;
 			str = other.str;
+			other.str = nullptr;
 			fromLiteral = other.fromLiteral;
 			other.fromLiteral = false;
 			return *this;

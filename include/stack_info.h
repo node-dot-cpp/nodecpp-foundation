@@ -64,6 +64,7 @@ namespace nodecpp {
 		StackInfo& operator = ( StackInfo&& other ) = default;
 		virtual ~StackInfo() {}
 		void init() { init_(); }
+		void clear() { timeStamp = 0; whereTaken = nullptr; }
 		void log( log::LogLevel l) { log::default_log::log( l, "{}", whereTaken.c_str() ); }
 		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "{}", whereTaken.c_str() ); }
 	};

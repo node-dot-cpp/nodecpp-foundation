@@ -65,8 +65,8 @@ namespace nodecpp {
 		virtual ~StackInfo() {}
 		void init() { init_(); }
 		void clear() { whereTaken = nullptr; }
-		void log( log::LogLevel l) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
-		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
+		void log( log::LogLevel l ) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
+		void log( log::Log& targetLog, log::LogLevel l ) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
 	};
 
 } //namespace nodecpp

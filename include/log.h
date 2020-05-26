@@ -29,14 +29,13 @@
 #define NODECPP_LOGGING_H
 
 #include "platform_base.h"
-#include "foundation.h"
+#include "foundation_module.h"
 #include <fmt/format.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <vector>
 #include "page_allocator.h"
-#include "nodecpp_assert.h"
 
 
 namespace nodecpp::logging_impl {
@@ -89,30 +88,7 @@ namespace nodecpp::log {
 			++fullCnt_;
 		}
 		size_t fullCount() { return fullCnt_; }
-		size_t toStr( char* buff, size_t sz) {
-			NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, sz >= reportMaxSize ); 
-			memcpy( buff, "<skipped: ", 9 );
-			size_t pos = 9;
-			bool added = false;
-			for ( size_t i=0; i<log_level_count; ++i )
-				if ( skippedCtrs[i] && pos < sz )					
-				{
-					auto r = ::fmt::format_to_n( buff + pos, sz - pos, "{}:{}, ", LogLevelNames[i], skippedCtrs[i] );
-					pos += r.size;
-					added = true;
-				}
-			if ( added )
-			{
-				buff[pos - 2] = '>';
-				buff[pos - 1] = '\n';
-				return pos;
-			}
-			else
-			{
-				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, fullCnt_ == 0, "indeed: {}", fullCnt_ ); 
-				return 0;
-			}
-		}
+		size_t toStr( char* buff, size_t sz);
 	};
 
 	struct ChainedWaitingData
@@ -222,166 +198,9 @@ namespace nodecpp::log {
 		LogBufferBaseData* logData;
 		ChainedWaitingForGuaranteedWrite gww;
 
-		void insertSingleMsg( const char* msg, size_t sz ) // under lock
-		{
-			NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->availableSize() );
-			size_t endoff = logData->end & (logData->buffSize - 1);
-			if ( logData->buffSize - endoff >= sz )
-			{
-				memcpy( logData->buff + endoff, msg, sz );
-			}
-			else
-			{
-				memcpy( logData->buff + endoff, msg, logData->buffSize - endoff );
-				memcpy( logData->buff, msg + logData->buffSize - endoff, sz - (logData->buffSize - endoff) );
-			}
-			logData->end += sz;
-		}
-
-		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs, bool isCritical ) // under lock
-		{
-			if ( ctrs.fullCount() )
-			{
-				char b[SkippedMsgCounters::reportMaxSize];
-				size_t bsz = ctrs.toStr( b, SkippedMsgCounters::reportMaxSize );
-				static_assert( SkippedMsgCounters::reportMaxSize <= LogBufferBaseData::skippedCntMsgSz );
-				insertSingleMsg( b, bsz );
-				ctrs.clear();
-			}
-			insertSingleMsg( msg, sz );
-			if ( isCritical || logData->action == LogBufferBaseData::Action::proceedToTermination )
-			{
-				logData->mustBeWrittenImmediately = logData->end;
-				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !gww.canRun );
-				gww.next = nullptr;
-				if ( logData->nextToAddGuaranteed == nullptr ) 
-				{
-					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToReleaseGuaranteed == nullptr ); 
-					logData->firstToReleaseGuaranteed = &gww;
-					logData->nextToAddGuaranteed = &gww;
-				}
-				else
-				{
-					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToReleaseGuaranteed != nullptr ); 
-					logData->nextToAddGuaranteed->next = &gww;
-					logData->nextToAddGuaranteed = &gww;
-				}
-				logData->waitWriter.notify_one();
-			}
-			else if ( logData->end - logData->start < logData->maxMessageSize )
-			{
-				logData->waitWriter.notify_one();
-			}
-		}
-
-		bool addMsg( const char* msg, size_t sz, LogLevel l )
-		{
-			bool isCritical = l <= logData->levelGuaranteedWrite;
-			bool wait4critialWrt = false;
-			bool waitAgain = false;
-			ChainedWaitingData d;
-			{
-				std::unique_lock<std::mutex> lock(logData->mx);
-				size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
-				if ( logData->nextToAdd != nullptr)
-				{
-					NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToRelease != nullptr ); 
-					if (l >= logData->levelCouldBeSkipped)
-					{
-						logData->nextToAdd->skippedCtrs.increment(l);
-						return false;
-					}
-					else
-					{
-						logData->nextToAdd->next = &d;
-						logData->nextToAdd = &d;
-						waitAgain = true;
-					}
-				}
-				else if ( logData->end + fullSzRequired <= logData->start + logData->buffSize ) // can copy
-				{
-					if ( isCritical )
-						wait4critialWrt = true;
-					insertMessage( msg, sz, logData->skippedCtrs, isCritical );
-				}
-				else
-				{
-					if ( l >= logData->levelCouldBeSkipped ) // skip
-					{
-						logData->skippedCtrs.increment(l);
-						return false;
-					}
-					else // add to waiting list
-					{
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->nextToAdd == nullptr );
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToRelease == nullptr ); 
-						logData->firstToRelease = &d;
-//						d.canRun = true;
-						logData->nextToAdd = &d;
-						waitAgain = true;
-					}
-				}
-			} // unlocking
-
-			if ( wait4critialWrt )
-			{
-				NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !waitAgain );
-				std::unique_lock<std::mutex> lock(gww.mx);
-				while (!gww.canRun)
-					gww.w.wait(lock);
-				gww.canRun = false;
-				lock.unlock();
-				return true;
-			}
-
-			while ( waitAgain )
-			{
-				waitAgain = false;
-				std::unique_lock<std::mutex> lock(d.mx);
-				while (!d.canRun)
-					d.w.wait(lock);
-				d.canRun = false;
-				lock.unlock();
-
-				{
-					std::unique_lock<std::mutex> lock(logData->mx);
-
-					size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
-					if ( logData->end + fullSzRequired > logData->start + logData->buffSize )
-					{
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToRelease == nullptr );
-						logData->firstToRelease = &d;
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, logData->nextToAdd != nullptr );
-						waitAgain = true;
-						lock.unlock();
-						continue;
-					}
-
-					insertMessage( msg, sz, d.skippedCtrs, l <= logData->levelGuaranteedWrite );
-
-					if ( logData->nextToAdd == &d )
-					{
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, d.next == nullptr ); 
-						logData->nextToAdd = nullptr;
-					}
-					else
-					{
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, d.next != nullptr ); 
-					}
-				} // unlocking
-
-				if ( d.next )
-				{
-					{
-						std::unique_lock<std::mutex> lock(d.next->mx);
-						NODECPP_ASSERT( foundation::module_id, ::nodecpp::assert::AssertLevel::critical, !d.next->canRun );
-						d.next->canRun = true;
-					}
-					d.next->w.notify_one();
-				}
-			}
-			return true;
-		}
+		void insertSingleMsg( const char* msg, size_t sz );
+		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs, bool isCritical );
+		bool addMsg( const char* msg, size_t sz, LogLevel l );
 
 		void setEnterTerminatingPhase() { if ( logData ) logData->setEnterTerminatingPhase(); }
 		void setTerminationAllowed() { if ( logData ) logData->setTerminationAllowed(); }

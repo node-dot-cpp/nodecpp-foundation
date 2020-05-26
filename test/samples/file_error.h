@@ -81,6 +81,8 @@ namespace nodecpp::error {
 				default: return "unknown file error"; break;
 			}
 		}
+		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "{}", value_to_message( value ).c_str() ); }
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "{}", value_to_message( value ).c_str() ); }
 		error_value* create_value( FILE_EXCEPTION code, const char* fileName ) const {
 			return new file_error_value(code, fileName);
 		}

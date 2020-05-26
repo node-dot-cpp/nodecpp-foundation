@@ -30,6 +30,10 @@
 
 #include "platform_base.h"
 
+#ifndef NODECPP_DEFAULT_LOG_MODULE
+#define NODECPP_DEFAULT_LOG_MODULE nullptr
+#endif
+
 namespace nodecpp::foundation
 {
 	constexpr uint64_t module_id = 0;

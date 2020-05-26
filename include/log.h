@@ -258,7 +258,7 @@ namespace nodecpp::log {
 				}
 				logData->waitWriter.notify_one();
 			}
-			else if ( logData->end - logData->writerPromisedNextStart < logData->pageSize )
+			else if ( logData->end - logData->start < logData->maxMessageSize )
 			{
 				logData->waitWriter.notify_one();
 			}

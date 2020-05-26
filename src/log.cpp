@@ -94,7 +94,6 @@ namespace nodecpp::logging_impl {
 					mustBeWrittenImmediately = logData->mustBeWrittenImmediately;
 					start = logData->start;
 					end = logData->end;
-					logData->writerPromisedNextStart = end;
 
 					if ( logData->firstToReleaseGuaranteed != nullptr )
 					{
@@ -123,7 +122,6 @@ namespace nodecpp::logging_impl {
 					{
 						std::unique_lock<std::mutex> lock(logData->mx);
 						logData->start = end;
-						logData->writerPromisedNextStart = end;
 						start = end;
 					} // unlocking
 					while ( gww )
@@ -145,7 +143,6 @@ namespace nodecpp::logging_impl {
 						std::unique_lock<std::mutex> lock(logData->mx);
 						logData->start = end;
 						start = end;
-						logData->writerPromisedNextStart = end;
 					} // unlocking
 				}
 

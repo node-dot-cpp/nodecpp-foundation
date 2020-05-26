@@ -37,19 +37,35 @@
 namespace nodecpp::logging_impl {
 	using namespace nodecpp::log;
 
+	// TODO: gather all thread local data in a single structure
 	thread_local ::nodecpp::log::Log* currentLog = nullptr;
 	thread_local size_t instanceId = invalidInstanceID;
+	thread_local uint64_t lastTimeReported;
+	thread_local size_t ordinalSinceLastReportedTime;
 	
-	uint64_t getCurrentTime()
+	LoggingTimeStamp getCurrentTimeStamp()
 	{
+		uint64_t ret = 0;
 	#ifdef _MSC_VER
-		return GetTickCount64() * 1000; // mks
+		ret = GetTickCount64(); // ms
 	#else
 		struct timespec ts;
 	//    timespec_get(&ts, TIME_UTC);
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
+		ret = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000; // ms
 	#endif
+		if ( ret != lastTimeReported )
+		{
+			lastTimeReported = ret;
+			ordinalSinceLastReportedTime = 0;
+		}
+		else
+		{
+			++ordinalSinceLastReportedTime;
+		}
+		LoggingTimeStamp lts;
+		lts.t = ret * 1000 + ordinalSinceLastReportedTime;
+		return lts;
 	}
 
 	class LogWriter

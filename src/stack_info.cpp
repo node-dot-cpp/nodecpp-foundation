@@ -82,14 +82,14 @@ namespace nodecpp {
 #else
 #error not (yet) supported
 #endif
-		timeStamp = ::nodecpp::log::logTime();
+		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
 	}
 
 	namespace impl
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { return info.whereTaken; }
-		extern uint64_t whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
-		extern bool isDataStackInfo( const StackInfo& info ) { return info.timeStamp != 0; }
+		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
+		extern bool isDataStackInfo( const StackInfo& info ) { return !info.whereTaken.empty(); }
 	} // namespace impl
 
 } //namespace nodecpp

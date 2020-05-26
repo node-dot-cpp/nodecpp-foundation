@@ -41,17 +41,17 @@ namespace nodecpp {
 	namespace impl
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info );
-		extern uint64_t whenTakenStackInfo( const StackInfo& info );
+		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info );
 		extern bool isDataStackInfo( const StackInfo& info );
 	} // namespace impl
 
 	class StackInfo
 	{
 		friend const error::string_ref& impl::whereTakenStackInfo( const StackInfo& info );
-		friend uint64_t impl::whenTakenStackInfo( const StackInfo& info );
+		friend ::nodecpp::logging_impl::LoggingTimeStamp impl::whenTakenStackInfo( const StackInfo& info );
 		friend bool impl::isDataStackInfo( const StackInfo& info );
 
-		uint64_t timeStamp = 0;
+		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
 		void init_();
 
@@ -64,9 +64,9 @@ namespace nodecpp {
 		StackInfo& operator = ( StackInfo&& other ) = default;
 		virtual ~StackInfo() {}
 		void init() { init_(); }
-		void clear() { timeStamp = 0; whereTaken = nullptr; }
-		void log( log::LogLevel l) { log::default_log::log( l, "time {:.06f}\n{}", timeStamp / 1000000.0, whereTaken.c_str() ); }
-		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "time {:.06f}\n{}", timeStamp / 1000000.0, whereTaken.c_str() ); }
+		void clear() { whereTaken = nullptr; }
+		void log( log::LogLevel l) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
+		void log( log::Log targetLog, log::LogLevel l) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
 	};
 
 } //namespace nodecpp

@@ -90,7 +90,7 @@ namespace nodecpp::error {
 		const char* c_str() const {
 			return str ? str : "";
 		}
-		bool empty() { return str == nullptr || str[0] == 0; }
+		bool empty() const { return str == nullptr || str[0] == 0; }
 	};
 
 	class error;

@@ -39,12 +39,22 @@
 #include "nodecpp_assert.h"
 
 
-
 namespace nodecpp::logging_impl {
 	constexpr size_t invalidInstanceID = ((size_t)0 - 2);
 	extern thread_local size_t instanceId;
-	uint64_t getCurrentTime();
+	struct LoggingTimeStamp
+	{
+		uint64_t t;
+	};
+	LoggingTimeStamp getCurrentTimeStamp();
 } // namespace logging_impl
+
+template<>
+struct ::fmt::formatter<nodecpp::logging_impl::LoggingTimeStamp>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::logging_impl::LoggingTimeStamp const& lts, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{:.06f}", lts.t / 1000000.0 );}
+};	
 
 namespace nodecpp::log {
 
@@ -258,7 +268,7 @@ namespace nodecpp::log {
 				}
 				logData->waitWriter.notify_one();
 			}
-			else if ( logData->end - logData->writerPromisedNextStart < logData->pageSize )
+			else if ( logData->end - logData->start < logData->maxMessageSize )
 			{
 				logData->waitWriter.notify_one();
 			}
@@ -381,7 +391,7 @@ namespace nodecpp::log {
 			size_t wrtPos = 0;
 			if ( addTimeStamp )
 			{
-				auto formatRet = ::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{:.06f}]", logging_impl::getCurrentTime() / 1000000.0 );
+				auto formatRet = ::fmt::format_to_n( msgFormatted, LogBufferBaseData::maxMessageSize - 1, "[{}]", logging_impl::getCurrentTimeStamp() );
 				wrtPos = formatRet.size;
 			}
 			auto formatRet = mid.id() != nullptr ?
@@ -543,7 +553,6 @@ namespace nodecpp::log {
 		//TODO::add: remove()
 	};
 
-	inline uint64_t logTime() { return logging_impl::getCurrentTime(); }
 } // namespace nodecpp::log
 
 namespace nodecpp::logging_impl {

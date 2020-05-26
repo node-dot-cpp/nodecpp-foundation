@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "stack_info.h"
+#include "log.h"
 
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 #include <process.h>
@@ -49,7 +50,7 @@ namespace nodecpp {
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
-		WORD numberOfFrames = CaptureStackBackTrace(0, TRACE_MAX_STACK_FRAMES, stack, NULL);
+		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
 		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
 		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
 		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -81,13 +82,14 @@ namespace nodecpp {
 #else
 #error not (yet) supported
 #endif
+		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
 	}
 
 	namespace impl
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { return info.whereTaken; }
-		extern uint64_t whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
-		extern bool isDataStackInfo( const StackInfo& info ) { return info.timeStamp != 0; }
+		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
+		extern bool isDataStackInfo( const StackInfo& info ) { return !info.whereTaken.empty(); }
 	} // namespace impl
 
 } //namespace nodecpp

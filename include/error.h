@@ -87,9 +87,10 @@ namespace nodecpp::error {
 			if ( !fromLiteral && str )
 				free( const_cast<char*>(str) );
 		}
-		const char* c_str() {
+		const char* c_str() const {
 			return str ? str : "";
 		}
+		bool empty() { return str == nullptr || str[0] == 0; }
 	};
 
 	class error;

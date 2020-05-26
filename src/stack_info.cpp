@@ -50,7 +50,7 @@ namespace nodecpp {
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
-		WORD numberOfFrames = CaptureStackBackTrace(0, TRACE_MAX_STACK_FRAMES, stack, NULL);
+		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
 		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
 		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
 		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);

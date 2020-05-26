@@ -80,6 +80,8 @@ namespace nodecpp::error {
 			constexpr memory_code_messages msgs;
 			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}
+		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "{}", value_to_message( value ).c_str() ); }
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "{}", value_to_message( value ).c_str() ); }
 		error_value* create_value( Valuetype code ) const {
 			return reinterpret_cast<error_value*>(code);
 		}

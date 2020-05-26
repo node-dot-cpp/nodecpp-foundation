@@ -29,6 +29,7 @@
 #define NODECPP_ERROR_H 
 
 #include "platform_base.h"
+#include "log.h"
 
 // quick workaround TODO: address properly ASAP!
 #if defined NODECPP_WINDOWS
@@ -108,6 +109,8 @@ namespace nodecpp::error {
 		constexpr error_domain() {}
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "unknown domain" ); }
 		virtual string_ref value_to_message(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
+		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "Error" ); }
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "Error" ); }
 		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }
@@ -156,7 +159,9 @@ namespace nodecpp::error {
 			return *this;
 		}
 		string_ref name() const { return domain_->name(); }
-		string_ref description() const { return domain_->value_to_message(value_); }
+		string_ref description() const { return domain_->value_to_message( value_ ); }
+		void log( log::LogLevel l ) const { domain_->log( value_, l ); }
+		void log( log::Log& targetLog, log::LogLevel l ) const { domain_->log( value_, targetLog, l ); }
 		~error() {
 			if ( domain_ )
 				domain_->destroy_value( value_ );

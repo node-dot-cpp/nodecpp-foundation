@@ -74,8 +74,8 @@ namespace nodecpp::logging_impl {
 			for (;;)
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start && logData->firstToReleaseGuaranteed == nullptr ) ||
-						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start && logData->firstToReleaseGuaranteed == nullptr ) )
+				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start && logData->firstToRelease == nullptr && logData->firstToReleaseGuaranteed == nullptr ) ||
+						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start && logData->firstToRelease == nullptr && logData->firstToReleaseGuaranteed == nullptr ) )
 //					logData->waitWriter.wait(lock);
 					logData->waitWriter.wait_for(lock, std::chrono::milliseconds(200));
 				lock.unlock();

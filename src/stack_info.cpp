@@ -89,7 +89,7 @@ namespace nodecpp {
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { return info.whereTaken; }
 		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
-		extern bool isDataStackInfo( const StackInfo& info ) { return !info.whereTaken.empty(); }
+		extern bool isDataStackInfo( const StackInfo& info ) { return !(info.whereTaken.empty() && info.timeStamp.t == 0); }
 	} // namespace impl
 
 } //namespace nodecpp

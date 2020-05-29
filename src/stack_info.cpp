@@ -45,6 +45,7 @@
 
 namespace nodecpp {
 
+	NODECPP_NOINLINE
 	void StackInfo::init_()
 	{
 		void *stack[TRACE_MAX_STACK_FRAMES];

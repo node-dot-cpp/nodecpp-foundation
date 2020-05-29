@@ -87,7 +87,7 @@ namespace nodecpp::error {
 			return new file_error_value(code, fileName);
 		}
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
-			return reinterpret_cast<const file_error_value*>(value1)->errorCode == reinterpret_cast<const file_error_value*>(value1)->errorCode;
+			return reinterpret_cast<const file_error_value*>(value1)->errorCode == reinterpret_cast<const file_error_value*>(value2)->errorCode;
 		}
 		virtual error_value* clone_value(error_value* value) const {
 			if ( value )

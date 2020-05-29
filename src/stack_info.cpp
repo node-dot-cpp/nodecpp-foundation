@@ -34,20 +34,21 @@
 #include <Windows.h>
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
-#define TRACE_MAX_STACK_FRAMES 1024
-#define TRACE_MAX_FUNCTION_NAME_LENGTH 1024
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
-#error not yet supported
+#include <execinfo.h>
 #else
 #error not (yet) supported
 #endif
+
+#define TRACE_MAX_STACK_FRAMES 1024
+#define TRACE_MAX_FUNCTION_NAME_LENGTH 1024
 
 namespace nodecpp {
 
 	void StackInfo::init_()
 	{
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 		void *stack[TRACE_MAX_STACK_FRAMES];
+#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
@@ -78,7 +79,21 @@ namespace nodecpp {
 		}
 		whereTaken = out.c_str();
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
-#error not yet supported
+		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
+		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
+		if ( btsymbols != nullptr )
+		{
+			std::string out;
+			for (int i = 0; i < numberOfFrames; i++)
+			{
+				out += fmt::format( "\tat {}\n", btsymbols[i] );
+			}
+			free( btsymbols );
+			whereTaken = out.c_str();
+		}
+		else
+			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+
 #else
 #error not (yet) supported
 #endif

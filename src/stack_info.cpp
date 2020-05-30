@@ -29,13 +29,21 @@
 #include "log.h"
 
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
 #include <process.h>
 #include <iostream>
 #include <Windows.h>
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
+#define LINUX_APPROACH 2
+#if LINUX_APPROACH == 1
 #include <execinfo.h>
+#elif LINUX_APPROACH == 2
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+#include <cxxabi.h>
+#endif // LINUX_APPROACH
 #else
 #error not (yet) supported
 #endif
@@ -45,11 +53,11 @@
 
 namespace nodecpp {
 
-	NODECPP_NOINLINE
 	void StackInfo::init_()
 	{
-		void *stack[TRACE_MAX_STACK_FRAMES];
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
+		void *stack[TRACE_MAX_STACK_FRAMES];
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
@@ -79,7 +87,11 @@ namespace nodecpp {
 				out += fmt::format( "\tat <...>\n" );
 		}
 		whereTaken = out.c_str();
+		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
+
+#if LINUX_APPROACH == 1
+		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
 		if ( btsymbols != nullptr )
@@ -94,10 +106,47 @@ namespace nodecpp {
 		}
 		else
 			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+#elif LINUX_APPROACH == 2
+		unw_cursor_t cursor;
+		unw_context_t context;
+
+		// Initialize cursor to current frame for local unwinding.
+		unw_getcontext(&context);
+		unw_init_local(&cursor, &context);
+
+		// Unwind frames one by one, going up the frame stack.
+
+		std::string out;
+
+		while (unw_step(&cursor) > 0) {
+			unw_word_t offset, pc;
+			unw_get_reg(&cursor, UNW_REG_IP, &pc);
+			if (pc == 0) {
+				break;
+			}
+			out += fmt::format( "0x{:x}:", pc );
+
+			char sym[256];
+			if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
+				char* nameptr = sym;
+				int status;
+				char* demangled = abi::__cxa_demangle(sym, nullptr, nullptr, &status);
+				if (status == 0) {
+					nameptr = demangled;
+				}
+				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
+				std::free(demangled);
+			} else {
+				out += "<...>\n";
+			}
+		}
+
+		whereTaken = out.c_str();
+#endif // LINUX_APPROACH
 
 #else
 #error not (yet) supported
-#endif
+#endif // platform/compiler
 		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
 	}
 

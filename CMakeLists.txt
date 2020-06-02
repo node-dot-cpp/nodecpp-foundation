@@ -21,13 +21,15 @@ include(CommonCppFlags)
 # Library definition
 #-------------------------------------------------------------------------------------------
 add_library(foundation STATIC
-	src/cpu_exceptions_translator.cpp 
-	src/log.cpp 
-	src/nodecpp_assert.cpp 
-	src/page_allocator.cpp 
-	src/safe_memory_error.cpp 
-	src/std_error.cpp 
-	src/tagged_ptr_impl.cpp 
+	src/cpu_exceptions_translator.cpp
+	src/internal_msg.cpp
+	src/log.cpp
+	src/nodecpp_assert.cpp
+	src/page_allocator.cpp
+	src/safe_memory_error.cpp
+	src/stack_info.cpp
+	src/std_error.cpp
+	src/tagged_ptr_impl.cpp
 	)
 
 #-------------------------------------------------------------------------------------------

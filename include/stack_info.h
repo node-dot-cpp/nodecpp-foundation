@@ -53,17 +53,27 @@ namespace nodecpp {
 
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
-		void init_();
+		void init_( const char* stripPoint = nullptr );
+		void strip( std::string& s, const char* stripPoint ){
+			size_t pos = s.find( stripPoint, 0 );
+			if ( pos != std::string::npos )
+			{
+				pos = s.find( "\n", pos );
+				if ( pos != std::string::npos )
+					s = s.substr( pos + 1 );
+			}
+		}
 
 	public:
 		StackInfo() : whereTaken( "" ) {}
 		StackInfo( bool doInit ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
+		StackInfo( bool doInit, const char* stripPoint ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_( stripPoint ); }
 		StackInfo( const StackInfo& other ) = default;
 		StackInfo& operator = ( const StackInfo& other ) = default;
 		StackInfo( StackInfo&& other ) = default;
 		StackInfo& operator = ( StackInfo&& other ) = default;
 		virtual ~StackInfo() {}
-		void init() { init_(); }
+		void init( const char* stripPoint = nullptr ) { init_( stripPoint ); }
 		void clear() { whereTaken = nullptr; }
 		void log( log::LogLevel l ) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
 		void log( log::Log& targetLog, log::LogLevel l ) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }

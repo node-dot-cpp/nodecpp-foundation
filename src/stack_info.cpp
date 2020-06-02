@@ -53,7 +53,7 @@
 
 namespace nodecpp {
 
-	void StackInfo::init_()
+	void StackInfo::init_( const char* stripPoint )
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
@@ -86,6 +86,8 @@ namespace nodecpp {
 			else
 				out += fmt::format( "\tat <...>\n" );
 		}
+		if ( stripPoint != nullptr )
+			strip( out, stripPoint );
 		whereTaken = out.c_str();
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
@@ -102,6 +104,8 @@ namespace nodecpp {
 				out += fmt::format( "\tat {}\n", btsymbols[i] );
 			}
 			free( btsymbols );
+			if ( stripPoint != nullptr )
+				strip( out, stripPoint );
 			whereTaken = out.c_str();
 		}
 		else
@@ -140,7 +144,8 @@ namespace nodecpp {
 				out += "<...>\n";
 			}
 		}
-
+		if ( stripPoint != nullptr )
+			strip( out, stripPoint );
 		whereTaken = out.c_str();
 #endif // LINUX_APPROACH
 

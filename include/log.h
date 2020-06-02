@@ -49,7 +49,7 @@ namespace nodecpp::logging_impl {
 } // namespace logging_impl
 
 template<>
-struct ::fmt::formatter<nodecpp::logging_impl::LoggingTimeStamp>
+struct fmt::formatter<nodecpp::logging_impl::LoggingTimeStamp>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::logging_impl::LoggingTimeStamp const& lts, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{:.06f}", lts.t / 1000000.0 );}

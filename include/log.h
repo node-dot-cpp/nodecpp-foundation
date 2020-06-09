@@ -222,9 +222,10 @@ namespace nodecpp::log {
 					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[:][{}] {}\n", LogLevelNames[(size_t)severity], msg ) );
 			if ( formatRet.size + wrtPos >= LogBufferBaseData::maxMessageSize )
 			{
+				msgFormatted[LogBufferBaseData::maxMessageSize-5] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-4] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-3] = '.';
-				msgFormatted[LogBufferBaseData::maxMessageSize-2] = '.';
+				msgFormatted[LogBufferBaseData::maxMessageSize-2] = '\n';
 				msgFormatted[LogBufferBaseData::maxMessageSize-1] = 0;
 			}
 			else

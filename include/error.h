@@ -41,16 +41,13 @@ namespace nodecpp::error {
 
 	class error_value
 	{
-#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
-		friend class error_domain;
-		::nodecpp::StackInfo stackInfo;
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 	public:
-		error_value() {
-#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
-			stackInfo.init();
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+		error_value() {}
+#else
+		::nodecpp::StackInfo stackInfo;
+		error_value() { stackInfo.init(); }
 #endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
-		}
 		virtual ~error_value() {
 		}
 	};

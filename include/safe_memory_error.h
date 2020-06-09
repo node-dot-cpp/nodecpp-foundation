@@ -80,8 +80,29 @@ namespace nodecpp::error {
 			constexpr memory_code_messages msgs;
 			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "{}", value_to_message( value ).c_str() ); }
 		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "{}", value_to_message( value ).c_str() ); }
+#else
+		virtual void log(error_value* value, log::LogLevel l ) const { 
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				log::default_log::log( l, "{} happened at", value_to_message( value ).c_str() );
+				value->stackInfo.log( l );
+			}
+			else
+				log::default_log::log( l, "{}", value_to_message( value ).c_str() );
+		}
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { 
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				targetLog.log( l, "{} happened at", value_to_message( value ).c_str() );
+				value->stackInfo.log( targetLog, l );
+			}
+			else
+				targetLog.log( l, "{}", value_to_message( value ).c_str() );
+		}
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		error_value* create_value( Valuetype code ) const {
 			return reinterpret_cast<error_value*>(code);
 		}

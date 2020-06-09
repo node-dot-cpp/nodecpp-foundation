@@ -34,8 +34,8 @@
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
 
-void throwZeroPointerAccess();
-void throwLatelyDetectedZombieAccess();
+[[noreturn]] void throwZeroPointerAccess();
+[[noreturn]] void throwLatelyDetectedZombieAccess();
 
 ///////  ptr_with_zombie_property
 

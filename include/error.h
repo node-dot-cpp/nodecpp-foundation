@@ -30,69 +30,9 @@
 
 #include "platform_base.h"
 #include "log.h"
-
-// quick workaround TODO: address properly ASAP!
-#if defined NODECPP_WINDOWS
-#include <string.h>
-#define strdup _strdup 
-#else
-#include <cstdlib>
-#include <string.h>
-#endif
+#include "string_ref.h"
 
 namespace nodecpp::error {
-
-	class string_ref
-	{
-		bool fromLiteral;
-		const char* str;
-		char* duplicate_str( const char* str_ ) { return strdup( str_ ); }
-
-	public:
-		class literal_tag_t {};
-
-	public:
-		string_ref( const char* str_ ) : fromLiteral( false ) {
-			str = duplicate_str( str_ );
-		}
-		string_ref( literal_tag_t, const char* str_ ) : fromLiteral( true ), str( str_ ) {}
-		string_ref( const string_ref& other ) {
-			if ( other.fromLiteral )
-				str = other.str;
-			else
-				str = duplicate_str(other.str);
-			fromLiteral = other.fromLiteral;
-		}
-		string_ref operator = ( const string_ref& other ) {
-			if ( fromLiteral )
-				str = other.str;
-			else
-				str = duplicate_str(other.str);
-			fromLiteral = other.fromLiteral;
-			return *this;
-		}
-		string_ref( string_ref&& other ) {
-			str = other.str;
-			other.str = nullptr;
-			fromLiteral = other.fromLiteral;
-			other.fromLiteral = false;
-		}
-		string_ref operator = ( string_ref&& other ) {
-			str = other.str;
-			other.str = nullptr;
-			fromLiteral = other.fromLiteral;
-			other.fromLiteral = false;
-			return *this;
-		}
-		~string_ref() {
-			if ( !fromLiteral && str )
-				free( const_cast<char*>(str) );
-		}
-		const char* c_str() const {
-			return str ? str : "";
-		}
-		bool empty() const { return str == nullptr || str[0] == 0; }
-	};
 
 	class error;
 

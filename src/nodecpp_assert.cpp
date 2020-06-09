@@ -27,6 +27,7 @@
 
 #include "../include/nodecpp_assert.h"
 #include "log.h"
+#include "error.h"
 
 namespace nodecpp::assert {
 	void onAssertionFailed( const char* file, int line, const char* condString, const char* why, bool shouldThrow)

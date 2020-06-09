@@ -30,7 +30,6 @@
 
 #include "platform_base.h"
 #include <fmt/format.h>
-#include "error.h"
 
 
 namespace nodecpp::assert { // pedantic regular critical

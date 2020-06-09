@@ -31,9 +31,11 @@
 #include "platform_base.h"
 #include "foundation_module.h"
 #include "nodecpp_assert.h"
-#include "safe_memory_error.h"
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
+
+void throwZeroPointerAccess();
+void throwLatelyDetectedZombieAccess();
 
 ///////  ptr_with_zombie_property
 
@@ -408,14 +410,14 @@ public:
 template< int dataminsize, int nflags >
 void generic_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
 	if ( isZombie )
-		throw nodecpp::error::lately_detected_zombie_pointer_access; 
+		throwLatelyDetectedZombieAccess(); 
 	else
-		throw nodecpp::error::zero_pointer_access; 
+		throwZeroPointerAccess(); 
 }
 
 template< int dataminsize, int nflags >
 void generic_allocated_ptr_and_ptr_and_data_and_flags_< dataminsize, nflags >::throwZombieAccess() const {
-	throw nodecpp::error::zero_pointer_access; 
+	throwZeroPointerAccess(); 
 }
 
 #ifdef NODECPP_X64
@@ -582,15 +584,15 @@ public:
 
 template< int dataminsize, int nflags >
 void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwZombieAccess() const {
-	throw nodecpp::error::zero_pointer_access; 
+	throwZeroPointerAccess(); 
 }
 
 template< int dataminsize, int nflags >
 void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< dataminsize, nflags >::throwNullptrOrZombieAccess() const {
 	if ( is_zombie() )
-		throw nodecpp::error::lately_detected_zombie_pointer_access; 
+		throwLatelyDetectedZombieAccess(); 
 	else
-		throw nodecpp::error::zero_pointer_access;
+		throwZeroPointerAccess();
 }
 
 #else

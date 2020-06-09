@@ -25,48 +25,77 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifndef NODECPP_STRING_REF_H
+#define NODECPP_STRING_REF_H 
 
-#include "../include/foundation.h"
-#include "../include/tagged_ptr_impl.h"
-#include "../include/stack_info.h"
-#include "../include/safe_memory_error.h"
+#include "platform_base.h"
 
-namespace nodecpp::platform::ptrwithdatastructsdefs { 
+// quick workaround TODO: address properly ASAP!
+#if defined NODECPP_WINDOWS
+#include <string.h>
+#define strdup _strdup 
+#else
+#include <cstdlib>
+#include <string.h>
+#endif
 
-///////  ptr_with_zombie_property
+namespace nodecpp::error {
 
-void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
-	if (((uintptr_t)ptr) == zombie_indicator)
-		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
-	else
-		throw ::nodecpp::error::zero_pointer_access; 
-}
-
-void optimized_ptr_with_zombie_property_::throwZombieAccess() const {
-	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
-}
-
-void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
-	if (isZombie)
-		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
-	else
+	class string_ref
 	{
-		NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ptr == nullptr );
-		throw ::nodecpp::error::zero_pointer_access; 
-	}
-}
+		bool fromLiteral;
+		const char* str;
+		char* duplicate_str( const char* str_ ) { return strdup( str_ ); }
 
-void generic_ptr_with_zombie_property_::throwZombieAccess() const {
-	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isZombie );
-	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
-}
+	public:
+		class literal_tag_t {};
 
-void throwZeroPointerAccess() {
-	throw ::nodecpp::error::zero_pointer_access; 
-}
+	public:
+		string_ref( const char* str_ ) : fromLiteral( false ) {
+			str = duplicate_str( str_ );
+		}
+		string_ref( literal_tag_t, const char* str_ ) : fromLiteral( true ), str( str_ ) {}
+		string_ref( const string_ref& other ) {
+			if ( other.fromLiteral )
+				str = other.str;
+			else
+				str = duplicate_str(other.str);
+			fromLiteral = other.fromLiteral;
+		}
+		string_ref operator = ( const string_ref& other ) {
+			if ( fromLiteral )
+				str = other.str;
+			else
+				str = duplicate_str(other.str);
+			fromLiteral = other.fromLiteral;
+			return *this;
+		}
+		string_ref( string_ref&& other ) {
+			str = other.str;
+			other.str = nullptr;
+			fromLiteral = other.fromLiteral;
+			other.fromLiteral = false;
+		}
+		string_ref operator = ( string_ref&& other ) {
+			str = other.str;
+			other.str = nullptr;
+			fromLiteral = other.fromLiteral;
+			other.fromLiteral = false;
+			return *this;
+		}
+		~string_ref() {
+			if ( !fromLiteral && str )
+				free( const_cast<char*>(str) );
+		}
+		const char* c_str() const {
+			return str ? str : "";
+		}
+		bool empty() const { return str == nullptr || str[0] == 0; }
+	};
 
-void throwLatelyDetectedZombieAccess() {
-	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
-}
 
-} // nodecpp::platform::ptrwithdatastructsdefs
+
+} // namespace nodecpp::error
+
+
+#endif // NODECPP_STRING_REF_H

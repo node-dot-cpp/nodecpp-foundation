@@ -30,7 +30,7 @@
 
 #include "platform_base.h"
 #include "foundation.h"
-#include "error.h"
+#include "string_ref.h"
 #include "log.h"
 #include <fmt/format.h>
 

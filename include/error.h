@@ -31,6 +31,9 @@
 #include "platform_base.h"
 #include "log.h"
 #include "string_ref.h"
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#include "stack_info.h"
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 
 namespace nodecpp::error {
 
@@ -38,9 +41,18 @@ namespace nodecpp::error {
 
 	class error_value
 	{
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+		friend class error_domain;
+		::nodecpp::StackInfo stackInfo;
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 	public:
-		error_value() {}
-		virtual ~error_value() {}
+		error_value() {
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+			stackInfo.init();
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+		}
+		virtual ~error_value() {
+		}
 	};
 
 	class error_domain
@@ -49,8 +61,29 @@ namespace nodecpp::error {
 		constexpr error_domain() {}
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "unknown domain" ); }
 		virtual string_ref value_to_message(error_value* value) const { return string_ref( string_ref::literal_tag_t(), ""); }
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "Error" ); }
 		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "Error" ); }
+#else
+		virtual void log(error_value* value, log::LogLevel l ) const { 
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				log::default_log::log( l, "An error happened. Stack info:" ); 
+				value->stackInfo.log( l );
+			}
+			else
+				log::default_log::log( l, "Error" ); 
+		}
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { 
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				targetLog.log( l, "An error happened. Stack info:" ); 
+				value->stackInfo.log( targetLog, l );
+			}
+			else
+				log::default_log::log( l, "Error" ); 
+		}
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual ~error_domain() {}
 		virtual error_value* clone_value(error_value* value) const { return value; }
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { return false; }

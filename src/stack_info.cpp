@@ -36,7 +36,7 @@
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
-#define LINUX_APPROACH 2
+#define LINUX_APPROACH 0
 #if LINUX_APPROACH == 1
 #include <execinfo.h>
 #elif LINUX_APPROACH == 2

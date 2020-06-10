@@ -28,6 +28,8 @@
 #ifndef NODECPP_STACK_INFO_H
 #define NODECPP_STACK_INFO_H
 
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+
 #include "platform_base.h"
 #include "foundation.h"
 #include "string_ref.h"
@@ -80,5 +82,7 @@ namespace nodecpp {
 	};
 
 } //namespace nodecpp
+
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 
 #endif // NODECPP_STACK_INFO_H

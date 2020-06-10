@@ -25,6 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+
 #include "stack_info.h"
 #include "log.h"
 
@@ -36,7 +38,7 @@
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
-#define LINUX_APPROACH 0
+#define LINUX_APPROACH 2
 #if LINUX_APPROACH == 1
 #include <execinfo.h>
 #elif LINUX_APPROACH == 2
@@ -163,3 +165,5 @@ namespace nodecpp {
 	} // namespace impl
 
 } //namespace nodecpp
+
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO

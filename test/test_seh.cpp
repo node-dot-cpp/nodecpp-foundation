@@ -56,9 +56,11 @@ public:
 void badCallInner_Nullptr()
 {
 	volatile int * ptr = nullptr;
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 	nodecpp::log::default_log::info("about to attempt to dereference a null pointer. Calling at " );
 	nodecpp::StackInfo si(true);
 	si.log( nodecpp::log::LogLevel::fatal );
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
     *ptr = 0;
 }
 

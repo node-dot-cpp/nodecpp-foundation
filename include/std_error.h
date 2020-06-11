@@ -65,15 +65,35 @@ namespace nodecpp::error {
 		}
 	};
 
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO // Note: in this case the Value is a bit more than just an error code
+	class std_error_value : public error_value
+	{
+		friend class std_error_domain;
+		errc errorCode;
+	public:
+		std_error_value( errc code ) : errorCode( code ) {}
+		std_error_value( const std_error_value& other ) = default;
+		std_error_value& operator = ( const std_error_value& other ) = default;
+		std_error_value& operator = ( std_error_value&& other ) = default;
+		std_error_value( std_error_value&& other ) = default;
+		virtual ~std_error_value() {}
+	};
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+
 	class std_error_domain : public error_domain
 	{
 	protected:
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
+#else
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(((std_error_value*)(value))->errorCode); } // for inter-domain comparison purposes only
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 
 	public:
 		constexpr std_error_domain() {}
-		using Valuetype = errc;
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+		using Valuetype = errc;
 		virtual string_ref value_to_message(error_value* value) const { 
 			constexpr generic_code_messages msgs;
 			return string_ref(msgs[(int)(uintptr_t)(value)]);
@@ -90,6 +110,46 @@ namespace nodecpp::error {
 			return value;
 		}
 		virtual void destroy_value(error_value* value) const {}
+#else
+		using Valuetype = std_error_value;
+		virtual string_ref value_to_message(error_value* value) const { 
+			constexpr generic_code_messages msgs;
+			return string_ref(msgs[(int)((std_error_value*)(value))->errorCode]);
+		}
+		virtual void log(error_value* value, log::LogLevel l ) const { 
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				log::default_log::log( l, "{} happened at", value_to_message( value ).c_str() );
+				value->stackInfo.log( l );
+			}
+			else
+				log::default_log::log( l, "{}", value_to_message( value ).c_str() );
+		}
+		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const {
+			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
+			{
+				targetLog.log( l, "{} happened at", value_to_message( value ).c_str() );
+				value->stackInfo.log( targetLog, l );
+			}
+			else
+				targetLog.log( l, "{}", value_to_message( value ).c_str() );
+		}
+		error_value* create_value( Valuetype code ) const {
+			return new std_error_value(code);
+		}
+		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
+			return (reinterpret_cast<const std_error_value*>(value1))->errorCode == (reinterpret_cast<const std_error_value*>(value2))->errorCode;
+		}
+		virtual error_value* clone_value(error_value* value) const {
+			return new std_error_value(*reinterpret_cast<const std_error_value*>(value));
+		}
+		virtual void destroy_value(error_value* value) const {
+			if ( value ) {
+				std_error_value* myData = reinterpret_cast<std_error_value*>(value);
+				delete myData;
+			}
+		}
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
 			if ( src.domain() == this )
 				return is_same_error_code( my_value, src.value() );

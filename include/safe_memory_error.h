@@ -66,24 +66,59 @@ namespace nodecpp::error {
 		}
 	};
 
+#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO // Note: in this case the Value is a bit more than just an error code
+	class memory_error_value : public error_value
+	{
+		friend class memory_error_domain;
+		merrc errorCode;
+	public:
+		memory_error_value( merrc code ) : errorCode( code ) {}
+		memory_error_value( const memory_error_value& other ) = default;
+		memory_error_value& operator = ( const memory_error_value& other ) = default;
+		memory_error_value& operator = ( memory_error_value&& other ) = default;
+		memory_error_value( memory_error_value&& other ) = default;
+		virtual ~memory_error_value() {}
+	};
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+
+
 
 	class memory_error_domain : public error_domain
 	{
 	protected:
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
+#else
+		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(((memory_error_value*)(value))->errorCode); } // for inter-domain comparison purposes only
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 
 	public:
 		memory_error_domain() {}
+		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "memory domain" ); }
+#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		using Valuetype = merrc;
-		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "sytem domain" ); }
 		virtual string_ref value_to_message(error_value* value) const { 
 			constexpr memory_code_messages msgs;
 			return string_ref(msgs[(int)(uintptr_t)(value)]);
 		}
-#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		virtual void log(error_value* value, log::LogLevel l ) const { log::default_log::log( l, "{}", value_to_message( value ).c_str() ); }
 		virtual void log(error_value* value, log::Log& targetLog, log::LogLevel l ) const { targetLog.log( l, "{}", value_to_message( value ).c_str() ); }
+		error_value* create_value( Valuetype code ) const {
+			return reinterpret_cast<error_value*>(code);
+		}
+		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
+			return reinterpret_cast<uintptr_t>(value1) == reinterpret_cast<uintptr_t>(value2);
+		}
+		virtual error_value* clone_value(error_value* value) const {
+			return value;
+		}
+		virtual void destroy_value(error_value* value) const {}
 #else
+		using Valuetype = memory_error_value;
+		virtual string_ref value_to_message(error_value* value) const { 
+			constexpr memory_code_messages msgs;
+			return string_ref(msgs[(int)((memory_error_value*)(value))->errorCode]);
+		}
 		virtual void log(error_value* value, log::LogLevel l ) const { 
 			if ( ::nodecpp::impl::isDataStackInfo( value->stackInfo ) )
 			{
@@ -102,17 +137,23 @@ namespace nodecpp::error {
 			else
 				targetLog.log( l, "{}", value_to_message( value ).c_str() );
 		}
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
 		error_value* create_value( Valuetype code ) const {
-			return reinterpret_cast<error_value*>(code);
+			return new memory_error_value(code);
 		}
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
-			return reinterpret_cast<uintptr_t>(value1) == reinterpret_cast<uintptr_t>(value2);
+			return (reinterpret_cast<const memory_error_value*>(value1))->errorCode == (reinterpret_cast<const memory_error_value*>(value2))->errorCode;
 		}
 		virtual error_value* clone_value(error_value* value) const {
-			return value;
+			return new memory_error_value(*reinterpret_cast<const memory_error_value*>(value));
 		}
-		virtual void destroy_value(error_value* value) const {}
+		virtual void destroy_value(error_value* value) const {
+			if ( value ) {
+				memory_error_value* myData = reinterpret_cast<memory_error_value*>(value);
+				delete myData;
+			}
+		}
+#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
 			if ( src.domain() == this )
 				return is_same_error_code( my_value, src.value() );

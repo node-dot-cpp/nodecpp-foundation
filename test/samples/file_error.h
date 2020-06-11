@@ -49,12 +49,12 @@ namespace nodecpp::error {
 	public:
 		file_error_value( FILE_EXCEPTION code, const char* fileName_ ) : errorCode( code ), fileName( fileName_ ) {}
 		file_error_value( const file_error_value& other ) = default;
-		file_error_value operator = ( const file_error_value& other ) {
+		file_error_value& operator = ( const file_error_value& other ) {
 			errorCode = other.errorCode;
 			fileName = other.fileName;
 			return *this;
 		}
-		file_error_value operator = ( file_error_value&& other ) {
+		file_error_value& operator = ( file_error_value&& other ) {
 			errorCode = other.errorCode;
 			fileName = std::move( other.fileName );
 			return *this;

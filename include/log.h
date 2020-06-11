@@ -220,17 +220,19 @@ namespace nodecpp::log {
 				( logging_impl::instanceId != logging_impl::invalidInstanceID ?
 					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[:{}][{}] {}\n", logging_impl::instanceId, LogLevelNames[(size_t)severity], msg ) :
 					::fmt::format_to_n( msgFormatted + wrtPos, LogBufferBaseData::maxMessageSize - 1 - wrtPos, "[:][{}] {}\n", LogLevelNames[(size_t)severity], msg ) );
-			if ( formatRet.size + wrtPos >= LogBufferBaseData::maxMessageSize )
+			wrtPos += formatRet.size;
+			if ( wrtPos >= LogBufferBaseData::maxMessageSize )
 			{
 				msgFormatted[LogBufferBaseData::maxMessageSize-5] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-4] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-3] = '.';
 				msgFormatted[LogBufferBaseData::maxMessageSize-2] = '\n';
 				msgFormatted[LogBufferBaseData::maxMessageSize-1] = 0;
+				wrtPos = LogBufferBaseData::maxMessageSize-1;
 			}
 			else
-				msgFormatted[formatRet.size + wrtPos] = 0;
-			addMsg( msgFormatted, formatRet.size + wrtPos, severity );
+				msgFormatted[wrtPos] = 0;
+			addMsg( msgFormatted, wrtPos, severity );
 		}
 
 	public:

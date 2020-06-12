@@ -67,7 +67,7 @@ namespace nodecpp {
 		}
 
 	public:
-		StackInfo() : whereTaken( "" ) {}
+		StackInfo() : whereTaken( error::string_ref::literal_tag_t(), "" ) {}
 		StackInfo( bool doInit ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
 		StackInfo( bool doInit, const char* stripPoint ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_( stripPoint ); }
 		StackInfo( const StackInfo& other ) = default;

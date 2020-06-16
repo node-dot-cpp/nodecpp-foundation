@@ -48,7 +48,10 @@ namespace nodecpp::error {
 		char* duplicate_str( const char* str_ ) { return strdup( str_ ); }
 		void release_str() {
 			if ( !fromLiteral && str )
+			{
 				free( const_cast<char*>(str) );
+				str = nullptr;
+			}
 		}
 
 	public:

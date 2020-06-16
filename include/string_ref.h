@@ -58,6 +58,12 @@ namespace nodecpp::error {
 		string_ref( const char* str_ ) : fromLiteral( false ) {
 			str = duplicate_str( str_ );
 		}
+		string_ref& operator = ( const char* str_ )  {
+			release_str();
+			str = duplicate_str( str_ );
+			fromLiteral = false;
+			return *this;
+		}
 		string_ref( literal_tag_t, const char* str_ ) : fromLiteral( true ), str( str_ ) {}
 		string_ref( const string_ref& other ) {
 			if ( other.fromLiteral )
@@ -66,7 +72,7 @@ namespace nodecpp::error {
 				str = duplicate_str(other.str);
 			fromLiteral = other.fromLiteral;
 		}
-		string_ref operator = ( const string_ref& other ) {
+		string_ref& operator = ( const string_ref& other ) {
 			release_str();
 			if ( fromLiteral )
 				str = other.str;
@@ -81,7 +87,7 @@ namespace nodecpp::error {
 			fromLiteral = other.fromLiteral;
 			other.fromLiteral = false;
 		}
-		string_ref operator = ( string_ref&& other ) {
+		string_ref& operator = ( string_ref&& other ) {
 			release_str();
 			str = other.str;
 			other.str = nullptr;

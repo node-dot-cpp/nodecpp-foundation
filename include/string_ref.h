@@ -74,7 +74,7 @@ namespace nodecpp::error {
 		}
 		string_ref& operator = ( const string_ref& other ) {
 			release_str();
-			if ( fromLiteral )
+			if ( other.fromLiteral )
 				str = other.str;
 			else
 				str = duplicate_str(other.str);

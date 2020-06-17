@@ -39,7 +39,7 @@ target_include_directories(foundation PUBLIC include)
 
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_definitions(foundation PRIVATE NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO)
+	target_compile_definitions(foundation PUBLIC NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO)
 	target_sources(foundation PRIVATE src/stack_info.cpp)
 endif()
 
@@ -80,6 +80,6 @@ add_executable(test_foundation
 
 target_link_libraries(test_foundation foundation)
 
-if (NOT UNIX)
-  add_test(Run_test_foundation test_foundation)
-endif()
+#if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+#  add_test(Run_test_foundation test_foundation)
+#endif()

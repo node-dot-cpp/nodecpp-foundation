@@ -48,6 +48,8 @@ add_subdirectory(3rdparty/fmt)
 target_link_libraries(foundation fmt::fmt)
 if (UNIX)
 	target_link_libraries(foundation pthread)
+	target_link_libraries(foundation unwind)
+	target_link_options(foundation INTERFACE -rdynamic)
 endif()
 
 

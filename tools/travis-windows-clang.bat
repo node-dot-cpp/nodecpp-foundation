@@ -10,7 +10,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliar
 set CC=clang-cl.exe
 set CXX=clang-cl.exe
 
-cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja ..
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
 cmake --build .

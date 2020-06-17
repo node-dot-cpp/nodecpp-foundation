@@ -1,29 +1,22 @@
 language: cpp
 os: linux
 dist: bionic
-script:
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Release ..
-  - cmake --build .
-  - ctest
+addons:
+  apt:
+    packages: libunwind-dev
+script: ./tools/travis-unix.sh
 jobs:
   include:
     - name: Linux GCC
       compiler: gcc
     - name: Windows MSVC
       os: windows
-      script:
-        - mkdir build
-        - cd build
-        - cmake -G "Visual Studio 15 2017 Win64" ..
-        - cmake --build . --config Release
-        - ctest -C Release
+      script: ./tools/travis-windows-msvc.bat
     - name: Linux Clang
       compiler: clang
     - name: Windows Clang
       os: windows
-      install: choco install ninja
+      before_install: choco install ninja
       script: ./tools/travis-windows-clang.bat
     - name: macOS Clang
       os: osx

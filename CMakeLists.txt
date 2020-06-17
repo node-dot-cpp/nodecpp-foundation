@@ -35,9 +35,14 @@ add_library(foundation STATIC
 #-------------------------------------------------------------------------------------------
 # Export Include Directories
 #-------------------------------------------------------------------------------------------
-target_include_directories(foundation
-  PUBLIC include
-  )
+target_include_directories(foundation PUBLIC include)
+
+
+if (UNIX)
+	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
+#	target_link_options(foundation INTERFACE -rdynamic)
+	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
+endif()
 
 
 #-------------------------------------------------------------------------------------------
@@ -46,12 +51,12 @@ target_include_directories(foundation
 add_subdirectory(3rdparty/fmt)
 
 target_link_libraries(foundation fmt::fmt)
+
 if (UNIX)
 	target_link_libraries(foundation pthread)
 	target_link_libraries(foundation unwind)
-#	target_link_options(foundation INTERFACE -rdynamic)
-	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 endif()
+
 
 
 #-------------------------------------------------------------------------------------------

@@ -82,6 +82,6 @@ add_executable(test_foundation
 
 target_link_libraries(test_foundation foundation)
 
-#if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-add_test(Run_test_foundation test_foundation)
-#endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	add_test(Run_test_foundation test_foundation)
+endif()

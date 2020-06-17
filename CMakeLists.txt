@@ -59,7 +59,9 @@ target_link_libraries(foundation fmt::fmt)
 
 if (UNIX)
 	target_link_libraries(foundation pthread)
-	target_link_libraries(foundation unwind)
+	if(NOT APPLE)
+		target_link_libraries(foundation unwind)
+	endif()
 endif()
 
 

@@ -25,7 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #include "stack_info.h"
 #include "log.h"
@@ -37,15 +37,17 @@
 #include <Windows.h>
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
+
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
-#define LINUX_APPROACH 2
-#if LINUX_APPROACH == 1
+
+#ifdef NODECPP_LINUX_NO_LIBUNWIND
 #include <execinfo.h>
-#elif LINUX_APPROACH == 2
+#else
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 #include <cxxabi.h>
-#endif // LINUX_APPROACH
+#endif // NODECPP_LINUX_NO_LIBUNWIND
+
 #else
 #error not (yet) supported
 #endif
@@ -94,7 +96,7 @@ namespace nodecpp {
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
-#if LINUX_APPROACH == 1
+#ifdef NODECPP_LINUX_NO_LIBUNWIND
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
@@ -112,7 +114,7 @@ namespace nodecpp {
 		}
 		else
 			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
-#elif LINUX_APPROACH == 2
+#else
 		unw_cursor_t cursor;
 		unw_context_t context;
 
@@ -149,7 +151,7 @@ namespace nodecpp {
 		if ( stripPoint != nullptr )
 			strip( out, stripPoint );
 		whereTaken = out.c_str();
-#endif // LINUX_APPROACH
+#endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
 #error not (yet) supported
@@ -166,4 +168,4 @@ namespace nodecpp {
 
 } //namespace nodecpp
 
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS

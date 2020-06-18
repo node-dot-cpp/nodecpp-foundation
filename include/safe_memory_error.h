@@ -66,7 +66,7 @@ namespace nodecpp::error {
 		}
 	};
 
-#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO // Note: in this case the Value is a bit more than just an error code
+#ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS // Note: in this case the Value is a bit more than just an error code
 	class memory_error_value : public error_value
 	{
 		friend class memory_error_domain;
@@ -79,23 +79,23 @@ namespace nodecpp::error {
 		memory_error_value( memory_error_value&& other ) = default;
 		virtual ~memory_error_value() {}
 	};
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 
 
 	class memory_error_domain : public error_domain
 	{
 	protected:
-#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#ifdef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(value); } // for inter-domain comparison purposes only
 #else
 		virtual uintptr_t _nodecpp_get_error_code(const error_value* value) const { return (uintptr_t)(((memory_error_value*)(value))->errorCode); } // for inter-domain comparison purposes only
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 	public:
 		memory_error_domain() {}
 		virtual string_ref name() const { return string_ref( string_ref::literal_tag_t(), "memory domain" ); }
-#ifndef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#ifdef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 		using Valuetype = merrc;
 		virtual string_ref value_to_message(error_value* value) const { 
 			constexpr memory_code_messages msgs;
@@ -152,7 +152,7 @@ namespace nodecpp::error {
 				delete myData;
 			}
 		}
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 		virtual bool is_equivalent( const error& src, const error_value* my_value ) const {
 			if ( src.domain() == this )

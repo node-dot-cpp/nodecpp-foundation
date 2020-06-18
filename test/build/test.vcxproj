@@ -213,7 +213,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NODECPP_NO_STACK_INFO_IN_EXCEPTIONS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -247,7 +247,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NODECPP_NO_STACK_INFO_IN_EXCEPTIONS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -287,7 +287,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NODECPP_NO_STACK_INFO_IN_EXCEPTIONS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -329,7 +329,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_CUSTOM_LOG_PROCESSING="../test/my_logger.h";_CRT_SECURE_NO_WARNINGS;NODECPP_NO_STACK_INFO_IN_EXCEPTIONS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>

@@ -28,7 +28,7 @@
 #ifndef NODECPP_STACK_INFO_H
 #define NODECPP_STACK_INFO_H
 
-#ifdef NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #include "platform_base.h"
 #include "foundation.h"
@@ -83,6 +83,6 @@ namespace nodecpp {
 
 } //namespace nodecpp
 
-#endif // NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO
+#endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #endif // NODECPP_STACK_INFO_H

@@ -14,13 +14,11 @@ jobs:
       compiler: gcc
     - name: Windows MSVC
       os: windows
-      compiler: cl
       script: ./tools/travis-windows-msvc.bat
     - name: Linux Clang
       compiler: clang
     - name: Windows Clang
       os: windows
-      compiler: clang-cl
       before_install: choco install ninja
       script: ./tools/travis-windows-clang.bat
     - name: macOS Clang

@@ -2,8 +2,14 @@
 # Copyright (c) 2020, OLogN Technologies AG
 #-------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.0)
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0077 NEW)
+
+if(POLICY CMP0054)
+	cmake_policy(SET CMP0054 NEW)
+endif()
+
+if(POLICY CMP0077)
+	cmake_policy(SET CMP0077 NEW)
+endif()
 
 
 project(libfoundation CXX)
@@ -47,7 +53,7 @@ if (UNIX)
 	if(APPLE)
 		target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 	endif()
-	
+
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
 #	target_link_options(foundation INTERFACE -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)

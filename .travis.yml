@@ -4,6 +4,9 @@ dist: bionic
 addons:
   apt:
     packages: libunwind-dev
+notifications:
+  email:
+    if: branch = master OR branch = develop
 script: ./tools/travis-unix.sh
 jobs:
   include:

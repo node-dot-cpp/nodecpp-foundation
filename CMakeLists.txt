@@ -2,6 +2,10 @@
 # Copyright (c) 2020, OLogN Technologies AG
 #-------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.0)
+cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0077 NEW)
+
+
 project(libfoundation CXX)
 
 include(CTest)
@@ -27,7 +31,7 @@ add_library(foundation STATIC
 	src/nodecpp_assert.cpp
 	src/page_allocator.cpp
 	src/safe_memory_error.cpp
-#	src/stack_info.cpp
+	src/stack_info.cpp
 	src/std_error.cpp
 	src/tagged_ptr_impl.cpp
 	)
@@ -38,12 +42,12 @@ add_library(foundation STATIC
 target_include_directories(foundation PUBLIC include)
 
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_definitions(foundation PUBLIC NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO)
-	target_sources(foundation PRIVATE src/stack_info.cpp)
-endif()
 
 if (UNIX)
+	if(APPLE)
+		target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+	endif()
+	
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
 #	target_link_options(foundation INTERFACE -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)

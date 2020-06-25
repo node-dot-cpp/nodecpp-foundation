@@ -97,12 +97,24 @@ printf( "Path of my EXE: %s\n\n", path2thisExe );
 
 #include <dlfcn.h>
 
-static uintptr_t addr2offset( void* fnAddr ) {
+struct SInfo
+{
+	const char* modulePath;
+	uintptr_t offsetInModule;
+};
+
+static bool addrToModuleAndOffset( void* fnAddr, SInfo& si ) {
 	Dl_info info;
 	int ret = dladdr(fnAddr, &info); // see https://linux.die.net/man/3/dlopen for details
 	if ( ret == 0 )
-		return 0;
-	return (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
+	{
+		si.modulePath = nullptr;
+		si.offsetInModule = 0;
+		return false;
+	}
+	si.modulePath = info.dli_fname;
+	si.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
+	return true;
 }
 
 using namespace llvm;
@@ -208,9 +220,14 @@ namespace nodecpp {
 			for (int i = 0; i < numberOfFrames; i++)
 			{
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				out += fmt::format( "\tat {}", btsymbols[i] );
-//				addFileLineInfo( path2me(), (uintptr_t)(stack[i]), out, true );
-				addFileLineInfo( path2me(), addr2offset(stack[i]), out, true );
+				SInfo si;
+				if ( addrToModuleAndOffset( stack[i], si ) )
+				{
+					out += fmt::format( "\tat {}", btsymbols[i] );
+					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+				}
+				else
+					out += fmt::format( "\tat {}\n", btsymbols[i] );
 #else
 				out += fmt::format( "\tat {}\n", btsymbols[i] );
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
@@ -251,9 +268,14 @@ namespace nodecpp {
 					nameptr = demangled;
 				}
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				out += fmt::format( " ({}+0x{:x})", nameptr, offset );
-//				addFileLineInfo( path2me(), offset, out, false );
-				addFileLineInfo( path2me(), addr2offset(pc + offset), out, true );
+				SInfo si;
+				if ( addrToModuleAndOffset( pc + offset, si ) )
+				{
+					out += fmt::format( " ({}+0x{:x})", nameptr, offset );
+					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+				}
+				else
+					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
 #else
 				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE

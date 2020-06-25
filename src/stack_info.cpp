@@ -124,7 +124,7 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::stri
 
 namespace nodecpp {
 
-	void StackInfo::init_( const char* stripPoint )
+	void StackInfo::preinit()
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
@@ -132,6 +132,29 @@ namespace nodecpp {
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
+		stackPointers.init( stack, numberOfFrames );
+		
+#elif defined NODECPP_CLANG || defined NODECPP_GCC
+
+#ifdef NODECPP_LINUX_NO_LIBUNWIND
+		void *stack[TRACE_MAX_STACK_FRAMES];
+		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
+		stackPointers.init( stack, numberOfFrames );
+#endif // NODECPP_LINUX_NO_LIBUNWIND
+
+#else
+#error not (yet) supported
+#endif // platform/compiler
+		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
+	}
+
+	void StackInfo::postinit()
+	{
+#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
+		const void** stack = stackPointers.get();
+		size_t numberOfFrames = stackPointers.size();
+		HANDLE process = GetCurrentProcess();
 		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
 		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
 		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -157,8 +180,84 @@ namespace nodecpp {
 			else
 				out += fmt::format( "\tat <...>\n" );
 		}
-		if ( stripPoint != nullptr )
-			strip( out, stripPoint );
+		if ( !stripPoint.empty() )
+			strip( out, stripPoint.c_str() );
+		whereTaken = out.c_str();
+		
+#elif defined NODECPP_CLANG || defined NODECPP_GCC
+
+#ifdef NODECPP_LINUX_NO_LIBUNWIND
+		const void** stack = stackPointers.get();
+		size_t numberOfFrames = stackPointers.size();
+		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
+		if ( btsymbols != nullptr )
+		{
+			std::string out;
+			for (int i = 0; i < numberOfFrames; i++)
+			{
+#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+				SInfo si;
+				if ( addrToModuleAndOffset( stack[i], si ) )
+				{
+					out += fmt::format( "\tat {}", btsymbols[i] );
+					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+				}
+				else
+					out += fmt::format( "\tat {}\n", btsymbols[i] );
+#else
+				out += fmt::format( "\tat {}\n", btsymbols[i] );
+#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+			}
+			free( btsymbols );
+			if ( stripPoint != nullptr )
+				strip( out, stripPoint );
+			whereTaken = out.c_str();
+		}
+		else
+			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+#endif // NODECPP_LINUX_NO_LIBUNWIND
+
+#else
+#error not (yet) supported
+#endif // platform/compiler
+	}
+
+	void StackInfo::init_()
+	{
+#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
+		void *stack[TRACE_MAX_STACK_FRAMES];
+		HANDLE process = GetCurrentProcess();
+		SymInitialize(process, NULL, TRUE);
+		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
+		stackPointers.init( stack, numberOfFrames );
+		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
+		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		DWORD displacement = 0;
+		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
+		memset(line, 0, sizeof(IMAGEHLP_LINE64));
+		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+		std::string out;
+		for (int i = 0; i < numberOfFrames; i++)
+		{
+			DWORD64 address = (DWORD64)(stack[i]);
+			bool addrOK = false;
+#ifndef _DEBUG
+			addrOK = SymFromAddr(process, address, NULL, symbol);
+#endif
+			bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, line);
+			if ( addrOK && fileLineOK )
+				out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line->FileName, line->LineNumber );
+			else if ( fileLineOK )
+				out += fmt::format( "\tat {}, line {}\n", line->FileName, line->LineNumber );
+			else if ( addrOK )
+				out += fmt::format( "\tat {}\n", symbol->Name );
+			else
+				out += fmt::format( "\tat <...>\n" );
+		}
+		if ( !stripPoint.empty() )
+			strip( out, stripPoint.c_str() );
 		whereTaken = out.c_str();
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
@@ -166,6 +265,7 @@ namespace nodecpp {
 #ifdef NODECPP_LINUX_NO_LIBUNWIND
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
+		stackPointers.init( stack, numberOfFrames );
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
 		if ( btsymbols != nullptr )
 		{

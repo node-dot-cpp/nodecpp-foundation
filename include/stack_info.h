@@ -53,9 +53,30 @@ namespace nodecpp {
 		friend ::nodecpp::logging_impl::LoggingTimeStamp impl::whenTakenStackInfo( const StackInfo& info );
 		friend bool impl::isDataStackInfo( const StackInfo& info );
 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+		class StackPointers {
+			void** ptrs = nullptr;
+			size_t cnt = 0;
+		public:
+			StackPointers() {};
+			StackPointers( const StackPointers& other ) { init( other.ptrs, other.cnt ); }
+			StackPointers& operator = ( const StackPointers& other ) { init( other.ptrs, other.cnt ); return *this; }
+			StackPointers( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; }
+			StackPointers& operator = ( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; return *this; }
+			~StackPointers() { if (ptrs ) delete [] ptrs; }
+			void init( void** ptrs_, size_t cnt_ ) { if (ptrs ) delete [] ptrs; cnt = cnt_; ptrs = new void* [cnt]; memcpy( ptrs, ptrs_, sizeof(void*) * cnt ); }
+			size_t size() const { return cnt; }
+			const void** get() const { return ptrs; }
+		};
+		StackPointers stackPointers;
+		void preinit();
+		void postinit();
+#else
+#endif
+		error::string_ref stripPoint;
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
-		void init_( const char* stripPoint = nullptr );
+		void init_();
 		void strip( std::string& s, const char* stripPoint ){
 			size_t pos = s.find( stripPoint, 0 );
 			if ( pos != std::string::npos )
@@ -68,15 +89,16 @@ namespace nodecpp {
 
 	public:
 		StackInfo() : whereTaken( error::string_ref::literal_tag_t(), "" ) {}
-		StackInfo( bool doInit ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
-		StackInfo( bool doInit, const char* stripPoint ) : whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_( stripPoint ); }
+		StackInfo( bool doInit ) : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
+		StackInfo( bool doInit, error::string_ref&& stripPoint_ ) : stripPoint( std::move( stripPoint_ ) ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
 		StackInfo( const StackInfo& other ) = default;
 		StackInfo& operator = ( const StackInfo& other ) = default;
 		StackInfo( StackInfo&& other ) = default;
 		StackInfo& operator = ( StackInfo&& other ) = default;
 		virtual ~StackInfo() {}
-		void init( const char* stripPoint = nullptr ) { init_( stripPoint ); }
-		void clear() { whereTaken = nullptr; }
+		void init() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); init_(); }
+		void init( error::string_ref&& stripPoint_ ) { stripPoint = std::move( stripPoint_ ); init_(); }
+		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }
 		void log( log::LogLevel l ) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
 		void log( log::Log& targetLog, log::LogLevel l ) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
 	};

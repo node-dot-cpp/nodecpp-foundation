@@ -57,40 +57,6 @@
 #include <stdio.h>
 #include <string>
 
-static char path2thisExe[0x400];
-static bool path2thisExeLoaded = false;
-static const char* path2me() {
-	if ( path2thisExeLoaded )
-		return path2thisExe;
-
-    int ret;
-
-    ret = readlink("/proc/self/exe", path2thisExe, sizeof(path2thisExe)-1);
-    if(ret ==-1)
-		return "";
-    path2thisExe[ret] = 0;
-	path2thisExeLoaded = true;
-printf( "Path of my EXE: %s\n\n", path2thisExe );
-    return path2thisExe;
-}
-
-/*static uintptr_t baseAddrOfthisExe = 0;
-static uintptr_t baseAddr()
-{
-	if ( baseAddrOfthisExe )
-		return baseAddrOfthisExe;
-
-    int ret;
-
-    ret = readlink("/proc/self/exe", path2thisExe, sizeof(path2thisExe)-1);
-    if(ret ==-1)
-		return "";
-    path2thisExe[ret] = 0;
-	path2thisExeLoaded = true;
-printf( "Path of my EXE: %s\n\n", path2thisExe );
-    return path2thisExe;
-}*/
-
 #ifndef _GNU_SOURCE
 #error _GNU_SOURCE must be defined to proceed
 #endif
@@ -124,7 +90,6 @@ template<typename T>
 static bool error(Expected<T> &ResOrErr) {
 	if (ResOrErr)
 		return false;
-//	logAllUnhandledErrors(ResOrErr.takeError(), errs(), "LLVMSymbolizer: error reading file: ");
 	consumeError( ResOrErr.takeError() );
 	return true;
 }
@@ -145,18 +110,6 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::stri
 			out += fmt::format( "at {} in {}, line {}:{}\n", li.FunctionName.c_str(), li.FileName.c_str(), li.Line, li.Column );
 		else
 			out += fmt::format( " in {}, line {}:{}\n", li.FileName.c_str(), li.Line, li.Column );
-
-		/*printf( "num of frames: %d\n", (int)(numOfFrames) );
-		for ( size_t i=0; i<numOfFrames; ++i )
-		{
-			const DILineInfo & li = info.getFrame(i);
-			printf( "  [%zd]\n", i );
-			printf( "    file: %s\n", li.FileName.c_str() );
-			printf( "    func: %s\n", li.FunctionName.c_str() );
-			printf( "    line: %d\n", li.Line );
-			printf( "    clmn: %d\n", li.Column );
-			printf( "    s.l.: %d\n", li.StartLine );
-		}*/
 	}
 }
 

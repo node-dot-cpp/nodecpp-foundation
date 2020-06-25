@@ -66,7 +66,7 @@ namespace nodecpp {
 			~StackPointers() { if (ptrs ) delete [] ptrs; }
 			void init( void** ptrs_, size_t cnt_ ) { if (ptrs ) delete [] ptrs; cnt = cnt_; ptrs = new void* [cnt]; memcpy( ptrs, ptrs_, sizeof(void*) * cnt ); }
 			size_t size() const { return cnt; }
-			const void** get() const { return ptrs; }
+			void** get() const { return ptrs; }
 		};
 		StackPointers stackPointers;
 		void preinit();
@@ -88,7 +88,7 @@ namespace nodecpp {
 		}
 
 	public:
-		StackInfo() : whereTaken( error::string_ref::literal_tag_t(), "" ) {}
+		StackInfo() : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) {}
 		StackInfo( bool doInit ) : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
 		StackInfo( bool doInit, error::string_ref&& stripPoint_ ) : stripPoint( std::move( stripPoint_ ) ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
 		StackInfo( const StackInfo& other ) = default;

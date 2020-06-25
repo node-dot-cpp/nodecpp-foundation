@@ -152,7 +152,7 @@ namespace nodecpp {
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
-		const void** stack = stackPointers.get();
+		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
 		HANDLE process = GetCurrentProcess();
 		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
@@ -187,7 +187,7 @@ namespace nodecpp {
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
 #ifdef NODECPP_LINUX_NO_LIBUNWIND
-		const void** stack = stackPointers.get();
+		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
 		if ( btsymbols != nullptr )

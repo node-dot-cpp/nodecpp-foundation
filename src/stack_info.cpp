@@ -30,6 +30,43 @@
 #include "stack_info.h"
 #include "log.h"
 
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
+#include <map>
+struct ModuleAndOffset
+{
+	const char* modulePath;
+	uintptr_t offsetInModule;
+};
+struct StackFrameInfo
+{
+	std::string modulePath;
+	std::string functionName;
+	std::string srcPath;
+	int line = 0;
+	int column = 0;
+};
+using BaseMapT = std::map<void*, StackFrameInfo>;
+static BaseMapT resolvedData;
+bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
+{
+	auto ret = resolvedData.find( stackPtr );
+	if ( ret != resolvedData.end() )
+	{
+		info = ret->second;
+		return true;
+	}
+	return false;
+}
+void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
+{
+	auto ret = resolvedData.insert( std::make_pair( stackPtr, info ) );
+	if ( ret.second )
+		return;
+	// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
+	nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
+}
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
+
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
 #include <process.h>
@@ -63,23 +100,17 @@
 
 #include <dlfcn.h>
 
-struct SInfo
-{
-	const char* modulePath;
-	uintptr_t offsetInModule;
-};
-
-static bool addrToModuleAndOffset( void* fnAddr, SInfo& si ) {
+static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	Dl_info info;
 	int ret = dladdr(fnAddr, &info); // see https://linux.die.net/man/3/dlopen for details
 	if ( ret == 0 )
 	{
-		si.modulePath = nullptr;
-		si.offsetInModule = 0;
+		mao.modulePath = nullptr;
+		mao.offsetInModule = 0;
 		return false;
 	}
-	si.modulePath = info.dli_fname;
-	si.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
+	mao.modulePath = info.dli_fname;
+	mao.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
 	return true;
 }
 
@@ -159,26 +190,51 @@ namespace nodecpp {
 		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
 		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 		DWORD displacement = 0;
-		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
-		memset(line, 0, sizeof(IMAGEHLP_LINE64));
-		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+//		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
+		IMAGEHLP_LINE64 line;
+		memset(&line, 0, sizeof(IMAGEHLP_LINE64));
+		line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
-			DWORD64 address = (DWORD64)(stack[i]);
-			bool addrOK = false;
-#ifndef _DEBUG
-			addrOK = SymFromAddr(process, address, NULL, symbol);
-#endif
-			bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, line);
-			if ( addrOK && fileLineOK )
-				out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line->FileName, line->LineNumber );
-			else if ( fileLineOK )
-				out += fmt::format( "\tat {}, line {}\n", line->FileName, line->LineNumber );
-			else if ( addrOK )
-				out += fmt::format( "\tat {}\n", symbol->Name );
+			StackFrameInfo info;
+			if ( getResolvedStackPtrData( stack[i], info ) )
+			{
+				if ( info.functionName.size() && info.srcPath.size() )
+					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+				else if ( info.srcPath.size() )
+					out += fmt::format( "\tat {}, line {}\n", info.srcPath, line.LineNumber );
+				else if ( info.functionName.size() )
+					out += fmt::format( "\tat {}\n", info.functionName );
+				else
+					out += fmt::format( "\tat <...>\n" );
+			}
 			else
-				out += fmt::format( "\tat <...>\n" );
+			{
+				DWORD64 address = (DWORD64)(stack[i]);
+				bool addrOK = false;
+#ifndef _DEBUG
+				addrOK = SymFromAddr(process, address, NULL, symbol);
+#endif
+				bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, &line);
+
+				if ( fileLineOK )
+				{
+					info.srcPath = line.FileName;
+					info.line = line.LineNumber;
+				}
+				if ( addrOK )
+					info.functionName = symbol->Name;
+
+				if ( addrOK && fileLineOK )
+					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
+				else if ( fileLineOK )
+					out += fmt::format( "\tat {}, line {}\n", line.FileName, line.LineNumber );
+				else if ( addrOK )
+					out += fmt::format( "\tat {}\n", symbol->Name );
+				else
+					out += fmt::format( "\tat <...>\n" );
+			}
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
@@ -196,11 +252,11 @@ namespace nodecpp {
 			for (int i = 0; i < numberOfFrames; i++)
 			{
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				SInfo si;
-				if ( addrToModuleAndOffset( stack[i], si ) )
+				ModuleAndOffset mao;
+				if ( addrToModuleAndOffset( stack[i], mao ) )
 				{
 					out += fmt::format( "\tat {}", btsymbols[i] );
-					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
 				}
 				else
 					out += fmt::format( "\tat {}\n", btsymbols[i] );
@@ -274,11 +330,11 @@ namespace nodecpp {
 			for (int i = 0; i < numberOfFrames; i++)
 			{
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				SInfo si;
-				if ( addrToModuleAndOffset( stack[i], si ) )
+				ModuleAndOffset mao;
+				if ( addrToModuleAndOffset( stack[i], mao ) )
 				{
 					out += fmt::format( "\tat {}", btsymbols[i] );
-					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
 				}
 				else
 					out += fmt::format( "\tat {}\n", btsymbols[i] );
@@ -323,11 +379,11 @@ namespace nodecpp {
 					nameptr = demangled;
 				}
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				SInfo si;
-				if ( addrToModuleAndOffset( pc + offset, si ) )
+				ModuleAndOffset mao;
+				if ( addrToModuleAndOffset( pc + offset, mao ) )
 				{
 					out += fmt::format( " ({}+0x{:x})", nameptr, offset );
-					addFileLineInfo( si.modulePath, si.offsetInModule, out, true );
+					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
 				}
 				else
 					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
@@ -353,7 +409,7 @@ namespace nodecpp {
 	namespace impl
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( info.whereTaken.empty() )
 				info.postinit();
 #endif
@@ -361,7 +417,7 @@ namespace nodecpp {
 		}
 		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
 		extern bool isDataStackInfo( const StackInfo& info ) {
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			return !(info.whereTaken.empty() && info.timeStamp.t == 0 && info.stackPointers.size() == 0);
 #else
 			return !(info.whereTaken.empty() && info.timeStamp.t == 0);

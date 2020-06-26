@@ -36,6 +36,10 @@
 #include "log.h"
 #include <fmt/format.h>
 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#define NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
+#endif
+
 namespace nodecpp {
 
 	class StackInfo;
@@ -53,7 +57,7 @@ namespace nodecpp {
 		friend ::nodecpp::logging_impl::LoggingTimeStamp impl::whenTakenStackInfo( const StackInfo& info );
 		friend bool impl::isDataStackInfo( const StackInfo& info );
 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		class StackPointers {
 			void** ptrs = nullptr;
 			size_t cnt = 0;
@@ -71,8 +75,7 @@ namespace nodecpp {
 		StackPointers stackPointers;
 		void preinit();
 		void postinit() const;
-#else
-#endif
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		error::string_ref stripPoint;
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
@@ -98,33 +101,33 @@ namespace nodecpp {
 		virtual ~StackInfo() {}
 		void init() { 
 			stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
 #else
 			init_();
-#endif
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void init( error::string_ref&& stripPoint_ ) { 
 			stripPoint = std::move( stripPoint_ ); 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
 #else
 			init_();
-#endif
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }
 		void log( log::LogLevel l ) { 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( whereTaken.empty() )
 				postinit();
-#endif
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
 		}
 		void log( log::Log& targetLog, log::LogLevel l ) {
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( whereTaken.empty() )
 				postinit();
-#endif
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
 		}
 	};

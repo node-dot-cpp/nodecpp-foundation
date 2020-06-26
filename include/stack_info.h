@@ -96,8 +96,22 @@ namespace nodecpp {
 		StackInfo( StackInfo&& other ) = default;
 		StackInfo& operator = ( StackInfo&& other ) = default;
 		virtual ~StackInfo() {}
-		void init() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); init_(); }
-		void init( error::string_ref&& stripPoint_ ) { stripPoint = std::move( stripPoint_ ); init_(); }
+		void init() { 
+			stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			preinit();
+#else
+			init_();
+#endif
+		}
+		void init( error::string_ref&& stripPoint_ ) { 
+			stripPoint = std::move( stripPoint_ ); 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			preinit();
+#else
+			init_();
+#endif
+		}
 		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }
 		void log( log::LogLevel l ) { 
 #if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )

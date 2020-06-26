@@ -209,12 +209,12 @@ namespace nodecpp {
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 			}
 			free( btsymbols );
-			if ( stripPoint != nullptr )
-				strip( out, stripPoint );
+			if ( !stripPoint.empty() )
+				strip( out, stripPoint.c_str() );
 			*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
 		}
 		else
-			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+			*const_cast<error::string_ref*>(&whereTaken) = error::string_ref	( error::string_ref::literal_tag_t(), "" );
 #endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else

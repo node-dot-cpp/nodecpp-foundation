@@ -148,7 +148,7 @@ namespace nodecpp {
 		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
 	}
 
-	void StackInfo::postinit()
+	void StackInfo::postinit() const
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
@@ -182,7 +182,7 @@ namespace nodecpp {
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
-		whereTaken = out.c_str();
+		*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
@@ -211,7 +211,7 @@ namespace nodecpp {
 			free( btsymbols );
 			if ( stripPoint != nullptr )
 				strip( out, stripPoint );
-			whereTaken = out.c_str();
+			*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
 		}
 		else
 			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
@@ -226,7 +226,7 @@ namespace nodecpp {
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
-		void *stack[TRACE_MAX_STACK_FRAMES];
+		/*void *stack[TRACE_MAX_STACK_FRAMES];
 		HANDLE process = GetCurrentProcess();
 		SymInitialize(process, NULL, TRUE);
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
@@ -258,12 +258,13 @@ namespace nodecpp {
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
-		whereTaken = out.c_str();
+		whereTaken = out.c_str();*/
+		preinit();
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
 #ifdef NODECPP_LINUX_NO_LIBUNWIND
-		void *stack[TRACE_MAX_STACK_FRAMES];
+		/*void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		stackPointers.init( stack, numberOfFrames );
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
@@ -291,7 +292,8 @@ namespace nodecpp {
 			whereTaken = out.c_str();
 		}
 		else
-			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );*/
+		preinit();
 #else
 		unw_cursor_t cursor;
 		unw_context_t context;
@@ -350,9 +352,21 @@ namespace nodecpp {
 
 	namespace impl
 	{
-		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { return info.whereTaken; }
+		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			if ( info.whereTaken.empty() )
+				info.postinit();
+#endif
+			return info.whereTaken;
+		}
 		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
-		extern bool isDataStackInfo( const StackInfo& info ) { return !(info.whereTaken.empty() && info.timeStamp.t == 0); }
+		extern bool isDataStackInfo( const StackInfo& info ) {
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			return !(info.whereTaken.empty() && info.timeStamp.t == 0 && info.stackPointers.size() == 0);
+#else
+			return !(info.whereTaken.empty() && info.timeStamp.t == 0);
+#endif
+		}
 	} // namespace impl
 
 } //namespace nodecpp

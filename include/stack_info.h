@@ -70,14 +70,14 @@ namespace nodecpp {
 		};
 		StackPointers stackPointers;
 		void preinit();
-		void postinit();
+		void postinit() const;
 #else
 #endif
 		error::string_ref stripPoint;
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
 		void init_();
-		void strip( std::string& s, const char* stripPoint ){
+		void strip( std::string& s, const char* stripPoint ) const {
 			size_t pos = s.find( stripPoint, 0 );
 			if ( pos != std::string::npos )
 			{
@@ -99,8 +99,20 @@ namespace nodecpp {
 		void init() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); init_(); }
 		void init( error::string_ref&& stripPoint_ ) { stripPoint = std::move( stripPoint_ ); init_(); }
 		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }
-		void log( log::LogLevel l ) { log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
-		void log( log::Log& targetLog, log::LogLevel l ) { targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() ); }
+		void log( log::LogLevel l ) { 
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			if ( whereTaken.empty() )
+				postinit();
+#endif
+			log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
+		}
+		void log( log::Log& targetLog, log::LogLevel l ) {
+#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+			if ( whereTaken.empty() )
+				postinit();
+#endif
+			targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
+		}
 	};
 
 } //namespace nodecpp

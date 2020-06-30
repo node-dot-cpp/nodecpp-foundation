@@ -32,6 +32,9 @@
 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 #include <map>
+#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
+
+#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 class StackPointerInfoCache
 {
 public:
@@ -225,6 +228,54 @@ namespace nodecpp {
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		stackPointers.init( stack, numberOfFrames );
+#else // NODECPP_LINUX_NO_LIBUNWIND
+		unw_cursor_t cursor;
+		unw_context_t context;
+
+		// Initialize cursor to current frame for local unwinding.
+		unw_getcontext(&context);
+		unw_init_local(&cursor, &context);
+
+		// Unwind frames one by one, going up the frame stack.
+
+		std::string out;
+
+		while (unw_step(&cursor) > 0) {
+			unw_word_t offset, pc;
+			unw_get_reg(&cursor, UNW_REG_IP, &pc);
+			if (pc == 0) {
+				break;
+			}
+			out += fmt::format( "0x{:x}:", pc );
+
+			char sym[256];
+			if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
+				char* nameptr = sym;
+				int status;
+				char* demangled = abi::__cxa_demangle(sym, nullptr, nullptr, &status);
+				if (status == 0) {
+					nameptr = demangled;
+				}
+#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+				ModuleAndOffset mao;
+				if ( addrToModuleAndOffset( pc + offset, mao ) )
+				{
+					out += fmt::format( " ({}+0x{:x})", nameptr, offset );
+					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
+				}
+				else
+					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
+#else
+				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
+#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+				std::free(demangled);
+			} else {
+				out += "<...>\n";
+			}
+		}
+		if ( stripPoint != nullptr )
+			strip( out, stripPoint );
+		whereTaken = out.c_str();
 #endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else

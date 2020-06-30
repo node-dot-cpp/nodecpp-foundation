@@ -73,13 +73,12 @@ namespace nodecpp {
 			void** get() const { return ptrs; }
 		};
 		StackPointers stackPointers;
-		void preinit();
 		void postinit() const;
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		error::string_ref stripPoint;
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
-		void init_();
+		void preinit();
 		void strip( std::string& s, const char* stripPoint ) const {
 			size_t pos = s.find( stripPoint, 0 );
 			if ( pos != std::string::npos )
@@ -92,8 +91,8 @@ namespace nodecpp {
 
 	public:
 		StackInfo() : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) {}
-		StackInfo( bool doInit ) : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
-		StackInfo( bool doInit, error::string_ref&& stripPoint_ ) : stripPoint( std::move( stripPoint_ ) ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) init_(); }
+		StackInfo( bool doInit ) : stripPoint( error::string_ref::literal_tag_t(), "" ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) preinit(); }
+		StackInfo( bool doInit, error::string_ref&& stripPoint_ ) : stripPoint( std::move( stripPoint_ ) ), whereTaken( error::string_ref::literal_tag_t(), "" ) { if ( doInit ) preinit(); }
 		StackInfo( const StackInfo& other ) = default;
 		StackInfo& operator = ( const StackInfo& other ) = default;
 		StackInfo( StackInfo&& other ) = default;
@@ -105,7 +104,7 @@ namespace nodecpp {
 			preinit();
 postinit();
 #else
-			init_();
+			preinit();
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void init( error::string_ref&& stripPoint_ ) { 
@@ -114,7 +113,7 @@ postinit();
 			preinit();
 postinit();
 #else
-			init_();
+			preinit();
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }

@@ -32,56 +32,71 @@
 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 #include <map>
-struct ModuleAndOffset
-{
-	const char* modulePath;
-	uintptr_t offsetInModule;
-};
-struct StackFrameInfo
-{
-	std::string modulePath;
-	std::string functionName;
-	std::string srcPath;
-	int line = 0;
-	int column = 0;
-};
-using BaseMapT = std::map<uintptr_t, StackFrameInfo>;
-class ConstructingWrapper
+class StackInfoRegister
 {
 public:
-	bool initialized = false;
-	BaseMapT resolvedData;
-	ConstructingWrapper() {
-		printf( "being called!!!\n" );
-		initialized = true;
-	};
-};
-static ConstructingWrapper cw;
-//static BaseMapT resolvedData;
-bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
-{
-	if (!cw.initialized )
-		return false;
-	BaseMapT resolvedData_;
-	auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
-	auto ret = cw.resolvedData.find( (uintptr_t)(stackPtr) );
-	if ( ret != cw.resolvedData.end() )
+	struct StackFrameInfo
 	{
-		info = ret->second;
-		return true;
+		std::string modulePath;
+		std::string functionName;
+		std::string srcPath;
+		int line = 0;
+		int column = 0;
+	};
+	using StackStringCacheT = std::map<std::string, int>;
+	struct ModuleAndOffset
+	{
+		const char* modulePath;
+		uintptr_t offsetInModule;
+	};
+	struct StackFrameInfoInternal
+	{
+		std::string modulePath;
+		std::string functionName;
+		std::string srcPath;
+		int line = 0;
+		int column = 0;
+	};
+	using BaseMapT = std::map<uintptr_t, StackFrameInfo>;
+	BaseMapT resolvedData;
+
+private:
+    StackInfoRegister() {}
+
+public:
+    StackInfoRegister( const StackInfoRegister& ) = delete;
+    StackInfoRegister( StackInfoRegister&& ) = delete;
+    StackInfoRegister& operator = ( const StackInfoRegister& ) = delete;
+    StackInfoRegister& operator = ( StackInfoRegister&& ) = delete;
+    static StackInfoRegister& getRegister()
+    {
+        static StackInfoRegister r;
+        return r;
+    }
+
+	bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
+	{
+		BaseMapT resolvedData_;
+		auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
+		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
+		if ( ret != resolvedData.end() )
+		{
+			info = ret->second;
+			return true;
+		}
+		return false;
 	}
-	return false;
-}
-void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
-{
-	if (!cw.initialized )
-		return;
-	auto ret = cw.resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
-	if ( ret.second )
-		return;
-	// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
-	nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
-}
+
+	void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
+	{
+		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
+		if ( ret.second )
+			return;
+		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
+		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
+	}
+
+};
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
@@ -220,8 +235,8 @@ namespace nodecpp {
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
-			StackFrameInfo info;
-			if ( getResolvedStackPtrData( stack[i], info ) )
+			StackInfoRegister::StackFrameInfo info;
+			if ( StackInfoRegister::getRegister().getResolvedStackPtrData( stack[i], info ) )
 			{
 				if ( info.functionName.size() && info.srcPath.size() )
 					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
@@ -248,7 +263,7 @@ namespace nodecpp {
 				}
 				if ( addrOK )
 					info.functionName = symbol->Name;
-				addResolvedStackPtrData( stack[i], info );
+				StackInfoRegister::getRegister().addResolvedStackPtrData( stack[i], info );
 
 				if ( addrOK && fileLineOK )
 					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
@@ -275,8 +290,8 @@ namespace nodecpp {
 			std::string out;
 			for (int i = 0; i < numberOfFrames; i++)
 			{
-				StackFrameInfo info;
-				if ( getResolvedStackPtrData( stack[i], info ) )
+				StackInfoRegister::StackFrameInfo info;
+				if ( StackInfoRegister::getRegister().getResolvedStackPtrData( stack[i], info ) )
 				{
 					if ( info.functionName.size() && info.srcPath.size() )
 						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
@@ -293,7 +308,7 @@ namespace nodecpp {
 					info.functionName = btsymbols[i];
 
 					ModuleAndOffset mao;
-					if ( addrToModuleAndOffset( stack[i], mao ) )
+					if ( StackInfoRegister::getRegister().addrToModuleAndOffset( stack[i], mao ) )
 					{
 						out += fmt::format( "\tat {}", btsymbols[i] );
 						addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true, info );

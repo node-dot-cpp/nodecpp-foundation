@@ -45,12 +45,27 @@ struct StackFrameInfo
 	int line = 0;
 	int column = 0;
 };
-using BaseMapT = std::map<void*, StackFrameInfo>;
-static BaseMapT resolvedData;
+using BaseMapT = std::map<uintptr_t, StackFrameInfo>;
+class ConstructingWrapper
+{
+public:
+	bool initialized = false;
+	BaseMapT resolvedData;
+	ConstructingWrapper() {
+		printf( "being called!!!\n" );
+		initialized = true;
+	};
+};
+static ConstructingWrapper cw;
+//static BaseMapT resolvedData;
 bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
 {
-	auto ret = resolvedData.find( stackPtr );
-	if ( ret != resolvedData.end() )
+	if (!cw.initialized )
+		return false;
+	BaseMapT resolvedData_;
+	auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
+	auto ret = cw.resolvedData.find( (uintptr_t)(stackPtr) );
+	if ( ret != cw.resolvedData.end() )
 	{
 		info = ret->second;
 		return true;
@@ -59,7 +74,9 @@ bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
 }
 void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
 {
-	auto ret = resolvedData.insert( std::make_pair( stackPtr, info ) );
+	if (!cw.initialized )
+		return;
+	auto ret = cw.resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
 	if ( ret.second )
 		return;
 	// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
@@ -125,7 +142,7 @@ static bool error(Expected<T> &ResOrErr) {
 	return true;
 }
 
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::string& out, bool addFnName ) {
+static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::string& out, bool addFnName, StackFrameInfo& sfi ) {
 	LLVMSymbolizer Symbolizer;
 
 	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
@@ -137,6 +154,12 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::stri
 		if ( numOfFrames == 0 )
 			return;
 		const DILineInfo & li = info.getFrame(0);
+
+		sfi.functionName = li.FunctionName;
+		sfi.srcPath = li.FileName;
+		sfi.line = li.Line;
+		sfi.column = li.Column;
+
 		if ( addFnName )
 			out += fmt::format( "at {} in {}, line {}:{}\n", li.FunctionName.c_str(), li.FileName.c_str(), li.Line, li.Column );
 		else
@@ -203,7 +226,7 @@ namespace nodecpp {
 				if ( info.functionName.size() && info.srcPath.size() )
 					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
 				else if ( info.srcPath.size() )
-					out += fmt::format( "\tat {}, line {}\n", info.srcPath, line.LineNumber );
+					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
 				else if ( info.functionName.size() )
 					out += fmt::format( "\tat {}\n", info.functionName );
 				else
@@ -225,6 +248,7 @@ namespace nodecpp {
 				}
 				if ( addrOK )
 					info.functionName = symbol->Name;
+				addResolvedStackPtrData( stack[i], info );
 
 				if ( addrOK && fileLineOK )
 					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
@@ -251,18 +275,36 @@ namespace nodecpp {
 			std::string out;
 			for (int i = 0; i < numberOfFrames; i++)
 			{
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				ModuleAndOffset mao;
-				if ( addrToModuleAndOffset( stack[i], mao ) )
+				StackFrameInfo info;
+				if ( getResolvedStackPtrData( stack[i], info ) )
 				{
-					out += fmt::format( "\tat {}", btsymbols[i] );
-					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
+					if ( info.functionName.size() && info.srcPath.size() )
+						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+					else if ( info.srcPath.size() )
+						out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+					else if ( info.functionName.size() )
+						out += fmt::format( "\tat {}\n", info.functionName );
+					else
+						out += fmt::format( "\tat <...>\n" );
 				}
 				else
-					out += fmt::format( "\tat {}\n", btsymbols[i] );
+				{
+#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+					info.functionName = btsymbols[i];
+
+					ModuleAndOffset mao;
+					if ( addrToModuleAndOffset( stack[i], mao ) )
+					{
+						out += fmt::format( "\tat {}", btsymbols[i] );
+						addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true, info );
+						addResolvedStackPtrData( stack[i], info );
+					}
+					else
+						out += fmt::format( "\tat {}\n", btsymbols[i] );
 #else
-				out += fmt::format( "\tat {}\n", btsymbols[i] );
+					out += fmt::format( "\tat {}\n", btsymbols[i] );
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+				}
 			}
 			free( btsymbols );
 			if ( !stripPoint.empty() )

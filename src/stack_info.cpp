@@ -32,7 +32,7 @@
 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 #include <map>
-class StackInfoRegister
+class StackPointerInfoCache
 {
 public:
 	struct StackFrameInfo
@@ -61,38 +61,54 @@ public:
 	BaseMapT resolvedData;
 
 private:
-    StackInfoRegister() {}
+		std::condition_variable waitRequester;
+		std::mutex mx;
+
+private:
+    StackPointerInfoCache() {}
 
 public:
-    StackInfoRegister( const StackInfoRegister& ) = delete;
-    StackInfoRegister( StackInfoRegister&& ) = delete;
-    StackInfoRegister& operator = ( const StackInfoRegister& ) = delete;
-    StackInfoRegister& operator = ( StackInfoRegister&& ) = delete;
-    static StackInfoRegister& getRegister()
+    StackPointerInfoCache( const StackPointerInfoCache& ) = delete;
+    StackPointerInfoCache( StackPointerInfoCache&& ) = delete;
+    StackPointerInfoCache& operator = ( const StackPointerInfoCache& ) = delete;
+    StackPointerInfoCache& operator = ( StackPointerInfoCache&& ) = delete;
+    static StackPointerInfoCache& getRegister()
     {
-        static StackInfoRegister r;
+        static StackPointerInfoCache r;
         return r;
     }
 
 	bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
 	{
+		std::unique_lock<std::mutex> lock(mx);
 		BaseMapT resolvedData_;
 		auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
 		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
 		if ( ret != resolvedData.end() )
 		{
 			info = ret->second;
+			lock.unlock();
+			waitRequester.notify_one();
 			return true;
 		}
+		lock.unlock();
+		waitRequester.notify_one();
 		return false;
 	}
 
 	void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
 	{
+		std::unique_lock<std::mutex> lock(mx);
 		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
 		if ( ret.second )
+		{
+			lock.unlock();
+			waitRequester.notify_one();
 			return;
+		}
 		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
+		lock.unlock();
+		waitRequester.notify_one();
 		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
 	}
 
@@ -235,8 +251,8 @@ namespace nodecpp {
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
-			StackInfoRegister::StackFrameInfo info;
-			if ( StackInfoRegister::getRegister().getResolvedStackPtrData( stack[i], info ) )
+			StackPointerInfoCache::StackFrameInfo info;
+			if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
 			{
 				if ( info.functionName.size() && info.srcPath.size() )
 					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
@@ -263,7 +279,7 @@ namespace nodecpp {
 				}
 				if ( addrOK )
 					info.functionName = symbol->Name;
-				StackInfoRegister::getRegister().addResolvedStackPtrData( stack[i], info );
+				StackPointerInfoCache::getRegister().addResolvedStackPtrData( stack[i], info );
 
 				if ( addrOK && fileLineOK )
 					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
@@ -290,8 +306,8 @@ namespace nodecpp {
 			std::string out;
 			for (int i = 0; i < numberOfFrames; i++)
 			{
-				StackInfoRegister::StackFrameInfo info;
-				if ( StackInfoRegister::getRegister().getResolvedStackPtrData( stack[i], info ) )
+				StackPointerInfoCache::StackFrameInfo info;
+				if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
 				{
 					if ( info.functionName.size() && info.srcPath.size() )
 						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
@@ -308,7 +324,7 @@ namespace nodecpp {
 					info.functionName = btsymbols[i];
 
 					ModuleAndOffset mao;
-					if ( StackInfoRegister::getRegister().addrToModuleAndOffset( stack[i], mao ) )
+					if ( StackPointerInfoCache::getRegister().addrToModuleAndOffset( stack[i], mao ) )
 					{
 						out += fmt::format( "\tat {}", btsymbols[i] );
 						addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true, info );

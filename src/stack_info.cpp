@@ -103,7 +103,7 @@ static bool error(Expected<T> &ResOrErr) {
 	return true;
 }
 
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset/*, std::string& out*/, bool addFnName, StackFrameInfo& sfi ) {
+static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, bool addFnName, StackFrameInfo& sfi ) {
 	LLVMSymbolizer Symbolizer;
 
 	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
@@ -120,11 +120,6 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset/*, std::st
 		sfi.srcPath = li.FileName;
 		sfi.line = li.Line;
 		sfi.column = li.Column;
-
-		/*if ( addFnName )
-			out += fmt::format( "at {} in {}, line {}:{}\n", li.FunctionName.c_str(), li.FileName.c_str(), li.Line, li.Column );
-		else
-			out += fmt::format( " in {}, line {}:{}\n", li.FileName.c_str(), li.Line, li.Column );*/
 	}
 }
 
@@ -139,7 +134,6 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 	static constexpr size_t TRACE_MAX_FUNCTION_NAME_LENGTH = 1024;
 	HANDLE process = GetCurrentProcess();
 	uint8_t symbolBuff[ sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR) ];
-//	SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
 	SYMBOL_INFO *symbol = (SYMBOL_INFO *)symbolBuff;
 	symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
 	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -169,9 +163,7 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 	ModuleAndOffset mao;
 	if ( addrToModuleAndOffset( ptr, mao ) )
 	{
-//		out += fmt::format( "\tat {}", btsymbols[i] );
 		addFileLineInfo( mao.modulePath, mao.offsetInModule/*, out*/, true, info );
-//		addResolvedStackPtrData( ptr, info );
 		return true;
 	}
 	else
@@ -243,18 +235,7 @@ namespace nodecpp {
 				if (status == 0) {
 					nameptr = demangled;
 				}
-/*#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				ModuleAndOffset mao;
-				if ( addrToModuleAndOffset( pc + offset, mao ) )
-				{
-					out += fmt::format( " ({}+0x{:x})", nameptr, offset );
-					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
-				}
-				else
-					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-#else*/
 				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-//#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 				std::free(demangled);
 			} else {
 				out += "<...>\n";
@@ -278,15 +259,6 @@ namespace nodecpp {
 
 		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
-//		HANDLE process = GetCurrentProcess();
-//		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
-//		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
-//		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-//		DWORD displacement = 0;
-//		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
-/*		IMAGEHLP_LINE64 line;
-		memset(&line, 0, sizeof(IMAGEHLP_LINE64));
-		line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);*/
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
@@ -301,57 +273,6 @@ namespace nodecpp {
 				out += fmt::format( "\tat {}\n", info.functionName );
 			else
 				out += fmt::format( "\tat <...>\n" );
-#if 0
-			if ( StackPointerInfoCache::getRegister().resolveData( stack[i], info ) )
-			{
-				// info to string
-				if ( info.functionName.size() && info.srcPath.size() )
-					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-				else if ( info.srcPath.size() )
-					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-				else if ( info.functionName.size() )
-					out += fmt::format( "\tat {}\n", info.functionName );
-				else
-					out += fmt::format( "\tat <...>\n" );
-			}
-			else
-			{
-				stackPointerToInfo( stack[i], info );
-				/*DWORD64 address = (DWORD64)(stack[i]);
-				bool addrOK = false;
-#ifndef _DEBUG
-				addrOK = SymFromAddr(process, address, NULL, symbol);
-#endif
-				bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, &line);
-
-				if ( fileLineOK )
-				{
-					info.srcPath = line.FileName;
-					info.line = line.LineNumber;
-				}
-				if ( addrOK )
-					info.functionName = symbol->Name;*/
-				StackPointerInfoCache::getRegister().addResolvedStackPtrData( stack[i], info );
-
-				/*if ( addrOK && fileLineOK )
-					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
-				else if ( fileLineOK )
-					out += fmt::format( "\tat {}, line {}\n", line.FileName, line.LineNumber );
-				else if ( addrOK )
-					out += fmt::format( "\tat {}\n", symbol->Name );
-				else
-					out += fmt::format( "\tat <...>\n" );*/
-				// info to string
-				if ( info.functionName.size() && info.srcPath.size() )
-					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-				else if ( info.srcPath.size() )
-					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-				else if ( info.functionName.size() )
-					out += fmt::format( "\tat {}\n", info.functionName );
-				else
-					out += fmt::format( "\tat <...>\n" );
-			}
-#endif // 0
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
@@ -379,49 +300,6 @@ namespace nodecpp {
 					out += fmt::format( "\tat {}\n", info.functionName );
 				else
 					out += fmt::format( "\tat <...>\n" );
-#if 0
-				if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
-				{
-					if ( info.functionName.size() && info.srcPath.size() )
-						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-					else if ( info.srcPath.size() )
-						out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-					else if ( info.functionName.size() )
-						out += fmt::format( "\tat {}\n", info.functionName );
-					else
-						out += fmt::format( "\tat <...>\n" );
-				}
-				else
-				{
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-					/*info.functionName = btsymbols[i];
-
-					ModuleAndOffset mao;
-					if ( StackPointerInfoCache::getRegister().addrToModuleAndOffset( stack[i], mao ) )
-					{
-						out += fmt::format( "\tat {}", btsymbols[i] );
-						addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true, info );
-						addResolvedStackPtrData( stack[i], info );
-					}
-					else
-						out += fmt::format( "\tat {}\n", btsymbols[i] );*/
-					stackPointerToInfo( stack[i], info );
-					StackPointerInfoCache::getRegister().addResolvedStackPtrData( stack[i], info );
-
-					// info to string
-					if ( info.functionName.size() && info.srcPath.size() )
-						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-					else if ( info.srcPath.size() )
-						out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-					else if ( info.functionName.size() )
-						out += fmt::format( "\tat {}\n", info.functionName );
-					else
-						out += fmt::format( "\tat <...>\n" );
-#else
-					out += fmt::format( "\tat {}\n", btsymbols[i] );
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				}
-#endif
 			}
 			free( btsymbols );
 			if ( !stripPoint.empty() )

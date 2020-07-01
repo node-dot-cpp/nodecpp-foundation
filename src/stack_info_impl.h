@@ -117,16 +117,6 @@ public:
 		return true;
 	}
 
-	/*bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
-	{
-		return getResolvedStackPtrData_( stackPtr, info );
-	}
-
-	void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
-	{
-		addResolvedStackPtrData_( stackPtr, info );
-	}*/
-
 };
 
 #endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS

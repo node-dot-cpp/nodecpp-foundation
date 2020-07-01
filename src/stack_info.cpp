@@ -28,94 +28,11 @@
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #include "stack_info.h"
+#include "stack_info_impl.h"
 #include "log.h"
 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 #include <map>
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
-
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
-class StackPointerInfoCache
-{
-public:
-	struct StackFrameInfo
-	{
-		std::string modulePath;
-		std::string functionName;
-		std::string srcPath;
-		int line = 0;
-		int column = 0;
-	};
-	using StackStringCacheT = std::map<std::string, int>;
-	struct ModuleAndOffset
-	{
-		const char* modulePath;
-		uintptr_t offsetInModule;
-	};
-	struct StackFrameInfoInternal
-	{
-		std::string modulePath;
-		std::string functionName;
-		std::string srcPath;
-		int line = 0;
-		int column = 0;
-	};
-	using BaseMapT = std::map<uintptr_t, StackFrameInfo>;
-	BaseMapT resolvedData;
-
-private:
-		std::condition_variable waitRequester;
-		std::mutex mx;
-
-private:
-    StackPointerInfoCache() {}
-
-public:
-    StackPointerInfoCache( const StackPointerInfoCache& ) = delete;
-    StackPointerInfoCache( StackPointerInfoCache&& ) = delete;
-    StackPointerInfoCache& operator = ( const StackPointerInfoCache& ) = delete;
-    StackPointerInfoCache& operator = ( StackPointerInfoCache&& ) = delete;
-    static StackPointerInfoCache& getRegister()
-    {
-        static StackPointerInfoCache r;
-        return r;
-    }
-
-	bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
-	{
-		std::unique_lock<std::mutex> lock(mx);
-		BaseMapT resolvedData_;
-		auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
-		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
-		if ( ret != resolvedData.end() )
-		{
-			info = ret->second;
-			lock.unlock();
-			waitRequester.notify_one();
-			return true;
-		}
-		lock.unlock();
-		waitRequester.notify_one();
-		return false;
-	}
-
-	void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
-	{
-		std::unique_lock<std::mutex> lock(mx);
-		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
-		if ( ret.second )
-		{
-			lock.unlock();
-			waitRequester.notify_one();
-			return;
-		}
-		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
-		lock.unlock();
-		waitRequester.notify_one();
-		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
-	}
-
-};
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
@@ -138,18 +55,28 @@ public:
 
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 
+#ifndef _GNU_SOURCE
+#error _GNU_SOURCE must be defined to proceed
+#endif
+
 #include "llvm/DebugInfo/Symbolize/Symbolize.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string>
+#include <dlfcn.h>
 
-#ifndef _GNU_SOURCE
-#error _GNU_SOURCE must be defined to proceed
+#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+
+#else
+#error not (yet) supported
 #endif
 
-#include <dlfcn.h>
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 
 static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	Dl_info info;
@@ -176,7 +103,7 @@ static bool error(Expected<T> &ResOrErr) {
 	return true;
 }
 
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::string& out, bool addFnName, StackFrameInfo& sfi ) {
+static void addFileLineInfo( const char* ModuleName, uintptr_t Offset/*, std::string& out*/, bool addFnName, StackFrameInfo& sfi ) {
 	LLVMSymbolizer Symbolizer;
 
 	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
@@ -194,21 +121,78 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, std::stri
 		sfi.line = li.Line;
 		sfi.column = li.Column;
 
-		if ( addFnName )
+		/*if ( addFnName )
 			out += fmt::format( "at {} in {}, line {}:{}\n", li.FunctionName.c_str(), li.FileName.c_str(), li.Line, li.Column );
 		else
-			out += fmt::format( " in {}, line {}:{}\n", li.FileName.c_str(), li.Line, li.Column );
+			out += fmt::format( " in {}, line {}:{}\n", li.FileName.c_str(), li.Line, li.Column );*/
 	}
 }
 
+#endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
+{
+#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
+	static constexpr size_t TRACE_MAX_FUNCTION_NAME_LENGTH = 1024;
+	HANDLE process = GetCurrentProcess();
+	uint8_t symbolBuff[ sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR) ];
+//	SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
+	SYMBOL_INFO *symbol = (SYMBOL_INFO *)symbolBuff;
+	symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
+	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+	DWORD displacement = 0;
+	IMAGEHLP_LINE64 line;
+	DWORD64 address = (DWORD64)(ptr);
+	bool addrOK = false;
+#ifndef _DEBUG
+	addrOK = SymFromAddr(process, address, NULL, symbol);
+#endif
+	bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, &line);
+
+	if ( fileLineOK )
+	{
+		info.srcPath = line.FileName;
+		info.line = line.LineNumber;
+	}
+	if ( addrOK )
+		info.functionName = symbol->Name;
+	return true;
+		
+#elif defined NODECPP_CLANG || defined NODECPP_GCC
+
+#ifdef NODECPP_LINUX_NO_LIBUNWIND
+
+#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+	ModuleAndOffset mao;
+	if ( addrToModuleAndOffset( ptr, mao ) )
+	{
+//		out += fmt::format( "\tat {}", btsymbols[i] );
+		addFileLineInfo( mao.modulePath, mao.offsetInModule/*, out*/, true, info );
+//		addResolvedStackPtrData( ptr, info );
+		return true;
+	}
+	else
+		return false;
+#else
+#error not applicable
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+#else
+#error not applicable
+#endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
 #error not (yet) supported
-#endif
+#endif // platform/compiler
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 #define TRACE_MAX_STACK_FRAMES 1024
-#define TRACE_MAX_FUNCTION_NAME_LENGTH 1024
 
 namespace nodecpp {
 
@@ -225,10 +209,13 @@ namespace nodecpp {
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
 #ifdef NODECPP_LINUX_NO_LIBUNWIND
+
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		stackPointers.init( stack, numberOfFrames );
-#else // NODECPP_LINUX_NO_LIBUNWIND
+
+#else // NODECPP_LINUX_NO_LIBUNWIND // we do it in a single shot (at least, as for now)
+
 		unw_cursor_t cursor;
 		unw_context_t context;
 
@@ -256,7 +243,7 @@ namespace nodecpp {
 				if (status == 0) {
 					nameptr = demangled;
 				}
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+/*#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 				ModuleAndOffset mao;
 				if ( addrToModuleAndOffset( pc + offset, mao ) )
 				{
@@ -265,9 +252,9 @@ namespace nodecpp {
 				}
 				else
 					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-#else
+#else*/
 				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+//#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 				std::free(demangled);
 			} else {
 				out += "<...>\n";
@@ -276,6 +263,7 @@ namespace nodecpp {
 		if ( stripPoint != nullptr )
 			strip( out, stripPoint );
 		whereTaken = out.c_str();
+
 #endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
@@ -290,21 +278,22 @@ namespace nodecpp {
 
 		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
-		HANDLE process = GetCurrentProcess();
-		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
-		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
-		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-		DWORD displacement = 0;
+//		HANDLE process = GetCurrentProcess();
+//		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
+//		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
+//		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+//		DWORD displacement = 0;
 //		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
-		IMAGEHLP_LINE64 line;
+/*		IMAGEHLP_LINE64 line;
 		memset(&line, 0, sizeof(IMAGEHLP_LINE64));
-		line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+		line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);*/
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
-			StackPointerInfoCache::StackFrameInfo info;
+			StackFrameInfo info;
 			if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
 			{
+				// info to string
 				if ( info.functionName.size() && info.srcPath.size() )
 					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
 				else if ( info.srcPath.size() )
@@ -316,7 +305,8 @@ namespace nodecpp {
 			}
 			else
 			{
-				DWORD64 address = (DWORD64)(stack[i]);
+				stackPointerToInfo( stack[i], info );
+				/*DWORD64 address = (DWORD64)(stack[i]);
 				bool addrOK = false;
 #ifndef _DEBUG
 				addrOK = SymFromAddr(process, address, NULL, symbol);
@@ -329,15 +319,24 @@ namespace nodecpp {
 					info.line = line.LineNumber;
 				}
 				if ( addrOK )
-					info.functionName = symbol->Name;
+					info.functionName = symbol->Name;*/
 				StackPointerInfoCache::getRegister().addResolvedStackPtrData( stack[i], info );
 
-				if ( addrOK && fileLineOK )
+				/*if ( addrOK && fileLineOK )
 					out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line.FileName, line.LineNumber );
 				else if ( fileLineOK )
 					out += fmt::format( "\tat {}, line {}\n", line.FileName, line.LineNumber );
 				else if ( addrOK )
 					out += fmt::format( "\tat {}\n", symbol->Name );
+				else
+					out += fmt::format( "\tat <...>\n" );*/
+				// info to string
+				if ( info.functionName.size() && info.srcPath.size() )
+					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+				else if ( info.srcPath.size() )
+					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+				else if ( info.functionName.size() )
+					out += fmt::format( "\tat {}\n", info.functionName );
 				else
 					out += fmt::format( "\tat <...>\n" );
 			}
@@ -357,7 +356,7 @@ namespace nodecpp {
 			std::string out;
 			for (int i = 0; i < numberOfFrames; i++)
 			{
-				StackPointerInfoCache::StackFrameInfo info;
+				StackFrameInfo info;
 				if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
 				{
 					if ( info.functionName.size() && info.srcPath.size() )
@@ -372,7 +371,7 @@ namespace nodecpp {
 				else
 				{
 #ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-					info.functionName = btsymbols[i];
+					/*info.functionName = btsymbols[i];
 
 					ModuleAndOffset mao;
 					if ( StackPointerInfoCache::getRegister().addrToModuleAndOffset( stack[i], mao ) )
@@ -382,7 +381,19 @@ namespace nodecpp {
 						addResolvedStackPtrData( stack[i], info );
 					}
 					else
-						out += fmt::format( "\tat {}\n", btsymbols[i] );
+						out += fmt::format( "\tat {}\n", btsymbols[i] );*/
+					stackPointerToInfo( stack[i], info );
+					StackPointerInfoCache::getRegister().addResolvedStackPtrData( stack[i], info );
+
+					// info to string
+					if ( info.functionName.size() && info.srcPath.size() )
+						out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+					else if ( info.srcPath.size() )
+						out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+					else if ( info.functionName.size() )
+						out += fmt::format( "\tat {}\n", info.functionName );
+					else
+						out += fmt::format( "\tat <...>\n" );
 #else
 					out += fmt::format( "\tat {}\n", btsymbols[i] );
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
@@ -395,6 +406,8 @@ namespace nodecpp {
 		}
 		else
 			*const_cast<error::string_ref*>(&whereTaken) = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+#else
+// everything has already been done in preinit()
 #endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
@@ -402,6 +415,8 @@ namespace nodecpp {
 #endif // platform/compiler
 	}
 
+
+#if 0
 	void StackInfo::init_()
 	{
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
@@ -529,6 +544,8 @@ namespace nodecpp {
 #endif // platform/compiler
 		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
 	}
+#endif // 0
+
 
 	namespace impl
 	{

@@ -65,11 +65,34 @@ public:
 	BaseMapT resolvedData;
 
 private:
-	std::condition_variable waitRequester;
-	std::mutex mx;
+	std::mutex mxSearcher;
+	std::mutex mxResolver;
 
 private:
 	StackPointerInfoCache() {}
+
+	bool getResolvedStackPtrData_( void* stackPtr, StackFrameInfo& info )
+	{
+		std::unique_lock<std::mutex> lock(mxSearcher);
+		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
+		if ( ret != resolvedData.end() )
+		{
+			info = ret->second;
+			return true;
+		}
+		return false;
+	}
+
+	void addResolvedStackPtrData_( void* stackPtr, const StackFrameInfo& info )
+	{
+		std::unique_lock<std::mutex> lock(mxSearcher);
+		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
+		if ( ret.second )
+			return;
+		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
+		lock.unlock();
+		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
+	}
 
 public:
 	StackPointerInfoCache( const StackPointerInfoCache& ) = delete;
@@ -82,39 +105,27 @@ public:
 		return r;
 	}
 
-	bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
+	bool resolveData( void* stackPtr, StackFrameInfo& info )
 	{
-		std::unique_lock<std::mutex> lock(mx);
-		BaseMapT resolvedData_;
-		auto ret_ = resolvedData_.find( (uintptr_t)(stackPtr) );
-		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
-		if ( ret != resolvedData.end() )
-		{
-			info = ret->second;
-			lock.unlock();
-			waitRequester.notify_one();
+		if ( getResolvedStackPtrData_( stackPtr, info ) )
 			return true;
-		}
-		lock.unlock();
-		waitRequester.notify_one();
-		return false;
+		std::unique_lock<std::mutex> lock(mxResolver);
+		if ( getResolvedStackPtrData_( stackPtr, info ) )
+			return true;
+		bool ok = stackPointerToInfo( stackPtr, info );
+		addResolvedStackPtrData_( stackPtr, info );
+		return true;
+	}
+
+	/*bool getResolvedStackPtrData( void* stackPtr, StackFrameInfo& info )
+	{
+		return getResolvedStackPtrData_( stackPtr, info );
 	}
 
 	void addResolvedStackPtrData( void* stackPtr, const StackFrameInfo& info )
 	{
-		std::unique_lock<std::mutex> lock(mx);
-		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
-		if ( ret.second )
-		{
-			lock.unlock();
-			waitRequester.notify_one();
-			return;
-		}
-		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
-		lock.unlock();
-		waitRequester.notify_one();
-		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
-	}
+		addResolvedStackPtrData_( stackPtr, info );
+	}*/
 
 };
 

@@ -291,7 +291,18 @@ namespace nodecpp {
 		for (int i = 0; i < numberOfFrames; i++)
 		{
 			StackFrameInfo info;
-			if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
+			StackPointerInfoCache::getRegister().resolveData( stack[i], info );
+			// info to string
+			if ( info.functionName.size() && info.srcPath.size() )
+				out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+			else if ( info.srcPath.size() )
+				out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+			else if ( info.functionName.size() )
+				out += fmt::format( "\tat {}\n", info.functionName );
+			else
+				out += fmt::format( "\tat <...>\n" );
+#if 0
+			if ( StackPointerInfoCache::getRegister().resolveData( stack[i], info ) )
 			{
 				// info to string
 				if ( info.functionName.size() && info.srcPath.size() )
@@ -340,6 +351,7 @@ namespace nodecpp {
 				else
 					out += fmt::format( "\tat <...>\n" );
 			}
+#endif // 0
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
@@ -357,6 +369,17 @@ namespace nodecpp {
 			for (int i = 0; i < numberOfFrames; i++)
 			{
 				StackFrameInfo info;
+				StackPointerInfoCache::getRegister().resolveData( stack[i], info );
+				// info to string
+				if ( info.functionName.size() && info.srcPath.size() )
+					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+				else if ( info.srcPath.size() )
+					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+				else if ( info.functionName.size() )
+					out += fmt::format( "\tat {}\n", info.functionName );
+				else
+					out += fmt::format( "\tat <...>\n" );
+#if 0
 				if ( StackPointerInfoCache::getRegister().getResolvedStackPtrData( stack[i], info ) )
 				{
 					if ( info.functionName.size() && info.srcPath.size() )
@@ -398,6 +421,7 @@ namespace nodecpp {
 					out += fmt::format( "\tat {}\n", btsymbols[i] );
 #endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 				}
+#endif
 			}
 			free( btsymbols );
 			if ( !stripPoint.empty() )
@@ -414,137 +438,6 @@ namespace nodecpp {
 #error not (yet) supported
 #endif // platform/compiler
 	}
-
-
-#if 0
-	void StackInfo::init_()
-	{
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
-
-		/*void *stack[TRACE_MAX_STACK_FRAMES];
-		HANDLE process = GetCurrentProcess();
-		SymInitialize(process, NULL, TRUE);
-		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
-		stackPointers.init( stack, numberOfFrames );
-		SYMBOL_INFO *symbol = (SYMBOL_INFO *)malloc(sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR));
-		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
-		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-		DWORD displacement = 0;
-		IMAGEHLP_LINE64 *line = (IMAGEHLP_LINE64 *)malloc(sizeof(IMAGEHLP_LINE64));
-		memset(line, 0, sizeof(IMAGEHLP_LINE64));
-		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-		std::string out;
-		for (int i = 0; i < numberOfFrames; i++)
-		{
-			DWORD64 address = (DWORD64)(stack[i]);
-			bool addrOK = false;
-#ifndef _DEBUG
-			addrOK = SymFromAddr(process, address, NULL, symbol);
-#endif
-			bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, line);
-			if ( addrOK && fileLineOK )
-				out += fmt::format( "\tat {} in {}, line {}\n", symbol->Name, line->FileName, line->LineNumber );
-			else if ( fileLineOK )
-				out += fmt::format( "\tat {}, line {}\n", line->FileName, line->LineNumber );
-			else if ( addrOK )
-				out += fmt::format( "\tat {}\n", symbol->Name );
-			else
-				out += fmt::format( "\tat <...>\n" );
-		}
-		if ( !stripPoint.empty() )
-			strip( out, stripPoint.c_str() );
-		whereTaken = out.c_str();*/
-		preinit();
-		
-#elif defined NODECPP_CLANG || defined NODECPP_GCC
-
-#ifdef NODECPP_LINUX_NO_LIBUNWIND
-		/*void *stack[TRACE_MAX_STACK_FRAMES];
-		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
-		stackPointers.init( stack, numberOfFrames );
-		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
-		if ( btsymbols != nullptr )
-		{
-			std::string out;
-			for (int i = 0; i < numberOfFrames; i++)
-			{
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				ModuleAndOffset mao;
-				if ( addrToModuleAndOffset( stack[i], mao ) )
-				{
-					out += fmt::format( "\tat {}", btsymbols[i] );
-					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
-				}
-				else
-					out += fmt::format( "\tat {}\n", btsymbols[i] );
-#else
-				out += fmt::format( "\tat {}\n", btsymbols[i] );
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-			}
-			free( btsymbols );
-			if ( stripPoint != nullptr )
-				strip( out, stripPoint );
-			whereTaken = out.c_str();
-		}
-		else
-			whereTaken = error::string_ref	( error::string_ref::literal_tag_t(), "" );*/
-		preinit();
-#else
-		unw_cursor_t cursor;
-		unw_context_t context;
-
-		// Initialize cursor to current frame for local unwinding.
-		unw_getcontext(&context);
-		unw_init_local(&cursor, &context);
-
-		// Unwind frames one by one, going up the frame stack.
-
-		std::string out;
-
-		while (unw_step(&cursor) > 0) {
-			unw_word_t offset, pc;
-			unw_get_reg(&cursor, UNW_REG_IP, &pc);
-			if (pc == 0) {
-				break;
-			}
-			out += fmt::format( "0x{:x}:", pc );
-
-			char sym[256];
-			if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
-				char* nameptr = sym;
-				int status;
-				char* demangled = abi::__cxa_demangle(sym, nullptr, nullptr, &status);
-				if (status == 0) {
-					nameptr = demangled;
-				}
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				ModuleAndOffset mao;
-				if ( addrToModuleAndOffset( pc + offset, mao ) )
-				{
-					out += fmt::format( " ({}+0x{:x})", nameptr, offset );
-					addFileLineInfo( mao.modulePath, mao.offsetInModule, out, true );
-				}
-				else
-					out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-#else
-				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-				std::free(demangled);
-			} else {
-				out += "<...>\n";
-			}
-		}
-		if ( stripPoint != nullptr )
-			strip( out, stripPoint );
-		whereTaken = out.c_str();
-#endif // NODECPP_LINUX_NO_LIBUNWIND
-
-#else
-#error not (yet) supported
-#endif // platform/compiler
-		timeStamp = ::nodecpp::logging_impl::getCurrentTimeStamp();
-	}
-#endif // 0
 
 
 	namespace impl

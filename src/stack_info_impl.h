@@ -31,6 +31,7 @@
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #include <map>
+#include <set>
 
 struct StackFrameInfo
 {
@@ -52,16 +53,19 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info );
 class StackPointerInfoCache
 {
 public:
-	using StackStringCacheT = std::map<std::string, int>;
+	using StackStringCacheT = std::set<std::string>;
+	StackStringCacheT modules;
+	StackStringCacheT srcFiles;
+	StackStringCacheT functionNames;
 	struct StackFrameInfoInternal
 	{
-		std::string modulePath;
-		std::string functionName;
-		std::string srcPath;
+		const char* modulePath = nullptr;
+		const char* functionName = nullptr;
+		const char* srcPath = nullptr;
 		int line = 0;
 		int column = 0;
 	};
-	using BaseMapT = std::map<uintptr_t, StackFrameInfo>;
+	using BaseMapT = std::map<uintptr_t, StackFrameInfoInternal>;
 	BaseMapT resolvedData;
 
 private:
@@ -75,15 +79,41 @@ private:
 		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
 		if ( ret != resolvedData.end() )
 		{
-			info = ret->second;
+			info.functionName = ret->second.functionName;
+			info.modulePath = ret->second.modulePath;
+			info.srcPath = ret->second.srcPath;
+			info.line = ret->second.line;
+			info.column = ret->second.column;
 			return true;
 		}
 		return false;
 	}
 
+	const char* add2stringCache( std::string str, StackStringCacheT& coll )
+	{
+		auto findRes = coll.find( str );
+		if ( findRes != coll.end() )
+			return findRes->c_str();
+		else
+		{
+			auto r = coll.insert( str );
+			if ( r.second )
+				return r.first->c_str();
+			else
+				return "***"; // note: throwing here is not a good idea as with a high probability we're inside exception handler now. Let's just have this info lost
+		}
+	}
+
 	void addResolvedStackPtrData_( void* stackPtr, const StackFrameInfo& info )
 	{
-		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
+		StackFrameInfoInternal sfi;
+		sfi.modulePath = add2stringCache( info.modulePath, modules );
+		sfi.srcPath = add2stringCache( info.srcPath, srcFiles );
+		sfi.functionName = add2stringCache( info.functionName, functionNames );
+		sfi.line = info.line;
+		sfi.column = info.column;
+
+		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), sfi ) );
 		if ( ret.second )
 			return;
 		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool

@@ -66,14 +66,12 @@ public:
 
 private:
 	std::mutex mxSearcher;
-	std::mutex mxResolver;
 
 private:
 	StackPointerInfoCache() {}
 
 	bool getResolvedStackPtrData_( void* stackPtr, StackFrameInfo& info )
 	{
-		std::unique_lock<std::mutex> lock(mxSearcher);
 		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
 		if ( ret != resolvedData.end() )
 		{
@@ -85,12 +83,10 @@ private:
 
 	void addResolvedStackPtrData_( void* stackPtr, const StackFrameInfo& info )
 	{
-		std::unique_lock<std::mutex> lock(mxSearcher);
 		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), info ) );
 		if ( ret.second )
 			return;
 		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
-		lock.unlock();
 		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
 	}
 
@@ -107,16 +103,15 @@ public:
 
 	bool resolveData( void* stackPtr, StackFrameInfo& info )
 	{
+		std::unique_lock<std::mutex> lock(mxSearcher);
 		if ( getResolvedStackPtrData_( stackPtr, info ) )
 			return true;
-		std::unique_lock<std::mutex> lock(mxResolver);
 		if ( getResolvedStackPtrData_( stackPtr, info ) )
 			return true;
 		bool ok = stackPointerToInfo( stackPtr, info );
 		addResolvedStackPtrData_( stackPtr, info );
 		return true;
 	}
-
 };
 
 #endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS

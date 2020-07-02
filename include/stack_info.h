@@ -102,7 +102,7 @@ namespace nodecpp {
 			stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
-postinit();
+//postinit();
 #else
 			preinit();
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
@@ -111,7 +111,7 @@ postinit();
 			stripPoint = std::move( stripPoint_ ); 
 #ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
-postinit();
+//postinit();
 #else
 			preinit();
 #endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING

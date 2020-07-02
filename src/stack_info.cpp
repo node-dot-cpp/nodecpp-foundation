@@ -76,8 +76,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void parseAddr2LineRet( const std::string& str, StackFrameInfo& info ) {
-printf( "parseAddr2LineRet(): \"%s\"\n", str.c_str() );
+#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+
+#include <execinfo.h>
+#include <unistd.h>
+
+static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info ) {
 	if ( str.size() == 0 )
 		return;
 	size_t pos = 0;
@@ -97,11 +101,6 @@ printf( "parseAddr2LineRet(): \"%s\"\n", str.c_str() );
 		return;
 	info.line = atol( str.c_str() + pos + 1 );
 }
-
-#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-
-#include <execinfo.h>
-#include <unistd.h>
 
 std::string sh(std::string cmd) {
 	std::array<char, 128> buffer;
@@ -125,9 +124,7 @@ static void useAddr2Line( const char* moduleName, uintptr_t offsetInModule, Stac
 	cmd += " -f -C ";
 	cmd += offsetstr;
 	auto r = sh(cmd);
-	parseAddr2LineRet( r, info );
-//	printf( "addr2line: cmd = \"%s\"\n", cmd.c_str());
-//	printf( "addr2line( %s, %s ) = \"%s\"\n", moduleName, offsetstr, r.c_str() );
+	parseAddr2LineOutput( r, info );
 }
 
 static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
@@ -141,9 +138,6 @@ static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	}
 	mao.modulePath = info.dli_fname;
 	mao.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
-/*static int ctr = 0;
-if ( ctr++ == 0 )
-useAddr2Line( mao );*/
 	return true;
 }
 
@@ -158,9 +152,8 @@ static bool error(Expected<T> &ResOrErr) {
 	return true;
 }
 
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
-	useAddr2Line( ModuleName, Offset, sfi )
-	/*LLVMSymbolizer Symbolizer;
+static void useLlvmSymbolizer( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
+	LLVMSymbolizer Symbolizer;
 
 	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
 
@@ -176,7 +169,12 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFram
 		sfi.srcPath = li.FileName;
 		sfi.line = li.Line;
 		sfi.column = li.Column;
-	}*/
+	}
+}
+
+static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
+	useAddr2Line( ModuleName, Offset, sfi );
+//	useLlvmSymbolizer( ModuleName, Offset, sfi );
 }
 
 #endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE

@@ -76,7 +76,59 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+static void parseAddr2LineRet( const std::string& str, StackFrameInfo& info ) {
+printf( "parseAddr2LineRet(): \"%s\"\n", str.c_str() );
+	if ( str.size() == 0 )
+		return;
+	size_t pos = 0;
+	pos = str.find( '\n', pos );
+	if ( pos != std::string::npos )
+		info.functionName = str.substr( 0, pos );
+	else
+	{
+		info.functionName = str;
+		return;
+	}
+	size_t start = pos + 1;
+	pos = str.find( ':', start );
+	if ( pos != std::string::npos )
+		info.srcPath = str.substr( start, pos - start );
+	else // something went wrong
+		return;
+	info.line = atol( str.c_str() + pos + 1 );
+}
+
 #if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+
+#include <execinfo.h>
+#include <unistd.h>
+
+std::string sh(std::string cmd) {
+	std::array<char, 128> buffer;
+	std::string result;
+	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+//	if (!pipe) throw std::runtime_error("popen() failed!");
+	if (!pipe) return result; // with no data
+	while (!feof(pipe.get())) {
+		if (fgets(buffer.data(), 128, pipe.get()) != nullptr) {
+			result += buffer.data();
+		}
+	}
+    return result;
+}
+
+static void useAddr2Line( const char* moduleName, uintptr_t offsetInModule, StackFrameInfo& info ) {
+	char offsetstr[32];
+	sprintf( offsetstr, "0x%zx", offsetInModule );
+	std::string cmd = "addr2line -e ";
+	cmd += moduleName;
+	cmd += " -f -C ";
+	cmd += offsetstr;
+	auto r = sh(cmd);
+	parseAddr2LineRet( r, info );
+//	printf( "addr2line: cmd = \"%s\"\n", cmd.c_str());
+//	printf( "addr2line( %s, %s ) = \"%s\"\n", moduleName, offsetstr, r.c_str() );
+}
 
 static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	Dl_info info;
@@ -89,6 +141,9 @@ static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	}
 	mao.modulePath = info.dli_fname;
 	mao.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
+/*static int ctr = 0;
+if ( ctr++ == 0 )
+useAddr2Line( mao );*/
 	return true;
 }
 
@@ -103,8 +158,9 @@ static bool error(Expected<T> &ResOrErr) {
 	return true;
 }
 
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, bool addFnName, StackFrameInfo& sfi ) {
-	LLVMSymbolizer Symbolizer;
+static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
+	useAddr2Line( ModuleName, Offset, sfi )
+	/*LLVMSymbolizer Symbolizer;
 
 	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
 
@@ -120,7 +176,7 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, bool addF
 		sfi.srcPath = li.FileName;
 		sfi.line = li.Line;
 		sfi.column = li.Column;
-	}
+	}*/
 }
 
 #endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
@@ -163,7 +219,7 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 	ModuleAndOffset mao;
 	if ( addrToModuleAndOffset( ptr, mao ) )
 	{
-		addFileLineInfo( mao.modulePath, mao.offsetInModule/*, out*/, true, info );
+		addFileLineInfo( mao.modulePath, mao.offsetInModule, info );
 		return true;
 	}
 	else

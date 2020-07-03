@@ -141,37 +141,6 @@ static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 	return true;
 }
 
-using namespace llvm;
-using namespace symbolize;
-
-template<typename T>
-static bool error(Expected<T> &ResOrErr) {
-	if (ResOrErr)
-		return false;
-	consumeError( ResOrErr.takeError() );
-	return true;
-}
-
-static void useLlvmSymbolizer( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
-	LLVMSymbolizer Symbolizer;
-
-	auto ResOrErr = Symbolizer.symbolizeInlinedCode( ModuleName, {Offset, object::SectionedAddress::UndefSection});
-
-	if ( !error(ResOrErr) )
-	{
-		auto& info = ResOrErr.get();
-		size_t numOfFrames = info.getNumberOfFrames();
-		if ( numOfFrames == 0 )
-			return;
-		const DILineInfo & li = info.getFrame(0);
-
-		sfi.functionName = li.FunctionName;
-		sfi.srcPath = li.FileName;
-		sfi.line = li.Line;
-		sfi.column = li.Column;
-	}
-}
-
 static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
 	useAddr2Line( ModuleName, Offset, sfi );
 //	useLlvmSymbolizer( ModuleName, Offset, sfi );
@@ -211,9 +180,6 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
-#ifdef NODECPP_LINUX_NO_LIBUNWIND
-
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 	ModuleAndOffset mao;
 	if ( addrToModuleAndOffset( ptr, mao ) )
 	{
@@ -222,12 +188,6 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 	}
 	else
 		return false;
-#else
-#error not applicable
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-#else
-#error not applicable
-#endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
 #error not (yet) supported
@@ -236,14 +196,11 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-#define TRACE_MAX_STACK_FRAMES 1024
-
 namespace nodecpp {
 
 	void StackInfo::preinit()
 	{
+		static constexpr size_t TRACE_MAX_STACK_FRAMES = 1024;
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
 		void *stack[TRACE_MAX_STACK_FRAMES];
@@ -254,52 +211,9 @@ namespace nodecpp {
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
-#ifdef NODECPP_LINUX_NO_LIBUNWIND
-
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
 		stackPointers.init( stack, numberOfFrames );
-
-#else // NODECPP_LINUX_NO_LIBUNWIND // we do it in a single shot (at least, as for now)
-
-		unw_cursor_t cursor;
-		unw_context_t context;
-
-		// Initialize cursor to current frame for local unwinding.
-		unw_getcontext(&context);
-		unw_init_local(&cursor, &context);
-
-		// Unwind frames one by one, going up the frame stack.
-
-		std::string out;
-
-		while (unw_step(&cursor) > 0) {
-			unw_word_t offset, pc;
-			unw_get_reg(&cursor, UNW_REG_IP, &pc);
-			if (pc == 0) {
-				break;
-			}
-			out += fmt::format( "0x{:x}:", pc );
-
-			char sym[256];
-			if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
-				char* nameptr = sym;
-				int status;
-				char* demangled = abi::__cxa_demangle(sym, nullptr, nullptr, &status);
-				if (status == 0) {
-					nameptr = demangled;
-				}
-				out += fmt::format( " ({}+0x{:x})\n", nameptr, offset );
-				std::free(demangled);
-			} else {
-				out += "<...>\n";
-			}
-		}
-		if ( stripPoint != nullptr )
-			strip( out, stripPoint );
-		whereTaken = out.c_str();
-
-#endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
 #error not (yet) supported
@@ -334,7 +248,6 @@ namespace nodecpp {
 		
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
-#ifdef NODECPP_LINUX_NO_LIBUNWIND
 		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
 		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
@@ -362,9 +275,6 @@ namespace nodecpp {
 		}
 		else
 			*const_cast<error::string_ref*>(&whereTaken) = error::string_ref	( error::string_ref::literal_tag_t(), "" );
-#else
-// everything has already been done in preinit()
-#endif // NODECPP_LINUX_NO_LIBUNWIND
 
 #else
 #error not (yet) supported

@@ -56,6 +56,8 @@
 
 #if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
 
+#ifdef NODECPP_CLANG
+
 static void parseBtSymbol( std::string symbol, StackFrameInfo& info ) {
 	if ( symbol.size() == 0 )
 		return;
@@ -76,6 +78,24 @@ static void parseBtSymbol( std::string symbol, StackFrameInfo& info ) {
 		return;
 	}
 }
+
+#else
+
+static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
+	Dl_info info;
+	int ret = dladdr(fnAddr, &info); // see https://linux.die.net/man/3/dlopen for details
+	if ( ret == 0 )
+	{
+		mao.modulePath = nullptr;
+		mao.offsetInModule = 0;
+		return false;
+	}
+	mao.modulePath = info.dli_fname;
+	mao.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
+	return true;
+}
+
+#endif // NODECPP_CLANG
 
 static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info ) {
 	if ( str.size() == 0 )
@@ -114,38 +134,19 @@ printf( "sh(%s) = \"%s\"\n", cmd.c_str(), result.c_str() );
     return result;
 }
 
-static void useAddr2Line( const char* moduleName, uintptr_t offsetInModule, StackFrameInfo& info ) {
-#ifdef NODECPP_CLANG
-	if ( info.offset != 0 )
-		offsetInModule = info.offset;
-#endif // NODECPP_CLANG
+static void useAddr2Line( StackFrameInfo& info ) {
 	char offsetstr[32];
-	sprintf( offsetstr, "0x%zx", offsetInModule );
+	sprintf( offsetstr, "0x%zx", info.offset );
 	std::string cmd = "addr2line -e ";
-	cmd += moduleName;
+	cmd += info.modulePath;
 	cmd += " -f -C ";
 	cmd += offsetstr;
 	auto r = sh(cmd);
 	parseAddr2LineOutput( r, info );
 }
 
-static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
-	Dl_info info;
-	int ret = dladdr(fnAddr, &info); // see https://linux.die.net/man/3/dlopen for details
-	if ( ret == 0 )
-	{
-		mao.modulePath = nullptr;
-		mao.offsetInModule = 0;
-		return false;
-	}
-	mao.modulePath = info.dli_fname;
-	mao.offsetInModule = (uintptr_t)fnAddr - (uintptr_t)(info.dli_fbase);
-	return true;
-}
-
-static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFrameInfo& sfi ) {
-	useAddr2Line( ModuleName, Offset, sfi );
-//	useLlvmSymbolizer( ModuleName, Offset, sfi );
+static void addFileLineInfo( StackFrameInfo& sfi ) {
+	useAddr2Line( sfi );
 }
 
 #endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
@@ -180,16 +181,23 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 		info.functionName = symbol->Name;
 	return true;
 		
-#elif defined NODECPP_CLANG || defined NODECPP_GCC
+#elif defined NODECPP_GCC
 
 	ModuleAndOffset mao;
 	if ( addrToModuleAndOffset( ptr, mao ) )
 	{
-		addFileLineInfo( mao.modulePath, mao.offsetInModule, info );
+		info.offset = mao.offsetInModule;
+		info.modulePath = mao.modulePath;
+		addFileLineInfo( info );
 		return true;
 	}
 	else
 		return false;
+
+#elif defined NODECPP_CLANG
+
+	addFileLineInfo( info );
+	return true;
 
 #else
 #error not (yet) supported

@@ -30,13 +30,15 @@
 
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
+// NOTE: on Linux (both clang and gcc) the following is required: -rdynamic -ldl
+
 #include "platform_base.h"
 #include "foundation.h"
 #include "string_ref.h"
 #include "log.h"
 #include <fmt/format.h>
 
-#if (defined NODECPP_LINUX && defined NODECPP_LINUX_NO_LIBUNWIND) || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#if defined NODECPP_LINUX || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 #define NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 #endif
 

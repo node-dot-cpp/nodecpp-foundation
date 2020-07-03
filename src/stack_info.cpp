@@ -31,10 +31,6 @@
 #include "stack_info_impl.h"
 #include "log.h"
 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
-#include <map>
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
-
 #if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
 
 #include <process.h>
@@ -45,29 +41,9 @@
 
 #elif defined NODECPP_CLANG || defined NODECPP_GCC
 
-#ifdef NODECPP_LINUX_NO_LIBUNWIND
 #include <execinfo.h>
-#else
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>
-#include <cxxabi.h>
-#endif // NODECPP_LINUX_NO_LIBUNWIND
-
-#ifdef NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
-
-#ifndef _GNU_SOURCE
-#error _GNU_SOURCE must be defined to proceed
-#endif
-
-#include "llvm/DebugInfo/Symbolize/Symbolize.h"
-#include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <string>
 #include <dlfcn.h>
-
-#endif // NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
 
 #else
 #error not (yet) supported
@@ -76,10 +52,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
 
-#include <execinfo.h>
-#include <unistd.h>
 
 static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info ) {
 	if ( str.size() == 0 )
@@ -146,7 +120,7 @@ static void addFileLineInfo( const char* ModuleName, uintptr_t Offset, StackFram
 //	useLlvmSymbolizer( ModuleName, Offset, sfi );
 }
 
-#endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) && NODECPP_STACKINFO_USE_LLVM_SYMBOLIZE
+#endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -40,6 +40,7 @@ struct StackFrameInfo
 	std::string srcPath;
 	int line = 0;
 	int column = 0;
+	uintptr_t offset = 0;
 };
 
 struct ModuleAndOffset

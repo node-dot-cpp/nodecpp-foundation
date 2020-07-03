@@ -52,8 +52,30 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
 #if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
 
+static void parseBtSymbol( std::string symbol, StackFrameInfo& info ) {
+	if ( symbol.size() == 0 )
+		return;
+	size_t pos = symbol.find_last_of( '[' );
+	if ( pos != std::string::npos )
+		info.offset = strtoll( symbol.c_str() + pos + 1, NULL, 0);
+	else
+	{
+		info.offset = 0;
+		return;
+	}
+	pos = symbol.find_last_of( '(' );
+	if ( pos != std::string::npos )
+		info.modulePath = symbol.substr( 0, pos );
+	else
+	{
+		info.modulePath = "";
+		return;
+	}
+}
 
 static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info ) {
 	if ( str.size() == 0 )
@@ -88,10 +110,15 @@ std::string sh(std::string cmd) {
 			result += buffer;
 		}
 	}
+printf( "sh(%s) = \"%s\"\n", cmd.c_str(), result.c_str() );
     return result;
 }
 
 static void useAddr2Line( const char* moduleName, uintptr_t offsetInModule, StackFrameInfo& info ) {
+#ifdef NODECPP_CLANG
+	if ( info.offset != 0 )
+		offsetInModule = info.offset;
+#endif // NODECPP_CLANG
 	char offsetstr[32];
 	sprintf( offsetstr, "0x%zx", offsetInModule );
 	std::string cmd = "addr2line -e ";
@@ -236,7 +263,11 @@ namespace nodecpp {
 			std::string out;
 			for (size_t i = 0; i < numberOfFrames; i++)
 			{
+printf( "btsymbols[%zd] = \"%s\"\n", i, btsymbols[i] );
 				StackFrameInfo info;
+#ifdef NODECPP_CLANG
+				parseBtSymbol( btsymbols[i], info );
+#endif // NODECPP_CLANG
 				StackPointerInfoCache::getRegister().resolveData( stack[i], info );
 				stackPointerToInfoToString( info, out );
 			}

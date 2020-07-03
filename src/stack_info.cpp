@@ -77,14 +77,15 @@ static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info )
 }
 
 std::string sh(std::string cmd) {
-	std::array<char, 128> buffer;
+	static constexpr size_t buffSz = 128;
+	char buffer[buffSz+1];
 	std::string result;
 	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-//	if (!pipe) throw std::runtime_error("popen() failed!");
 	if (!pipe) return result; // with no data
 	while (!feof(pipe.get())) {
-		if (fgets(buffer.data(), 128, pipe.get()) != nullptr) {
-			result += buffer.data();
+		if (fgets(buffer, buffSz, pipe.get()) != nullptr) {
+			buffer[buffSz] = 0;
+			result += buffer;
 		}
 	}
     return result;
@@ -233,7 +234,7 @@ namespace nodecpp {
 		if ( btsymbols != nullptr )
 		{
 			std::string out;
-			for (int i = 0; i < numberOfFrames; i++)
+			for (size_t i = 0; i < numberOfFrames; i++)
 			{
 				StackFrameInfo info;
 				StackPointerInfoCache::getRegister().resolveData( stack[i], info );

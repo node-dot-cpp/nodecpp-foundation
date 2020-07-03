@@ -198,14 +198,18 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 
 void stackPointerToInfoToString( const StackFrameInfo& info, std::string& out )
 {
-	if ( info.functionName.size() && info.srcPath.size() )
-		out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-	else if ( info.srcPath.size() )
-		out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-	else if ( info.functionName.size() )
-		out += fmt::format( "\tat {}\n", info.functionName );
+	if ( info.modulePath.size() )
+		out += fmt::format( "\tat {} [+0x{:x}]", info.modulePath, info.offset );
 	else
-		out += fmt::format( "\tat <...>\n" );
+		out += "\tat";
+	if ( info.functionName.size() && info.srcPath.size() )
+		out += fmt::format( ", {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+	else if ( info.srcPath.size() )
+		out += fmt::format( ",  {}, line {}\n", info.srcPath, info.line );
+	else if ( info.functionName.size() )
+		out += fmt::format( ", {}\n", info.functionName );
+	else
+		out += fmt::format( " <...>\n" );
 }
 
 

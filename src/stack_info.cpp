@@ -194,6 +194,19 @@ bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
 #endif // platform/compiler
 }
 
+void stackPointerToInfoToString( const StackFrameInfo& info, std::string& out )
+{
+	if ( info.functionName.size() && info.srcPath.size() )
+		out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
+	else if ( info.srcPath.size() )
+		out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
+	else if ( info.functionName.size() )
+		out += fmt::format( "\tat {}\n", info.functionName );
+	else
+		out += fmt::format( "\tat <...>\n" );
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace nodecpp {
@@ -232,15 +245,7 @@ namespace nodecpp {
 		{
 			StackFrameInfo info;
 			StackPointerInfoCache::getRegister().resolveData( stack[i], info );
-			// info to string
-			if ( info.functionName.size() && info.srcPath.size() )
-				out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-			else if ( info.srcPath.size() )
-				out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-			else if ( info.functionName.size() )
-				out += fmt::format( "\tat {}\n", info.functionName );
-			else
-				out += fmt::format( "\tat <...>\n" );
+			stackPointerToInfoToString( info, out );
 		}
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
@@ -258,15 +263,7 @@ namespace nodecpp {
 			{
 				StackFrameInfo info;
 				StackPointerInfoCache::getRegister().resolveData( stack[i], info );
-				// info to string
-				if ( info.functionName.size() && info.srcPath.size() )
-					out += fmt::format( "\tat {} in {}, line {}\n", info.functionName, info.srcPath, info.line );
-				else if ( info.srcPath.size() )
-					out += fmt::format( "\tat {}, line {}\n", info.srcPath, info.line );
-				else if ( info.functionName.size() )
-					out += fmt::format( "\tat {}\n", info.functionName );
-				else
-					out += fmt::format( "\tat <...>\n" );
+				stackPointerToInfoToString( info, out );
 			}
 			free( btsymbols );
 			if ( !stripPoint.empty() )

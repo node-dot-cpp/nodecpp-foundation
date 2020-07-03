@@ -130,7 +130,6 @@ std::string sh(std::string cmd) {
 			result += buffer;
 		}
 	}
-printf( "sh(%s) = \"%s\"\n", cmd.c_str(), result.c_str() );
     return result;
 }
 
@@ -275,7 +274,6 @@ namespace nodecpp {
 			std::string out;
 			for (size_t i = 0; i < numberOfFrames; i++)
 			{
-printf( "btsymbols[%zd] = \"%s\"\n", i, btsymbols[i] );
 				StackFrameInfo info;
 #ifdef NODECPP_CLANG
 				parseBtSymbol( btsymbols[i], info );

@@ -61,7 +61,9 @@ void badCallInner_Nullptr()
 	nodecpp::StackInfo si(true);
 	si.log( nodecpp::log::LogLevel::fatal );
 #endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
+#if !defined NODECPP_CLANG // SEH implementation for clang is yet to be developed
     *ptr = 0;
+#endif // NODECPP_CLANG
 }
 
 void badCallOuter_Nullptr()
@@ -74,7 +76,9 @@ void badCallOuter_Nullptr()
 void badCallInner_AnyPtr()
 {
 	volatile int * ptr = (int*) 0x100000;
+#if !defined NODECPP_CLANG // SEH implementation for clang is yet to be developed
     *ptr = 0;
+#endif // NODECPP_CLANG
 }
 
 void badCallOuter_AnyPtr()

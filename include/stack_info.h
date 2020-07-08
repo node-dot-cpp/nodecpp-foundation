@@ -38,8 +38,8 @@
 #include "log.h"
 #include <fmt/format.h>
 
-#if defined NODECPP_LINUX || (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
-#define NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
+#if ! ( ( defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC ) ) || defined NODECPP_WINDOWS )
+#error unsupported
 #endif
 
 namespace nodecpp {
@@ -59,7 +59,6 @@ namespace nodecpp {
 		friend ::nodecpp::logging_impl::LoggingTimeStamp impl::whenTakenStackInfo( const StackInfo& info );
 		friend bool impl::isDataStackInfo( const StackInfo& info );
 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		class StackPointers {
 			void** ptrs = nullptr;
 			size_t cnt = 0;
@@ -75,12 +74,12 @@ namespace nodecpp {
 			void** get() const { return ptrs; }
 		};
 		StackPointers stackPointers;
-		void postinit() const;
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		error::string_ref stripPoint;
 		::nodecpp::logging_impl::LoggingTimeStamp timeStamp;
 		error::string_ref whereTaken;
+
 		void preinit();
+		void postinit() const;
 		void strip( std::string& s, const char* stripPoint ) const {
 			size_t pos = s.find( stripPoint, 0 );
 			if ( pos != std::string::npos )
@@ -102,35 +101,21 @@ namespace nodecpp {
 		virtual ~StackInfo() {}
 		void init() { 
 			stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
-//postinit();
-#else
-			preinit();
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void init( error::string_ref&& stripPoint_ ) { 
 			stripPoint = std::move( stripPoint_ ); 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			preinit();
-//postinit();
-#else
-			preinit();
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 		}
 		void clear() { stripPoint = error::string_ref( error::string_ref::literal_tag_t(), "" ); whereTaken = nullptr; }
 		void log( log::LogLevel l ) { 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( whereTaken.empty() )
 				postinit();
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			log::default_log::log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
 		}
 		void log( log::Log& targetLog, log::LogLevel l ) {
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( whereTaken.empty() )
 				postinit();
-#endif // NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			targetLog.log( l, "time {}\n{}", timeStamp, whereTaken.c_str() );
 		}
 	};

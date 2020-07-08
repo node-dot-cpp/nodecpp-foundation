@@ -300,19 +300,13 @@ namespace nodecpp {
 	namespace impl
 	{
 		extern const error::string_ref& whereTakenStackInfo( const StackInfo& info ) { 
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			if ( info.whereTaken.empty() )
 				info.postinit();
-#endif
 			return info.whereTaken;
 		}
 		extern ::nodecpp::logging_impl::LoggingTimeStamp whenTakenStackInfo( const StackInfo& info ) { return info.timeStamp; }
 		extern bool isDataStackInfo( const StackInfo& info ) {
-#ifdef NODECPP_TWO_PHASE_STACK_DATA_RESOLVING
 			return !(info.whereTaken.empty() && info.timeStamp.t == 0 && info.stackPointers.size() == 0);
-#else
-			return !(info.whereTaken.empty() && info.timeStamp.t == 0);
-#endif
 		}
 	} // namespace impl
 

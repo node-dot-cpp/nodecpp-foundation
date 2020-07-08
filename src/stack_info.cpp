@@ -58,7 +58,7 @@
 
 #ifdef NODECPP_CLANG
 
-static void parseBtSymbol( std::string symbol, StackFrameInfo& info ) {
+static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFrameInfo& info ) {
 	if ( symbol.size() == 0 )
 		return;
 	size_t pos = symbol.find_last_of( '[' );
@@ -97,7 +97,7 @@ static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
 
 #endif // NODECPP_CLANG
 
-static void parseAddr2LineOutput( const std::string& str, StackFrameInfo& info ) {
+static void parseAddr2LineOutput( const std::string& str, nodecpp::stack_info_impl::StackFrameInfo& info ) {
 	if ( str.size() == 0 )
 		return;
 	size_t pos = 0;
@@ -133,7 +133,7 @@ std::string sh(std::string cmd) {
     return result;
 }
 
-static void useAddr2Line( StackFrameInfo& info ) {
+static void useAddr2Line( nodecpp::stack_info_impl::StackFrameInfo& info ) {
 	char offsetstr[32];
 	sprintf( offsetstr, "0x%zx", info.offset );
 	std::string cmd = "addr2line -e ";
@@ -144,7 +144,7 @@ static void useAddr2Line( StackFrameInfo& info ) {
 	parseAddr2LineOutput( r, info );
 }
 
-static void addFileLineInfo( StackFrameInfo& sfi ) {
+static void addFileLineInfo( nodecpp::stack_info_impl::StackFrameInfo& sfi ) {
 	useAddr2Line( sfi );
 }
 
@@ -152,58 +152,60 @@ static void addFileLineInfo( StackFrameInfo& sfi ) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool stackPointerToInfo( void* ptr, StackFrameInfo& info )
-{
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
-
-	static constexpr size_t TRACE_MAX_FUNCTION_NAME_LENGTH = 1024;
-	HANDLE process = GetCurrentProcess();
-	uint8_t symbolBuff[ sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR) ];
-	SYMBOL_INFO *symbol = (SYMBOL_INFO *)symbolBuff;
-	symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
-	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-	DWORD displacement = 0;
-	IMAGEHLP_LINE64 line;
-	DWORD64 address = (DWORD64)(ptr);
-	bool addrOK = false;
-#ifndef _DEBUG
-	addrOK = SymFromAddr(process, address, NULL, symbol);
-#endif
-	bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, &line);
-
-	if ( fileLineOK )
+namespace nodecpp::stack_info_impl {
+	bool stackPointerToInfo( void* ptr, nodecpp::stack_info_impl::StackFrameInfo& info )
 	{
-		info.srcPath = line.FileName;
-		info.line = line.LineNumber;
-	}
-	if ( addrOK )
-		info.functionName = symbol->Name;
-	return true;
+	#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+
+		static constexpr size_t TRACE_MAX_FUNCTION_NAME_LENGTH = 1024;
+		HANDLE process = GetCurrentProcess();
+		uint8_t symbolBuff[ sizeof(SYMBOL_INFO) + (TRACE_MAX_FUNCTION_NAME_LENGTH - 1) * sizeof(TCHAR) ];
+		SYMBOL_INFO *symbol = (SYMBOL_INFO *)symbolBuff;
+		symbol->MaxNameLen = TRACE_MAX_FUNCTION_NAME_LENGTH;
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		DWORD displacement = 0;
+		IMAGEHLP_LINE64 line;
+		DWORD64 address = (DWORD64)(ptr);
+		bool addrOK = false;
+	#ifndef _DEBUG
+		addrOK = SymFromAddr(process, address, NULL, symbol);
+	#endif
+		bool fileLineOK = SymGetLineFromAddr64(process, address, &displacement, &line);
+
+		if ( fileLineOK )
+		{
+			info.srcPath = line.FileName;
+			info.line = line.LineNumber;
+		}
+		if ( addrOK )
+			info.functionName = symbol->Name;
+		return true;
 		
-#elif defined NODECPP_GCC
+	#elif defined NODECPP_GCC
 
-	ModuleAndOffset mao;
-	if ( addrToModuleAndOffset( ptr, mao ) )
-	{
-		info.offset = mao.offsetInModule;
-		info.modulePath = mao.modulePath;
+		ModuleAndOffset mao;
+		if ( addrToModuleAndOffset( ptr, mao ) )
+		{
+			info.offset = mao.offsetInModule;
+			info.modulePath = mao.modulePath;
+			addFileLineInfo( info );
+			return true;
+		}
+		else
+			return false;
+
+	#elif defined NODECPP_CLANG
+
 		addFileLineInfo( info );
 		return true;
+
+	#else
+	#error not (yet) supported
+	#endif // platform/compiler
 	}
-	else
-		return false;
+} // nodecpp::stack_info_impl
 
-#elif defined NODECPP_CLANG
-
-	addFileLineInfo( info );
-	return true;
-
-#else
-#error not (yet) supported
-#endif // platform/compiler
-}
-
-void stackPointerToInfoToString( const StackFrameInfo& info, std::string& out )
+void stackPointerToInfoToString( const nodecpp::stack_info_impl::StackFrameInfo& info, std::string& out )
 {
 	if ( info.modulePath.size() )
 		out += fmt::format( "\tat {} [+0x{:x}]", info.modulePath, info.offset );
@@ -256,8 +258,8 @@ namespace nodecpp {
 		std::string out;
 		for (int i = 0; i < numberOfFrames; i++)
 		{
-			StackFrameInfo info;
-			StackPointerInfoCache::getRegister().resolveData( stack[i], info );
+			nodecpp::stack_info_impl::StackFrameInfo info;
+			nodecpp::stack_info_impl::StackPointerInfoCache::getRegister().resolveData( stack[i], info );
 			stackPointerToInfoToString( info, out );
 		}
 		if ( !stripPoint.empty() )
@@ -274,11 +276,11 @@ namespace nodecpp {
 			std::string out;
 			for (size_t i = 0; i < numberOfFrames; i++)
 			{
-				StackFrameInfo info;
+				nodecpp::stack_info_impl::StackFrameInfo info;
 #ifdef NODECPP_CLANG
 				parseBtSymbol( btsymbols[i], info );
 #endif // NODECPP_CLANG
-				StackPointerInfoCache::getRegister().resolveData( stack[i], info );
+				nodecpp::stack_info_impl::StackPointerInfoCache::getRegister().resolveData( stack[i], info );
 				stackPointerToInfoToString( info, out );
 			}
 			free( btsymbols );

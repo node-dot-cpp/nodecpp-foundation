@@ -50,6 +50,7 @@
     <ClCompile Include="..\test_seh.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\allocator_template.h" />
     <ClInclude Include="..\..\include\log.h" />
     <ClInclude Include="..\..\include\nodecpp_assert.h" />
     <ClInclude Include="..\..\include\cpu_exceptions_translator.h" />

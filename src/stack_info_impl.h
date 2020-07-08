@@ -30,120 +30,137 @@
 
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
+#include "../include/allocator_template.h"
+
 #include <map>
 #include <set>
 
-struct StackFrameInfo
-{
-	std::string modulePath;
-	std::string functionName;
-	std::string srcPath;
-	int line = 0;
-	int column = 0;
-	uintptr_t offset = 0;
-};
+namespace nodecpp::stack_info_impl {
 
-struct ModuleAndOffset
-{
-	const char* modulePath;
-	uintptr_t offsetInModule;
-};
+	template<class T>
+	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
 
-bool stackPointerToInfo( void* ptr, StackFrameInfo& info );
+	template<class Key, class T>
+	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
 
-class StackPointerInfoCache
-{
-public:
-	using StackStringCacheT = std::set<std::string>;
-	StackStringCacheT modules;
-	StackStringCacheT srcFiles;
-	StackStringCacheT functionNames;
-	struct StackFrameInfoInternal
+	template<class Key>
+	using stdset = ::std::set<Key, std::less<Key>, nodecpp::stdallocator<Key>>;
+
+	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
+
+	struct StackFrameInfo
 	{
-		const char* modulePath = nullptr;
-		const char* functionName = nullptr;
-		const char* srcPath = nullptr;
+		stdstring modulePath;
+		stdstring functionName;
+		stdstring srcPath;
 		int line = 0;
 		int column = 0;
+		uintptr_t offset = 0;
 	};
-	using BaseMapT = std::map<uintptr_t, StackFrameInfoInternal>;
-	BaseMapT resolvedData;
 
-private:
-	std::mutex mxSearcher;
-
-private:
-	StackPointerInfoCache() {}
-
-	bool getResolvedStackPtrData_( void* stackPtr, StackFrameInfo& info )
+	struct ModuleAndOffset
 	{
-		auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
-		if ( ret != resolvedData.end() )
+		const char* modulePath;
+		uintptr_t offsetInModule;
+	};
+
+	bool stackPointerToInfo( void* ptr, StackFrameInfo& info );
+
+	class StackPointerInfoCache
+	{
+	public:
+		using StackStringCacheT = stdset<stdstring>;
+		StackStringCacheT modules;
+		StackStringCacheT srcFiles;
+		StackStringCacheT functionNames;
+		struct StackFrameInfoInternal
 		{
-			info.functionName = ret->second.functionName;
-			info.modulePath = ret->second.modulePath;
-			info.srcPath = ret->second.srcPath;
-			info.line = ret->second.line;
-			info.column = ret->second.column;
-			return true;
+			const char* modulePath = nullptr;
+			const char* functionName = nullptr;
+			const char* srcPath = nullptr;
+			int line = 0;
+			int column = 0;
+		};
+		using BaseMapT = stdmap<uintptr_t, StackFrameInfoInternal>;
+		BaseMapT resolvedData;
+
+	private:
+		std::mutex mxSearcher;
+
+	private:
+		StackPointerInfoCache() {}
+
+		bool getResolvedStackPtrData_( void* stackPtr, StackFrameInfo& info )
+		{
+			auto ret = resolvedData.find( (uintptr_t)(stackPtr) );
+			if ( ret != resolvedData.end() )
+			{
+				info.functionName = ret->second.functionName;
+				info.modulePath = ret->second.modulePath;
+				info.srcPath = ret->second.srcPath;
+				info.line = ret->second.line;
+				info.column = ret->second.column;
+				return true;
+			}
+			return false;
 		}
-		return false;
-	}
 
-	const char* add2stringCache( std::string str, StackStringCacheT& coll )
-	{
-		auto findRes = coll.find( str );
-		if ( findRes != coll.end() )
-			return findRes->c_str();
-		else
+		const char* add2stringCache( stdstring str, StackStringCacheT& coll )
 		{
-			auto r = coll.insert( str );
-			if ( r.second )
-				return r.first->c_str();
+			auto findRes = coll.find( str );
+			if ( findRes != coll.end() )
+				return findRes->c_str();
 			else
-				return "***"; // note: throwing here is not a good idea as with a high probability we're inside exception handler now. Let's just have this info lost
+			{
+				auto r = coll.insert( str );
+				if ( r.second )
+					return r.first->c_str();
+				else
+					return "***"; // note: throwing here is not a good idea as with a high probability we're inside exception handler now. Let's just have this info lost
+			}
 		}
-	}
 
-	void addResolvedStackPtrData_( void* stackPtr, const StackFrameInfo& info )
-	{
-		StackFrameInfoInternal sfi;
-		sfi.modulePath = add2stringCache( info.modulePath, modules );
-		sfi.srcPath = add2stringCache( info.srcPath, srcFiles );
-		sfi.functionName = add2stringCache( info.functionName, functionNames );
-		sfi.line = info.line;
-		sfi.column = info.column;
+		void addResolvedStackPtrData_( void* stackPtr, const StackFrameInfo& info )
+		{
+			StackFrameInfoInternal sfi;
+			sfi.modulePath = add2stringCache( info.modulePath, modules );
+			sfi.srcPath = add2stringCache( info.srcPath, srcFiles );
+			sfi.functionName = add2stringCache( info.functionName, functionNames );
+			sfi.line = info.line;
+			sfi.column = info.column;
 
-		auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), sfi ) );
-		if ( ret.second )
-			return;
-		// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
-		nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
-	}
+			auto ret = resolvedData.insert( std::make_pair( (uintptr_t)(stackPtr), sfi ) );
+			if ( ret.second )
+				return;
+			// note: attempt to assert here results in throwing an exception, which itself may envoce this potentially-broken machinery; in any case it is only a supplementary tool
+			nodecpp::log::default_log::log( nodecpp::log::ModuleID(nodecpp::foundation_module_id), nodecpp::log::LogLevel::fatal, "!!! Assumptions at {}, line {} failed...", __FILE__, __LINE__ );
+		}
 
-public:
-	StackPointerInfoCache( const StackPointerInfoCache& ) = delete;
-	StackPointerInfoCache( StackPointerInfoCache&& ) = delete;
-	StackPointerInfoCache& operator = ( const StackPointerInfoCache& ) = delete;
-	StackPointerInfoCache& operator = ( StackPointerInfoCache&& ) = delete;
-	static StackPointerInfoCache& getRegister()
-	{
-		static StackPointerInfoCache r;
-		return r;
-	}
+	public:
+		StackPointerInfoCache( const StackPointerInfoCache& ) = delete;
+		StackPointerInfoCache( StackPointerInfoCache&& ) = delete;
+		StackPointerInfoCache& operator = ( const StackPointerInfoCache& ) = delete;
+		StackPointerInfoCache& operator = ( StackPointerInfoCache&& ) = delete;
+		static StackPointerInfoCache& getRegister()
+		{
+			static StackPointerInfoCache r;
+			return r;
+		}
 
-	bool resolveData( void* stackPtr, StackFrameInfo& info )
-	{
-		std::unique_lock<std::mutex> lock(mxSearcher);
-		if ( getResolvedStackPtrData_( stackPtr, info ) )
+		bool resolveData( void* stackPtr, StackFrameInfo& info )
+		{
+			std::unique_lock<std::mutex> lock(mxSearcher);
+			if ( getResolvedStackPtrData_( stackPtr, info ) )
+				return true;
+			if ( getResolvedStackPtrData_( stackPtr, info ) )
+				return true;
+			bool ok = stackPointerToInfo( stackPtr, info );
+			addResolvedStackPtrData_( stackPtr, info );
 			return true;
-		if ( getResolvedStackPtrData_( stackPtr, info ) )
-			return true;
-		bool ok = stackPointerToInfo( stackPtr, info );
-		addResolvedStackPtrData_( stackPtr, info );
-		return true;
-	}
-};
+		}
+	};
+
+} // nodecpp::stack_info_impl
 
 #endif // NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 #endif // STACK_INFO_IMPL_H

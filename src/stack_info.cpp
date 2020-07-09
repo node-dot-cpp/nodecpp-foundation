@@ -81,7 +81,7 @@ static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFr
 
 #else
 
-static bool addrToModuleAndOffset( void* fnAddr, ModuleAndOffset& mao ) {
+static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::ModuleAndOffset& mao ) {
 	Dl_info info;
 	int ret = dladdr(fnAddr, &info); // see https://linux.die.net/man/3/dlopen for details
 	if ( ret == 0 )
@@ -183,7 +183,7 @@ namespace nodecpp::stack_info_impl {
 		
 	#elif defined NODECPP_GCC
 
-		ModuleAndOffset mao;
+		nodecpp::stack_info_impl::ModuleAndOffset mao;
 		if ( addrToModuleAndOffset( ptr, mao ) )
 		{
 			info.offset = mao.offsetInModule;
@@ -196,8 +196,16 @@ namespace nodecpp::stack_info_impl {
 
 	#elif defined NODECPP_CLANG
 
-		addFileLineInfo( info );
-		return true;
+		void* sp = ptr;
+		char ** btsymbols = backtrace_symbols( &sp, 1 );
+		if ( btsymbols )
+		{
+			parseBtSymbol( btsymbols[0], info );
+			free( btsymbols );
+			addFileLineInfo( info );
+			return true;
+		}
+		return false;
 
 	#else
 	#error not (yet) supported

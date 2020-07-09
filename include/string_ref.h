@@ -45,7 +45,7 @@ namespace nodecpp::error {
 	{
 		bool fromLiteral;
 		const char* str = nullptr;
-		char* duplicate_str( const char* str_ ) { return strdup( str_ ); }
+		char* duplicate_str( const char* str_ ) { if ( str_ != nullptr ) return strdup( str_ ); return nullptr; }
 		void release_str() {
 			if ( !fromLiteral && str )
 			{

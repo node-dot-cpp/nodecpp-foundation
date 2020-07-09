@@ -198,7 +198,7 @@ namespace nodecpp::stack_info_impl {
 
 		void* sp = ptr;
 		char ** btsymbols = backtrace_symbols( &sp, 1 );
-		if ( btsymbols )
+		if ( btsymbols && btsymbols[0] )
 		{
 			parseBtSymbol( btsymbols[0], info );
 			free( btsymbols );

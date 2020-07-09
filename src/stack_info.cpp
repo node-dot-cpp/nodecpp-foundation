@@ -270,26 +270,16 @@ namespace nodecpp {
 
 		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
-		char ** btsymbols = backtrace_symbols( stack, numberOfFrames );
-		if ( btsymbols != nullptr )
+		std::string out;
+		for (size_t i = 0; i < numberOfFrames; i++)
 		{
-			std::string out;
-			for (size_t i = 0; i < numberOfFrames; i++)
-			{
-				nodecpp::stack_info_impl::StackFrameInfo info;
-#ifdef NODECPP_CLANG
-				parseBtSymbol( btsymbols[i], info );
-#endif // NODECPP_CLANG
-				nodecpp::stack_info_impl::StackPointerInfoCache::getRegister().resolveData( stack[i], info );
-				stackPointerToInfoToString( info, out );
-			}
-			free( btsymbols );
-			if ( !stripPoint.empty() )
-				strip( out, stripPoint.c_str() );
-			*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
+			nodecpp::stack_info_impl::StackFrameInfo info;
+			nodecpp::stack_info_impl::StackPointerInfoCache::getRegister().resolveData( stack[i], info );
+			stackPointerToInfoToString( info, out );
 		}
-		else
-			*const_cast<error::string_ref*>(&whereTaken) = error::string_ref	( error::string_ref::literal_tag_t(), "" );
+		if ( !stripPoint.empty() )
+			strip( out, stripPoint.c_str() );
+		*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
 
 #else
 #error not (yet) supported

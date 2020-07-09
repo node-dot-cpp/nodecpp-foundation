@@ -149,6 +149,11 @@ namespace nodecpp::stack_info_impl {
 
 		bool resolveData( void* stackPtr, StackFrameInfo& info )
 		{
+#ifdef NODECPP_CLANG
+			char ** btsymbols = backtrace_symbols( &(info.offset), 1 );
+			parseBtSymbol( btsymbols[i], info );
+			free( btsymbols );
+#endif // NODECPP_CLANG
 			std::unique_lock<std::mutex> lock(mxSearcher);
 			if ( getResolvedStackPtrData_( stackPtr, info ) )
 				return true;

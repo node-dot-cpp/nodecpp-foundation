@@ -16,5 +16,5 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -G Ninja ..
 cmake --build .
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
-ctest
+ctest --output-on-failure
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%

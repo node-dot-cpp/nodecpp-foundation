@@ -53,13 +53,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# we need async exceptions on foundation
 	string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 
-elif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
 #	target_link_options(foundation INTERFACE -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 
-elif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)

@@ -50,8 +50,9 @@ add_library(foundation STATIC
 target_include_directories(foundation PUBLIC include)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	# we need async exceptions on foundation
-	string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+	target_compile_options(foundation PUBLIC /EHa)
+	# remove the default compiler option to avoid warning
+	string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 

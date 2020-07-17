@@ -138,14 +138,14 @@ namespace nodecpp::error {
 			return new std_error_value(code);
 		}
 		virtual bool is_same_error_code(const error_value* value1, const error_value* value2) const { 
-			return (reinterpret_cast<const std_error_value*>(value1))->errorCode == (reinterpret_cast<const std_error_value*>(value2))->errorCode;
+			return (static_cast<const std_error_value*>(value1))->errorCode == (static_cast<const std_error_value*>(value2))->errorCode;
 		}
 		virtual error_value* clone_value(error_value* value) const {
-			return new std_error_value(*reinterpret_cast<const std_error_value*>(value));
+			return new std_error_value(*static_cast<const std_error_value*>(value));
 		}
 		virtual void destroy_value(error_value* value) const {
 			if ( value ) {
-				std_error_value* myData = reinterpret_cast<std_error_value*>(value);
+				std_error_value* myData = static_cast<std_error_value*>(value);
 				delete myData;
 			}
 		}

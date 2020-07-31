@@ -129,8 +129,9 @@ namespace nodecpp {
 		template<class RawAllocT1, class _Other>
 		constexpr selective_allocator(const selective_allocator<RawAllocT1, _Other>&) noexcept {}
 
-		void deallocate(_Ty * const ptr, size_t sz)
+		void deallocate(_Ty * const ptr, size_t count)
 		{
+			size_t sz = count * sizeof( _Ty );
 			constexpr size_t alignment = alignof(_Ty) > static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__) ? alignof(_Ty) : static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
 	#ifdef NODECPP_MSVC

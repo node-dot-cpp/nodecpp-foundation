@@ -34,6 +34,27 @@
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
 
+// main values describing pointer bit usage
+#ifdef NODECPP_X64
+constexpr size_t nodecpp_ptr_pointer_bit_size = 64;
+constexpr size_t nodecpp_ptr_unused_low_bytes_count = 3;
+constexpr size_t nodecpp_ptr_unused_upper_bytes_count = 16;
+#else
+constexpr size_t nodecpp_ptr_pointer_bit_size = 32;
+constexpr size_t nodecpp_ptr_unused_low_bytes_count = 2;
+constexpr size_t nodecpp_ptr_unused_upper_bytes_count = 0;
+#endif
+
+// derived values
+constexpr uintptr_t nodecpp_alloc_ptr_value_bits_mask = ( ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_low_bytes_count - nodecpp_ptr_unused_upper_bytes_count ) ) - 1 ) << nodecpp_ptr_unused_low_bytes_count;
+constexpr uintptr_t nodecpp_any_ptr_value_bits_mask = ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count ) ) - 1;
+constexpr uintptr_t nodecpp_ptr_lower_data_mask = ( ((uintptr_t)1) << nodecpp_ptr_unused_low_bytes_count ) - 1;
+constexpr uintptr_t nodecpp_ptr_upper_data_mask = ( ( ((uintptr_t)1) << nodecpp_ptr_unused_upper_bytes_count ) - 1 ) << ( nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count );
+constexpr uintptr_t nodecpp_ptr_zombie_indicator = ((uintptr_t)1) << nodecpp_ptr_unused_low_bytes_count;
+
+// ...
+constexpr uintptr_t nodecpp_guaranteed_malloc_alignment = 8;
+
 [[noreturn]] void throwZeroPointerAccess();
 [[noreturn]] void throwLatelyDetectedZombieAccess();
 
@@ -157,7 +178,7 @@ template< int nflags >
 struct optimized_allocated_ptr_with_flags_ {
 	static_assert(nflags > 0 && (1<<nflags) <= nodecpp_guaranteed_malloc_alignment);//don't need more than 2 ATM
 private:
-	static constexpr uintptr_t lowerDataMask_ = nodecpp_guaranteed_malloc_alignment - 1;
+	static constexpr uintptr_t lowerDataMask_ = nodecpp_ptr_lower_data_mask;
 	uintptr_t ptr;
 public:
 	void init( const void* ptr_ ) { 
@@ -201,18 +222,16 @@ public:
 
 template< int masksize, int nflags >
 struct generic_allocated_ptr_with_mask_and_flags_ {
-#ifdef NODECPP_X64
-	static_assert(nflags <= 3);
-	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFF8ULL;
-#else
-	static_assert(nflags <= 2);
-	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFC;
-#endif
-	static_assert(masksize <= 3);
 private:
 	void* ptr;
-	uint8_t flags;
+	uint16_t flags;
 	uint8_t mask;
+
+	static constexpr uintptr_t ptrMask_ = nodecpp_alloc_ptr_value_bits_mask;
+	static_assert(masksize <= nodecpp_ptr_unused_low_bytes_count);
+	static_assert( nflags <= nodecpp_ptr_unused_upper_bytes_count ); // inspired by optimized version
+	static_assert( nflags <= sizeof( flags ) * 8 ); // inspired by this version
+
 public:
 	void init() { ptr = 0; flags = 0; mask = 0;}
 	void init( const void* ptr_ ) { 
@@ -239,22 +258,21 @@ public:
 #ifdef NODECPP_X64
 template< int masksize, int nflags >
 struct optimized_allocated_ptr_with_mask_and_flags_64_ {
-//	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
-	static_assert((1<<nflags) <= nodecpp_guaranteed_malloc_alignment);
-	static_assert(masksize <= 3);
+	static_assert( nflags <= nodecpp_ptr_unused_upper_bytes_count );
+	static_assert( masksize <= nodecpp_ptr_unused_low_bytes_count );
 private:
 	uintptr_t ptr;
-	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFF8ULL;
-	static constexpr uintptr_t upperDataMask_ = ~(0xFFFFFFFFFFFFULL);
-	static constexpr uintptr_t upperDataOffset_ = 48;
-	static constexpr uintptr_t lowerDataMask_ = 0x7ULL;
-	static constexpr size_t upperDataSize_ = 16;
-	static constexpr size_t lowerDataSize_ = 3;
+	static constexpr uintptr_t ptrMask_ = nodecpp_alloc_ptr_value_bits_mask;
+	static constexpr uintptr_t upperDataMask_ = nodecpp_ptr_upper_data_mask;
+	static constexpr uintptr_t upperDataOffset_ = nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count;
+	static constexpr uintptr_t lowerDataMask_ = nodecpp_ptr_lower_data_mask;
+	static constexpr size_t upperDataSize_ = nodecpp_ptr_unused_upper_bytes_count;
+	static constexpr size_t lowerDataSize_ = nodecpp_ptr_unused_low_bytes_count;
 	static_assert ( (ptrMask_ & upperDataMask_) == 0 );
 	static_assert ( (ptrMask_ >> upperDataOffset_) == 0 );
 	static_assert ( (ptrMask_ & lowerDataMask_) == 0 );
 	static_assert ( (upperDataMask_ & lowerDataMask_) == 0 );
-	static_assert ( (ptrMask_ | upperDataMask_ | lowerDataMask_) == 0xFFFFFFFFFFFFFFFFULL );
+	static_assert ( (ptrMask_ | upperDataMask_ | lowerDataMask_) == ( ((uintptr_t)1) << nodecpp_ptr_pointer_bit_size ) - 1 );
 public:
 	void init() { ptr = 0; }
 	void init( const void* ptr_ ) { 
@@ -264,11 +282,11 @@ public:
 	void set_ptr( const void* ptr_ ) { NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ((uintptr_t)ptr_ & ~ptrMask_) == 0 ); ptr = (ptr & lowerDataMask_) | ((uintptr_t)ptr_ & ~lowerDataMask_); }
 	void* get_ptr() const { return (void*)( ptr & ptrMask_ ); }
 	template<int pos>
-	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<upperDataOffset_; }
+	void set_flag() { static_assert( pos >= 0 && pos < nflags); ptr |= ((uintptr_t)(1))<<(upperDataOffset_+pos); }
 	template<int pos>
-	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<upperDataOffset_); }
+	void unset_flag() { static_assert( pos >= 0 && pos < nflags); ptr &= ~(((uintptr_t)(1))<<(upperDataOffset_+pos)); }
 	template<int pos>
-	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<upperDataOffset_)) != 0; }
+	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<(upperDataOffset_+pos))) != 0; }
 	size_t get_mask() const { return ptr & lowerDataMask_; }
 	void set_mask( size_t mask ) { NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, mask < (1<<masksize)); ptr = (ptr & ~lowerDataMask_) | mask; }
 };
@@ -435,15 +453,15 @@ private:
 	uintptr_t allocptr;
 	static constexpr uintptr_t zombie_indicator = nodecpp_guaranteed_malloc_alignment;
 	static_assert ( nodecpp_guaranteed_malloc_alignment >= 8 ); // this assumption is used in below definitions
-	static constexpr uintptr_t allocptrMask_ = 0xFFFFFFFFFFF8ULL;
-	static constexpr uintptr_t ptrMask_ = 0xFFFFFFFFFFFFULL;
-	static constexpr uintptr_t upperDataMaskInPointer_ = ~(0xFFFFFFFFFFFFULL);
-	static constexpr uintptr_t lowerDataMaskInPointer_ = 0x7ULL;
+	static constexpr uintptr_t allocptrMask_ = nodecpp_alloc_ptr_value_bits_mask;
+	static constexpr uintptr_t ptrMask_ = nodecpp_any_ptr_value_bits_mask;
+	static constexpr uintptr_t upperDataMaskInPointer_ = nodecpp_ptr_upper_data_mask;
+	static constexpr uintptr_t lowerDataMaskInPointer_ = nodecpp_ptr_lower_data_mask;
 	static constexpr uintptr_t allocPtrFlagsMask_ = (1 << nflags) - 1;
-	static constexpr size_t upperDataSize_ = 16;
-	static constexpr size_t lowerDataSize_ = 3;
+	static constexpr size_t upperDataSize_ = nodecpp_ptr_unused_upper_bytes_count;
+	static constexpr size_t lowerDataSize_ = nodecpp_ptr_unused_low_bytes_count;
 	static constexpr uintptr_t ptrPartMaskInData_ = 0xFFFFULL;
-	static constexpr uintptr_t allocptrLowerPartMaskInData_ = ((1ULL<<(lowerDataSize_ - nflags))-1) << upperDataSize_;
+	static constexpr uintptr_t allocptrLowerPartMaskInData_ = ((((uintptr_t)1)<<(lowerDataSize_ - nflags))-1) << upperDataSize_;
 	static constexpr uintptr_t allocptrUpperPartMaskInData_ = 0xFFFFULL << (upperDataSize_ + lowerDataSize_ - nflags);
 	static constexpr uintptr_t allocptrLowerPartOffsetInData_ = upperDataSize_;
 	static constexpr uintptr_t allocptrUpperPartOffsetInData_ = upperDataSize_ + nflags;

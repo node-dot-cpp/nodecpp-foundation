@@ -36,7 +36,6 @@
 #if defined NODECPP_LINUX || defined  NODECPP_MAC
 
 #include <cstdlib>
-#include <cstddef>
 #include <memory>
 #include <cstring>
 #include <limits>

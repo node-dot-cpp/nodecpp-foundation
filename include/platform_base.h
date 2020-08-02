@@ -91,6 +91,7 @@ static_assert(sizeof(void*) == 4);
 #include <stddef.h>
 #include <cstdint>
 #include <utility>
+#include <cstddef>
 
 //MMU-BASED SYSTEMS IN PROTECTED MODE
 #if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
@@ -98,7 +99,9 @@ static_assert(sizeof(void*) == 4);
 #if defined(NODECPP_X86) || defined(NODECPP_X64)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
-#define nodecpp_guaranteed_malloc_alignment 8
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT (sizeof(::std::max_align_t))
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 5 // rather a forward declaration
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
 namespace nodecpp::platform { 
 NODECPP_FORCEINLINE
@@ -118,7 +121,7 @@ bool is_guaranteed_on_stack( void* ptr )
 
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
-#define nodecpp_guaranteed_malloc_alignment 1
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1
 
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64)
 
@@ -126,7 +129,7 @@ bool is_guaranteed_on_stack( void* ptr )
 
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
-#define nodecpp_guaranteed_malloc_alignment 1
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1
 
 #endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 

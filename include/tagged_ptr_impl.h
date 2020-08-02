@@ -45,7 +45,7 @@ constexpr size_t nodecpp_ptr_unused_low_bytes_count = 2;
 constexpr size_t nodecpp_ptr_unused_upper_bytes_count = 0;
 #endif
 
-// derived values
+// derived values describing pointer bit usage
 constexpr uintptr_t nodecpp_alloc_ptr_value_bits_mask = ( ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_low_bytes_count - nodecpp_ptr_unused_upper_bytes_count ) ) - 1 ) << nodecpp_ptr_unused_low_bytes_count;
 constexpr uintptr_t nodecpp_any_ptr_value_bits_mask = ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count ) ) - 1;
 constexpr uintptr_t nodecpp_ptr_lower_data_mask = ( ((uintptr_t)1) << nodecpp_ptr_unused_low_bytes_count ) - 1;
@@ -266,8 +266,8 @@ private:
 	static constexpr uintptr_t upperDataMask_ = nodecpp_ptr_upper_data_mask;
 	static constexpr uintptr_t upperDataOffset_ = nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count;
 	static constexpr uintptr_t lowerDataMask_ = nodecpp_ptr_lower_data_mask;
-	static constexpr size_t upperDataSize_ = nodecpp_ptr_unused_upper_bytes_count;
-	static constexpr size_t lowerDataSize_ = nodecpp_ptr_unused_low_bytes_count;
+//	static constexpr size_t upperDataSize_ = nodecpp_ptr_unused_upper_bytes_count;
+//	static constexpr size_t lowerDataSize_ = nodecpp_ptr_unused_low_bytes_count;
 	static_assert ( (ptrMask_ & upperDataMask_) == 0 );
 	static_assert ( (ptrMask_ >> upperDataOffset_) == 0 );
 	static_assert ( (ptrMask_ & lowerDataMask_) == 0 );
@@ -460,12 +460,12 @@ private:
 	static constexpr uintptr_t allocPtrFlagsMask_ = (1 << nflags) - 1;
 	static constexpr size_t upperDataSize_ = nodecpp_ptr_unused_upper_bytes_count;
 	static constexpr size_t lowerDataSize_ = nodecpp_ptr_unused_low_bytes_count;
-	static constexpr uintptr_t ptrPartMaskInData_ = 0xFFFFULL;
+	static constexpr uintptr_t ptrPartMaskInData_ = (1 << upperDataSize_) - 1;
 	static constexpr uintptr_t allocptrLowerPartMaskInData_ = ((((uintptr_t)1)<<(lowerDataSize_ - nflags))-1) << upperDataSize_;
 	static constexpr uintptr_t allocptrUpperPartMaskInData_ = 0xFFFFULL << (upperDataSize_ + lowerDataSize_ - nflags);
 	static constexpr uintptr_t allocptrLowerPartOffsetInData_ = upperDataSize_;
 	static constexpr uintptr_t allocptrUpperPartOffsetInData_ = upperDataSize_ + nflags;
-	static constexpr size_t upperDataBitOffsetInPointers_ = 48;
+	static constexpr size_t upperDataBitOffsetInPointers_ = nodecpp_ptr_pointer_bit_size - nodecpp_ptr_unused_upper_bytes_count;
 	static_assert ( (allocptrMask_ & upperDataMaskInPointer_) == 0 );
 	static_assert ( (allocptrMask_ & lowerDataMaskInPointer_) == 0 );
 	static_assert ( (upperDataMaskInPointer_ & lowerDataMaskInPointer_) == 0 );

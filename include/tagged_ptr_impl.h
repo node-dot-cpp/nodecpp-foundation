@@ -34,14 +34,29 @@
 
 namespace nodecpp::platform::ptrwithdatastructsdefs { 
 
+template<uintptr_t n>
+constexpr size_t LowNonZeroBitPos() {
+	static_assert( n != 0 );
+	size_t nn = n;
+	size_t ret = 0;
+	while ( !(nn & 1) ) { nn >>= 1; ret++; }
+	return ret;
+}
+
+#ifndef NODECPP_NOT_USING_IIBMALLOC
+#define NODECPP_GUARANTEED_ALIGNMENT_EXP NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP
+#else
+static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = LowNonZeroBitPos<NODECPP_GUARANTEED_MALLOC_ALIGNMENT>();
+#endif // NODECPP_NOT_USING_IIBMALLOC
+
 // main values describing pointer bit usage
 #ifdef NODECPP_X64
 constexpr size_t nodecpp_ptr_pointer_bit_size = 64;
-constexpr size_t nodecpp_ptr_unused_lower_bit_count = NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP;
+constexpr size_t nodecpp_ptr_unused_lower_bit_count = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 16;
 #else
 constexpr size_t nodecpp_ptr_pointer_bit_size = 32;
-constexpr size_t nodecpp_ptr_unused_lower_bit_count = 2;
+constexpr size_t nodecpp_ptr_unused_lower_bit_count = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 0;
 #endif
 
@@ -452,7 +467,7 @@ private:
 	uintptr_t ptr;
 	uintptr_t allocptr;
 	static constexpr uintptr_t zombie_indicator = nodecpp_zombie_indicator;
-	static_assert ( ( 1 << nFlags ) <= nodecpp_zombie_indicator ); // this assumption is used in below definitions
+	static_assert ( ( (uintptr_t)1 << nflags ) <= zombie_indicator ); // this assumption is used in below definitions
 	static constexpr uintptr_t allocptrMask_ = nodecpp_alloc_ptr_value_bits_mask;
 	static constexpr uintptr_t ptrMask_ = nodecpp_any_ptr_value_bits_mask;
 	static constexpr uintptr_t upperDataMaskInPointer_ = nodecpp_ptr_upper_data_mask;

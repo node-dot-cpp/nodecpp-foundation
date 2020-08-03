@@ -122,6 +122,8 @@ bool is_guaranteed_on_stack( void* ptr )
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 0 // rather a forward declaration; protective value; is iibmalloc is at all implemented?
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64)
 
@@ -129,7 +131,9 @@ bool is_guaranteed_on_stack( void* ptr )
 
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
-#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1 // protective value; redefine properly wherever possible
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 0 // rather a forward declaration; protective value; is iibmalloc is at all implemented?
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
 #endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 

@@ -45,17 +45,6 @@ namespace nodecpp {
 	{
 		static constexpr size_t alignment4BigAlloc = 32;
 		static_assert(2 * sizeof(void *) <= alignment4BigAlloc);
-	#ifdef _DEBUG
-		static constexpr size_t reserverdSize4Vecor = 2 * sizeof(void *) + alignment4BigAlloc - 1;
-	#else
-		static constexpr size_t reserverdSize4Vecor = sizeof(void *) + alignment4BigAlloc - 1;
-	#endif // _DEBUG
-
-	#ifdef NODECPP_X64
-		static constexpr size_t bigAllocGuardSignature = 0xECECECECECECECECULL;
-	#else
-		static constexpr size_t bigAllocGuardSignature = 0xECECECECUL;
-	#endif // NODECPP_X64
 
 		size_t getByteSizeOfNElem(const size_t numOfElements)
 		{
@@ -69,45 +58,6 @@ namespace nodecpp {
 					ret = static_cast<size_t>(-1);
 				return ret;
 			}
-		}
-
-		void* allocAlignedVector(const size_t sz)
-		{
-			size_t allocSize = reserverdSize4Vecor + sz;
-			if (allocSize <= sz)
-				allocSize = static_cast<size_t>(-1);
-
-			uintptr_t container_;
-			container_ = reinterpret_cast<uintptr_t>(RawAllocT::allocate(allocSize));
-			const uintptr_t container = container_;
-			NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, container != 0 );
-			void * const ret = reinterpret_cast<void *>((container + reserverdSize4Vecor)	& ~(alignment4BigAlloc - 1));
-			static_cast<uintptr_t *>(ret)[-1] = container;
-
-	#ifdef _DEBUG
-			static_cast<uintptr_t *>(ret)[-2] = bigAllocGuardSignature;
-	#endif // _DEBUG
-			return ret;
-		}
-
-		void vectorValuesToAlignedValues(void *& ptr, size_t& sz)
-		{
-			sz += reserverdSize4Vecor;
-
-			const uintptr_t * const iniPtr = reinterpret_cast<uintptr_t *>(ptr);
-			const uintptr_t container = iniPtr[-1];
-
-			NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, iniPtr[-2] == bigAllocGuardSignature );
-
-	#ifdef _DEBUG
-			constexpr uintptr_t minBackShift = 2 * sizeof(void *);
-	#else
-			constexpr uintptr_t minBackShift = sizeof(void *);
-	#endif // _DEBUG
-			const uintptr_t backShift = reinterpret_cast<uintptr_t>(ptr) - container;
-			NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, backShift >= minBackShift, "{} vs. {}", backShift, minBackShift );
-			NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, backShift <= reserverdSize4Vecor, "{} vs. {}", backShift, reserverdSize4Vecor );
-			ptr = reinterpret_cast<void *>(container);
 		}
 
 	public:
@@ -134,30 +84,8 @@ namespace nodecpp {
 			size_t sz = count * sizeof( _Ty );
 			constexpr size_t alignment = alignof(_Ty) > static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__) ? alignof(_Ty) : static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
-	#ifdef NODECPP_MSVC
-			if constexpr ( alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__ )
-			{
-				size_t iniAlignment = alignment;
-	#if (defined NODECPP_X64) || (defined NODECPP_X86)
-				if (sz >= std::_Big_allocation_threshold)
-					iniAlignment = _Max_value(alignment, alignment4BigAlloc);
-	#endif // (defined NODECPP_X64) || (defined NODECPP_X86)
-	//			::operator delete(ptr, sz, std::align_val_t{iniAlignment}, StdAllocEnforcer::enforce);
-				RawAllocT::deallocate(ptr); // TODO: check that we can ignore other params
-			}
-			else
-	#endif
-			{
-				void* ptr_ = ptr;
-	#if (defined NODECPP_X64) || (defined NODECPP_X86)
-	#ifdef NODECPP_MSVC
-				if (sz >= std::_Big_allocation_threshold)
-					vectorValuesToAlignedValues(ptr_, sz);
-	#endif
-	#endif // (defined NODECPP_X64) || (defined NODECPP_X86)
-	//			::operator delete(ptr, sz, StdAllocEnforcer::enforce);
-				RawAllocT::deallocate(ptr); // TODO: check that we can ignore other params
-			}
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ptr & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ptr );
+			RawAllocT::deallocate(ptr); // TODO: check that we can ignore other params
 		}
 
 		NODISCARD _Ty * allocate(const size_t _Count)
@@ -168,28 +96,9 @@ namespace nodecpp {
 			if (iniByteSz == 0)
 				return static_cast<_Ty *>(nullptr);
 
-	#ifdef NODECPP_MSVC
-			if constexpr ( alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__ )
-			{
-				size_t iniAlignment = alignment;
-	#if (defined NODECPP_X64) || (defined NODECPP_X86)
-				if (iniByteSz >= std::_Big_allocation_threshold)
-					iniAlignment = _Max_value(alignment, alignment4BigAlloc);
-	#endif // (defined NODECPP_X64) || (defined NODECPP_X86)
-	//			return static_cast<_Ty *>(::operator new(iniByteSz, iniAlignment, StdAllocEnforcer::enforce));
-				return static_cast<_Ty *>(RawAllocT::allocate(iniByteSz, iniAlignment));
-			}
-			else
-	#endif
-			{
-	#if (defined NODECPP_X64) || (defined NODECPP_X86)
-	#ifdef NODECPP_MSVC
-				if (iniByteSz >= std::_Big_allocation_threshold)
-					return static_cast<_Ty *>(allocAlignedVector(iniByteSz));
-	#endif
-	#endif // (defined NODECPP_X64) || (defined NODECPP_X86)
-				return static_cast<_Ty *>(RawAllocT::allocate(iniByteSz));
-			}
+			_Ty* ret = static_cast<_Ty *>(RawAllocT::allocate(iniByteSz));
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ret & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ret );
+			return ret;
 		}
 	};
 

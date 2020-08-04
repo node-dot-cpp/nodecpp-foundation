@@ -31,6 +31,7 @@
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #include "../include/allocator_template.h"
+#include "../include/malloc_based_allocator.h"
 
 #include <map>
 #include <set>

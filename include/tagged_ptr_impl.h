@@ -44,7 +44,7 @@ constexpr size_t LowNonZeroBitPos() {
 }
 
 #ifndef NODECPP_NOT_USING_IIBMALLOC
-#define NODECPP_GUARANTEED_ALIGNMENT_EXP NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP
+static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP;
 #else
 static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = LowNonZeroBitPos<NODECPP_GUARANTEED_MALLOC_ALIGNMENT>();
 #endif // NODECPP_NOT_USING_IIBMALLOC
@@ -68,7 +68,7 @@ constexpr uintptr_t nodecpp_ptr_upper_data_mask = ( ( ((uintptr_t)1) << nodecpp_
 constexpr uintptr_t nodecpp_ptr_zombie_indicator = ((uintptr_t)1) << nodecpp_ptr_unused_lower_bit_count;
 
 // zombie indicator (lowest value beyond allocated pointer lower unused bit count
-constexpr uintptr_t nodecpp_zombie_indicator = ( 1 << nodecpp_ptr_unused_lower_bit_count );
+constexpr uintptr_t nodecpp_zombie_indicator = ( (uintptr_t)1 << nodecpp_ptr_unused_lower_bit_count );
 
 
 

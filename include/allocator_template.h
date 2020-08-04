@@ -97,7 +97,7 @@ namespace nodecpp {
 			if (iniByteSz == 0)
 				return static_cast<_Ty *>(nullptr);
 
-			_Ty* ret = static_cast<_Ty *>(RawAllocT::allocate(iniByteSz));
+			_Ty* ret = static_cast<_Ty *>(RawAllocT::allocate<alignment>(iniByteSz));
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ret & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ret );
 			return ret;
 		}

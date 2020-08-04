@@ -43,11 +43,11 @@ constexpr size_t LowNonZeroBitPos() {
 	return ret;
 }
 
-#ifndef NODECPP_NOT_USING_IIBMALLOC
+#ifdef USING_ALIGNED_MALLOC
 static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP;
 #else
 static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = LowNonZeroBitPos<NODECPP_GUARANTEED_MALLOC_ALIGNMENT>();
-#endif // NODECPP_NOT_USING_IIBMALLOC
+#endif // USING_ALIGNED_MALLOC
 
 // main values describing pointer bit usage
 #ifdef NODECPP_X64

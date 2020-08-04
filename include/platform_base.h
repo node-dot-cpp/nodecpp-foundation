@@ -102,6 +102,7 @@ static_assert(sizeof(void*) == 4);
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
 struct _TMP_STRUCT_WITH_STD_FUNCTION { std::function<size_t(size_t)> dummy; };
 #define NODECPP_MAX_SUPPORTED_ALIGNMENT ( std::max( sizeof(::std::max_align_t), alignof(_TMP_STRUCT_WITH_STD_FUNCTION) ) )
+#define NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW ( std::max( std::max( sizeof(::std::max_align_t), __STDCPP_DEFAULT_NEW_ALIGNMENT__), alignof(_TMP_STRUCT_WITH_STD_FUNCTION) ) )
 #define NODECPP_GUARANTEED_MALLOC_ALIGNMENT (sizeof(::std::max_align_t))
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 5 // rather a forward declaration
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)

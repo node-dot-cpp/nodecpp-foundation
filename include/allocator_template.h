@@ -92,6 +92,7 @@ namespace nodecpp {
 
 		NODISCARD _Ty * allocate(const size_t _Count)
 		{
+			static_assert( sizeof(_Ty) >= alignof(_Ty) );
 			static_assert( alignof(_Ty) <= RawAllocT::guaranteed_alignment );
 			size_t iniByteSz = getByteSizeOfNElem(_Count);
 			constexpr size_t alignment = alignof(_Ty) > static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__) ? alignof(_Ty) : static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__);
@@ -104,34 +105,6 @@ namespace nodecpp {
 			return ret;
 		}
 	};
-
-/*	struct StdRawAllocator
-	{
-		static constexpr size_t guaranteed_alignment = NODECPP_MAX_SUPPORTED_ALIGNMENT;
-		template<size_t alignment = 0> 
-		static NODECPP_FORCEINLINE void* allocate( size_t allocSize ) { 
-			constexpr size_t align_max = NODECPP_MAX_SUPPORTED_ALIGNMENT;
-			static_assert( alignment <= align_max );
-			if constexpr ( alignment <= NODECPP_GUARANTEED_MALLOC_ALIGNMENT )
-				return ::malloc( allocSize );
-			else
-				return ::aligned_alloc( allocSize, alignment );
-		}
-		template<size_t alignment = 0> 
-		static NODECPP_FORCEINLINE void deallocate( void* ptr) {
-			if constexpr ( alignment <= NODECPP_GUARANTEED_MALLOC_ALIGNMENT )
-				::free( ptr );
-			else
-				::free( ptr );
-		}
-	};
-
-	template<class _Ty>
-	using stdallocator = selective_allocator<StdRawAllocator, _Ty>;
-	template< class T1, class T2 >
-	bool operator==( const stdallocator<T1>& lhs, const stdallocator<T2>& rhs ) noexcept { return true; }
-	template< class T1, class T2 >
-	bool operator!=( const stdallocator<T1>& lhs, const stdallocator<T2>& rhs ) noexcept { return false; }*/
 
 } //namespace nodecpp
 

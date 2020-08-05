@@ -60,31 +60,31 @@ using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::ge
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
-template< int nflags >
-using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_flags_<nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int nflags >
+using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_flags_<allocated_ptr_unused_lower_bit_count, nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
-template< int nflags >
-using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_flags_<nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int nflags >
+using allocated_ptr_with_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_flags_<allocated_ptr_unused_lower_bit_count, nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
-template< int masksize, int nflags >
-using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_mask_and_flags_64_<masksize, nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int masksize, int nflags >
+using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_with_mask_and_flags_64_<allocated_ptr_unused_lower_bit_count, masksize, nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
-template< int masksize, int nflags >
-using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_mask_and_flags_<masksize, nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int masksize, int nflags >
+using allocated_ptr_with_mask_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_with_mask_and_flags_<allocated_ptr_unused_lower_bit_count, masksize, nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 
 #ifdef NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
-template< int dataminsize, int nflags >
-using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<dataminsize, nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int dataminsize, int nflags >
+using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<allocated_ptr_unused_lower_bit_count, dataminsize, nflags>;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
-template< int dataminsize, int nflags >
-using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_and_ptr_and_data_and_flags_<dataminsize, nflags>;
+template< size_t allocated_ptr_unused_lower_bit_count, int dataminsize, int nflags >
+using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_and_ptr_and_data_and_flags_<allocated_ptr_unused_lower_bit_count, dataminsize, nflags>;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED

@@ -22,12 +22,6 @@ set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/tools")
 include(CommonCppFlags)
 
 
-#-------------------------------------------------------------------------------------------
-# Defines
-#-------------------------------------------------------------------------------------------
-
-#add_definitions(-DNODECPP_CUSTOM_LOG_PROCESSING=\\\"${PROJECT_SOURCE_DIR}/test/my_logger.h\\\")
-
 
 #-------------------------------------------------------------------------------------------
 # Library definition
@@ -44,9 +38,8 @@ add_library(foundation STATIC
 	src/tagged_ptr_impl.cpp
 	)
 
-#-------------------------------------------------------------------------------------------
-# Export Include Directories
-#-------------------------------------------------------------------------------------------
+target_compile_definitions(foundation PUBLIC NODECPP_NOT_USING_IIBMALLOC)
+
 target_include_directories(foundation PUBLIC include)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -69,9 +62,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 
-#-------------------------------------------------------------------------------------------
-# Package Dependencies 
-#-------------------------------------------------------------------------------------------
 add_subdirectory(3rdparty/fmt)
 
 target_link_libraries(foundation fmt::fmt)
@@ -87,20 +77,26 @@ endif()
 #-------------------------------------------------------------------------------------------
 # Tests 
 #-------------------------------------------------------------------------------------------
-add_executable(test_foundation
-	test/main.cpp
-	test/test_seh.cpp
-	test/samples/file_error.cpp
-)
+set(FOUNDATION_TEST_DEFAULT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+option(FOUNDATION_TEST "Run safe_memory tests" FOUNDATION_TEST_DEFAULT)
 
-# we test for self move 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(test_foundation PRIVATE -Wno-self-move)
-endif()
+if (FOUNDATION_TEST)
+	# only when not a subproject
+	add_executable(test_foundation
+		test/main.cpp
+		test/test_seh.cpp
+		test/samples/file_error.cpp
+	)
+
+	# we test for self move 
+	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	  target_compile_options(test_foundation PRIVATE -Wno-self-move)
+	endif()
 
 
-target_link_libraries(test_foundation foundation)
+	target_link_libraries(test_foundation foundation)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	add_test(Run_test_foundation test_foundation)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+		add_test(Run_test_foundation test_foundation)
+	endif()
 endif()

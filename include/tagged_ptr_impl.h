@@ -281,7 +281,8 @@ private:
 	static_assert ( (ptrMask_ >> upperDataOffset_) == 0 );
 	static_assert ( (ptrMask_ & lowerDataMask_) == 0 );
 	static_assert ( (upperDataMask_ & lowerDataMask_) == 0 );
-	static_assert ( (ptrMask_ | upperDataMask_ | lowerDataMask_) == ( ((uintptr_t)1) << nodecpp_ptr_pointer_bit_size ) - 1 );
+	 //mb: clang didn't like to rotate by nodecpp_ptr_pointer_bit_size
+	static_assert ( (ptrMask_ | upperDataMask_ | lowerDataMask_) == ( (uintptr_t)-1));
 public:
 	void init() { ptr = 0; }
 	void init( const void* ptr_ ) { 

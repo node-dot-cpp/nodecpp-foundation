@@ -77,8 +77,10 @@ endif()
 #-------------------------------------------------------------------------------------------
 # Tests 
 #-------------------------------------------------------------------------------------------
-set(FOUNDATION_TEST_DEFAULT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
-option(FOUNDATION_TEST "Run safe_memory tests" FOUNDATION_TEST_DEFAULT)
+set(FOUNDATION_TEST OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(FOUNDATION_TEST ON)
+endif()
 
 if (FOUNDATION_TEST)
 	# only when not a subproject

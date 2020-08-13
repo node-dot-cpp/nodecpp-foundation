@@ -184,9 +184,9 @@ void testPtrStructsWithZombieProperty()
 	//     Platform-dependent code below is provided for direct testing purposes only
 	//     to test both implementations, if current platform allows (that is, 64 bit)
 #ifdef NODECPP_X64
-	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<32,1>, true>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_<3,32,1>, true>( dummy );
 #endif
-	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_and_ptr_and_data_and_flags_<32,1>, true>( dummy );
+	testPtrStructsWithZombieProperty_<nodecpp::platform::ptrwithdatastructsdefs::generic_allocated_ptr_and_ptr_and_data_and_flags_<2,32,1>, true>( dummy );
 
 	delete dummy;
 }

@@ -30,7 +30,7 @@
 
 #include "platform_base.h"
 #include <stdlib.h>
-#include <malloc.h>
+//#include <malloc.h>
 
 #if defined NODECPP_MSVC
 #define NODISCARD _NODISCARD

@@ -54,7 +54,7 @@
 
 
 
-#if defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
+#if ( defined NODECPP_LINUX || defined NODECPP_MAC ) && ( defined NODECPP_CLANG || defined NODECPP_GCC )
 
 #ifdef NODECPP_CLANG
 

@@ -212,6 +212,10 @@ namespace nodecpp::platform::internal_msg {
 		}
 
 	public:
+		static constexpr size_t app_reserved = 6 * sizeof( void* );
+		static constexpr size_t total_reserved = app_reserved + sizeof(FirstHeader) + 2 * sizeof( PagePointer ) + 2 * sizeof( size_t );
+
+	public:
 		class ReadIter
 		{
 			friend class InternalMsg;
@@ -222,7 +226,9 @@ namespace nodecpp::platform::internal_msg {
 			size_t idxInIndexPage;
 			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
-				sizeRemainingInBlock = sz <= pageSize ? sz : pageSize;
+//				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz >= total_reserved );
+				sizeRemainingInBlock = sz <= pageSize - total_reserved ? sz : pageSize - total_reserved;
+//				sizeRemainingInBlock = sz <= pageSize ? sz : pageSize;
 				idxInIndexPage = 0;
 			}
 		public:
@@ -252,8 +258,34 @@ namespace nodecpp::platform::internal_msg {
 			}
 		};
 
+		void reserveSpaceForConvertionToTag()
+		{
+			if ( currentPage.page() == nullptr )
+			{
+				implAddPage();
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage.page() != nullptr );
+			}
+			size_t remainingInPage = remainingSizeInCurrentPage();
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, total_reserved < remainingInPage, "{} vs. {}", total_reserved, remainingInPage );
+			totalSz += total_reserved;
+		}
+
+		void impl_clear() 
+		{
+			implReleaseAllPages();
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt == 0 );
+			firstHeader.next_.init();
+			lip.init();
+			currentPage.init();
+			totalSz = 0;
+		}
+
 	public:
-		InternalMsg() { firstHeader.init(); memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) ); }
+		InternalMsg() { 
+			firstHeader.init(); 
+			memset( firstHeader.firstPages, 0, sizeof( firstHeader.firstPages ) );
+			reserveSpaceForConvertionToTag();
+		}
 		InternalMsg( const InternalMsg& ) = delete;
 		InternalMsg& operator = ( const InternalMsg& ) = delete;
 		InternalMsg( InternalMsg&& other )
@@ -267,6 +299,7 @@ namespace nodecpp::platform::internal_msg {
 			other.currentPage.init();
 			totalSz = other.totalSz;
 			other.totalSz = 0;
+			other.reserveSpaceForConvertionToTag();
 		}
 		InternalMsg& operator = ( InternalMsg&& other )
 		{
@@ -280,7 +313,34 @@ namespace nodecpp::platform::internal_msg {
 			other.currentPage.init();
 			totalSz = other.totalSz;
 			other.totalSz = 0;
+			other.reserveSpaceForConvertionToTag();
 			return *this;
+		}
+		void appWriteData( void* data, size_t offset, size_t sz )
+		{
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offset + sz <= app_reserved, "{} + {} vs. {}", offset, sz, app_reserved );
+			uint8_t* appPrefix = firstHeader.pages()[0].page() + total_reserved - app_reserved;
+			memcpy( appPrefix + offset, data, sz );
+		}
+		void appReadData( void* data, size_t offset, size_t sz )
+		{
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offset + sz <= app_reserved, "{} + {} vs. {}", offset, sz, app_reserved );
+			uint8_t* appPrefix = firstHeader.pages()[0].page() + total_reserved - app_reserved;
+			memcpy( data, appPrefix + offset, sz );
+		}
+		InternalMsg* convertToPointer()
+		{
+			uint8_t* prefix = firstHeader.pages()[0].page();
+			memcpy( prefix, this, sizeof( InternalMsg ) );
+			memset( this, 0, sizeof( InternalMsg ) );
+			reserveSpaceForConvertionToTag();
+			return (InternalMsg*)prefix;
+		}
+		void restoreFromPointer(InternalMsg* ptr)
+		{
+			impl_clear();
+			uint8_t* prefix = firstHeader.pages()[0].page();
+			memcpy( this, ptr, sizeof( InternalMsg ) );
 		}
 		void append( const void* buff_, size_t sz )
 		{
@@ -318,22 +378,23 @@ namespace nodecpp::platform::internal_msg {
 
 		ReadIter getReadIter()
 		{
-			return ReadIter( &firstHeader, firstHeader.pages()[0].page(), totalSz );
+//			return ReadIter( &firstHeader, firstHeader.pages()[0].page(), totalSz );
+			return ReadIter( &firstHeader, firstHeader.pages()[0].page() + total_reserved, totalSz - total_reserved );
 		}
 
 		void clear() 
 		{
-			implReleaseAllPages();
-			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt == 0 );
-			firstHeader.next_.init();
-			lip.init();
-			currentPage.init();
-			totalSz = 0;
+			impl_clear();
+			reserveSpaceForConvertionToTag();
 		}
 
-		size_t size() { return totalSz; }
+		size_t size() { 
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
+			return totalSz - total_reserved;
+		}
 		~InternalMsg() { implReleaseAllPages(); }
 	};
+	static_assert( sizeof( InternalMsg ) + InternalMsg::app_reserved <= InternalMsg::total_reserved );
 
 } // nodecpp
 

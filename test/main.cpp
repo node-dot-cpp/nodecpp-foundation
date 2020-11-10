@@ -301,8 +301,46 @@ void testVectorOfPages()
 	}
 }
 
+/*#include <allocator_template.h>
+struct LargeAndAligned
+{
+	alignas(32) uint8_t basemem[ 72 ];
+	uintptr_t dummy;
+};*/
 int main(int argc, char *argv[])
 {
+	/*static_assert( std::alignment_of_v<LargeAndAligned> == 32 );
+	printf( "sizeof(LargeAndAligned) = %zd\n", sizeof( LargeAndAligned ) );
+
+	std::allocator<LargeAndAligned> a2;
+	LargeAndAligned* p2 = a2.allocate(1024);
+	printf( "p = 0x%zx\n", (size_t)p2 );
+	a2.deallocate(p2, 1024);
+
+	nodecpp::stdallocator<LargeAndAligned> stdalloc;
+	LargeAndAligned* p = stdalloc.allocate(1024);
+	printf( "p = 0x%zx\n", (size_t)p );
+	stdalloc.deallocate(p, 1024);
+
+	return 0;
+
+	printf( "char: sizeof() = %zd, alignment = %zd\n", sizeof(char), alignof(char) );
+	printf( "short: sizeof() = %zd, alignment = %zd\n", sizeof(short), alignof(short) );
+	printf( "int: sizeof() = %zd, alignment = %zd\n", sizeof(int), alignof(int) );
+	printf( "double: sizeof() = %zd, alignment = %zd\n", sizeof(double), alignof(double) );
+	printf( "void*: sizeof() = %zd, alignment = %zd\n", sizeof(void*), alignof(void*) );
+	char* chp[1024];
+	for ( size_t i=0; i<1024; ++i )
+	{
+//		chp[i] = new char;
+		chp[i] = (char*)(malloc(1));
+		printf( "chp[%zd] = 0x%zx\n", i, (size_t)(chp[i]) );
+		if ( (size_t)(chp[i]) &0xF )
+			printf( "GOT LOW!!!\n" );
+	}
+	return 0;*/
+
+
 	nodecpp::log::Log log;
 	log.level = nodecpp::log::LogLevel::info;
 	log.add( stdout );

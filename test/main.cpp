@@ -299,6 +299,34 @@ void testVectorOfPages()
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, 0 == ctr2, "indeed: {:x}", ctr2 );
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
 	}
+
+	{
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg1.size() != 0 );
+		size_t inisz = imsg1.size();
+		auto iptr = imsg1.convertToPointer();
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg1.size() == 0 );
+		nodecpp::platform::internal_msg::InternalMsg imsg4;
+		imsg4.restoreFromPointer( iptr );
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg4.size() == inisz, "{} vs. {}", imsg4.size(), inisz );
+
+		uint64_t ctr2 = 0;
+		auto it = imsg4.getReadIter();
+		size_t available = it.availableSize();
+		while ( available )
+		{
+			const uint64_t* ptr = reinterpret_cast<const uint64_t*>(it.read(available));
+			available /= sizeof( uint64_t );
+			for ( size_t i=0; i<available; ++i )
+			{
+				uint64_t val = ptr[i];
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, val == ctr2, "{} vs. {}", val, ctr2 );
+				++ctr2;
+			}
+			available = it.availableSize();
+		}
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+	}
 }
 
 /*#include <allocator_template.h>

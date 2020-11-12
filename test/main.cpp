@@ -326,6 +326,14 @@ void testVectorOfPages()
 		}
 		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, ctr1 == ctr2, "{:x} vs. {:x}", ctr1, ctr2 );
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "ctr1 = {:x}, ctr2 = {:x}", ctr1, ctr2 );
+
+		imsg1 = std::move( imsg4 );
+
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg4.size() == 0 );
+		auto iptr4 = imsg4.convertToPointer();
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, iptr4 == nullptr );
+		imsg4.restoreFromPointer( iptr4 );
+		NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, imsg4.size() == 0 );
 	}
 }
 

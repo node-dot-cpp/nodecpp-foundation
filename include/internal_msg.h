@@ -231,9 +231,32 @@ namespace nodecpp::platform::internal_msg {
 //				sizeRemainingInBlock = sz <= pageSize ? sz : pageSize;
 				idxInIndexPage = 0;
 			}
+			void impl_skip( size_t sz )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz <= sizeRemainingInBlock );
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ip != nullptr );
+				sizeRemainingInBlock -= sz;
+				totalSz -= sz;
+				if ( totalSz && sizeRemainingInBlock == 0 )
+				{
+					if ( idxInIndexPage + 1 >= ip->usedCnt )
+					{
+						ip = ip->next();
+						idxInIndexPage = 0;
+						page = ip->pages()[idxInIndexPage].page();
+					}
+					else
+						page = ip->pages()[++idxInIndexPage].page();
+					sizeRemainingInBlock = totalSz <= pageSize ? totalSz : pageSize;
+				}
+				else
+					page += sz;
+			}
 		public:
-			size_t availableSize() {return sizeRemainingInBlock;}
-			const uint8_t* read( size_t sz )
+			size_t directlyAvailableSize() {return sizeRemainingInBlock;}
+			size_t totalAvailableSize() {return totalSz;}
+			bool isData() { return totalSz != 0; }
+			const uint8_t* directRead( size_t sz )
 			{
 				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz <= sizeRemainingInBlock );
 				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ip != nullptr );
@@ -256,7 +279,73 @@ namespace nodecpp::platform::internal_msg {
 					page += sz;
 				return ret;
 			}
+			uint8_t operator * ()
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz );
+				return *page;
+			}
+			void operator ++ () 
+			{
+				impl_skip( 1 );
+			}
+			size_t read( void* buff, size_t size )
+			{
+				uint8_t* buffer = reinterpret_cast<uint8_t*>(buff);
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, buff != nullptr );
+				size_t asz = directlyAvailableSize();
+				while ( asz )
+				{
+					if ( size <= asz )
+					{
+						memcpy( buffer, directRead( size ), size );
+						buffer += size;
+						break;
+					}
+					else
+					{
+						memcpy( buffer, directRead( asz ), asz );
+						buffer += asz;
+						size -= asz;
+					}
+					asz = directlyAvailableSize();
+				}				
+				return buffer - reinterpret_cast<uint8_t*>(buff); 
+			}
+			size_t skip( size_t size )
+			{
+				if ( size > totalSz )
+					size = totalSz;
+				size_t ret = size;
+				size_t asz = directlyAvailableSize();
+				while ( asz )
+				{
+					if ( size <= asz )
+					{
+						impl_skip( size );
+						break;
+					}
+					else
+					{
+						impl_skip( asz );
+						size -= asz;
+					}
+					asz = directlyAvailableSize();
+				}
+				return ret;
+			}
 		};
+
+		using ReadIteratorT = ReadIter;
+
+		ReadIter getReadIter()
+		{
+//			return ReadIter( &firstHeader, firstHeader.pages()[0].page(), totalSz );
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz == 0 || totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
+			if ( totalSz )
+				return ReadIter( &firstHeader, firstHeader.pages()[0].page() + total_reserved, totalSz - total_reserved );
+			else
+				return ReadIter( &firstHeader, nullptr, 0 );
+		}
 
 		void reserveSpaceForConvertionToTag()
 		{
@@ -396,16 +485,6 @@ namespace nodecpp::platform::internal_msg {
 					currentPage.init();
 				}
 			}
-		}
-
-		ReadIter getReadIter()
-		{
-//			return ReadIter( &firstHeader, firstHeader.pages()[0].page(), totalSz );
-			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz == 0 || totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
-			if ( totalSz )
-				return ReadIter( &firstHeader, firstHeader.pages()[0].page() + total_reserved, totalSz - total_reserved );
-			else
-				return ReadIter( &firstHeader, nullptr, 0 );
 		}
 
 		void clear() 

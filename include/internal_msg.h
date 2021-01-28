@@ -212,7 +212,7 @@ namespace nodecpp::platform::internal_msg {
 		}
 
 	public:
-		static constexpr size_t app_reserved = 6 * sizeof( void* );
+		static constexpr size_t app_reserved = 8 * sizeof( void* );
 		static constexpr size_t total_reserved = app_reserved + sizeof(FirstHeader) + 2 * sizeof( PagePointer ) + 2 * sizeof( size_t );
 
 	public:

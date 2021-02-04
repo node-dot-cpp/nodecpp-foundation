@@ -52,10 +52,21 @@ namespace nodecpp {
 	struct StdRawAllocator
 	{
 		static constexpr size_t guaranteed_alignment = NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW;
+// NOTE: with MS NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW is known tobe the same as malloc supports, and malloc()/free() pair is used for both 'new' operator and this allocator; 
+//       for greater values both 'new' operator and this allocator will use _aligned_malloc()/_aligned_free() pair
+//       For Linux/Mac with GCC and CLANG a counterpart to alloc() and aligned_alloc() is always free()
+//       This may be useful when allocation is done by this allocator, and deallocation is done inside 3rd party lib with standard means
+#ifdef NODECPP_WINDOWS
+		static constexpr size_t guaranteed_malloc_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
+#elif ( defined NODECPP_LINUX || defined NODECPP_MAC ) && (defined NODECPP_GCC || defined NODECPP_CLANG)
+		static constexpr size_t guaranteed_malloc_alignment = NODECPP_GUARANTEED_MALLOC_ALIGNMENT;
+#else
+#error not implemented (add known cases when possible)
+#endif
 		template<size_t alignment = 0> 
 		static NODECPP_FORCEINLINE void* allocate( size_t allocSize ) { 
 			static_assert( alignment <= guaranteed_alignment );
-			if constexpr ( alignment <= NODECPP_GUARANTEED_MALLOC_ALIGNMENT )
+			if constexpr ( alignment <= guaranteed_malloc_alignment )
 				return ::malloc( allocSize );
 			else
 				return MALLOC_BASED_ALIGNED_ALLOC( allocSize, alignment );
@@ -63,7 +74,7 @@ namespace nodecpp {
 		template<size_t alignment = 0> 
 		static NODECPP_FORCEINLINE void deallocate( void* ptr) {
 			static_assert( alignment <= guaranteed_alignment );
-			if constexpr ( alignment <= NODECPP_GUARANTEED_MALLOC_ALIGNMENT )
+			if constexpr ( alignment <= guaranteed_malloc_alignment )
 				::free( ptr );
 			else
 				MALLOC_BASED_ALIGNED_FREE( ptr );

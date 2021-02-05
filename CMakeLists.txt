@@ -62,7 +62,9 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 
-add_subdirectory(3rdparty/fmt)
+if(NOT TARGET fmt)
+	add_subdirectory(3rdparty/fmt)
+endif()
 
 target_link_libraries(foundation fmt::fmt)
 
@@ -77,9 +79,10 @@ endif()
 #-------------------------------------------------------------------------------------------
 # Tests 
 #-------------------------------------------------------------------------------------------
-set(FOUNDATION_TEST OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(FOUNDATION_TEST ON)
+	set(FOUNDATION_TEST ON CACHE BOOL "Enable foundation tests")
+else()
+	set(FOUNDATION_TEST OFF CACHE BOOL "Enable foundation tests")
 endif()
 
 if (FOUNDATION_TEST)

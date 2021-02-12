@@ -38,7 +38,7 @@ add_library(foundation STATIC
 	src/tagged_ptr_impl.cpp
 	)
 
-target_compile_definitions(foundation PUBLIC NODECPP_NOT_USING_IIBMALLOC)
+# target_compile_definitions(foundation PUBLIC NODECPP_NOT_USING_IIBMALLOC)
 
 target_include_directories(foundation PUBLIC include)
 

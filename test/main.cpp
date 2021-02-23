@@ -203,7 +203,10 @@ void testVectorOfPages()
 	{
 		for ( size_t j=0; j<i; j++ )
 			buff[j] = ctr1++;
-		imsg.append( buff, i * sizeof( uint64_t) );
+		imsg.append( buff, i * sizeof( uint64_t) / 2 );
+		uint8_t* byteBuff = reinterpret_cast<uint8_t*>( buff ) + i * sizeof( uint64_t) / 2;
+		for ( size_t j=0; j<i*sizeof( uint64_t)/2; j++ )
+		imsg.appendUint8( byteBuff[j] );
 	}
 	delete [] buff;
 

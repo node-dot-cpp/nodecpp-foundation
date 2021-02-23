@@ -486,6 +486,29 @@ namespace nodecpp::platform::internal_msg {
 				}
 			}
 		}
+		void appendUint8( uint8_t what )
+		{
+			if ( currentPage.page() == nullptr )
+			{
+				if ( totalSz )
+					implAddPage();
+				else
+				{
+					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage.page() == nullptr );
+					reserveSpaceForConvertionToTag();
+				}
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, currentPage.page() != nullptr );
+			}
+			size_t remainingInPage = remainingSizeInCurrentPage();
+			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, remainingInPage != 0 );
+			*(currentPage.page() + offsetInCurrentPage()) = what;
+			++totalSz;
+			if( 1 == remainingInPage )
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offsetInCurrentPage() == 0 );
+				currentPage.init();
+			}
+		}
 
 		void clear() 
 		{

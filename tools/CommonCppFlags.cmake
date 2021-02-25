@@ -9,11 +9,11 @@
 #-------------------------------------------------------------------------------------------
 
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17)
 
 if (MSVC)
-  # we need async exceptions on foundation
-  string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+  # remove the default exception flag, so project has to be explicit about it
+  string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 #  add_definitions(-D_CRT_NONSTDC_NO_WARNINGS)

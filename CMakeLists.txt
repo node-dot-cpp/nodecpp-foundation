@@ -4,6 +4,8 @@
 cmake_minimum_required(VERSION 3.12.4)
 
 cmake_policy(SET CMP0054 NEW)
+
+# CMP0077 and 'target_link_options' require cmake 3.13 or bigger, but travis-ci has cmake 3.12
 if(POLICY CMP0077)
 	cmake_policy(SET CMP0077 NEW)
 endif()

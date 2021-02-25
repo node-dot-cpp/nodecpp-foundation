@@ -46,8 +46,8 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
 	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
-	target_link_options(foundation PUBLIC -rdynamic)
-#	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
+#	target_link_options(foundation PUBLIC -rdynamic)
+	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	# stack info not supported on Darwin yet
@@ -55,8 +55,8 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
 	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
-	target_link_options(foundation PUBLIC -rdynamic)
-#	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
+#	target_link_options(foundation PUBLIC -rdynamic)
+	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 endif()
 
 

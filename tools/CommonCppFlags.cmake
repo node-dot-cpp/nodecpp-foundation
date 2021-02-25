@@ -8,15 +8,11 @@
 # mb: This file only takes care of warnings compiler flags
 #-------------------------------------------------------------------------------------------
 
-#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-#set(CMAKE_CXX_STANDARD 17)
-
 if (MSVC)
   # remove the default exception flag, so project has to be explicit about it
   string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-#  add_definitions(-D_CRT_NONSTDC_NO_WARNINGS)
   
   add_compile_options( /W3 )
   add_compile_options( /wd4267 ) # conversion, possible loss of data

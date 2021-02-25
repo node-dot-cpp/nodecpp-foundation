@@ -1,12 +1,14 @@
 #-------------------------------------------------------------------------------------------
 # Copyright (c) 2020, OLogN Technologies AG
 #-------------------------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.12.4)
 
 cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0077 NEW)
+if(POLICY CMP0077)
+	cmake_policy(SET CMP0077 NEW)
+endif()
 
-project(libfoundation CXX)
+project(Foundation CXX)
 include(CTest)
 set(CMAKE_CXX_STANDARD 20)
 
@@ -30,18 +32,20 @@ add_library(foundation STATIC
 	src/tagged_ptr_impl.cpp
 	)
 
-# target_compile_definitions(foundation PUBLIC NODECPP_NOT_USING_IIBMALLOC)
-
 target_include_directories(foundation PUBLIC include)
+
+if(NOT TARGET fmt)
+	add_subdirectory(3rdparty/fmt)
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	target_compile_options(foundation PUBLIC /EHa)
-	# remove the default compiler option to avoid warning
-	# string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+	target_compile_options(fmt PUBLIC /EHa)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
+	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
 	target_link_options(foundation PUBLIC -rdynamic)
 #	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 
@@ -50,14 +54,11 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
+	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
 	target_link_options(foundation PUBLIC -rdynamic)
 #	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 endif()
 
-
-if(NOT TARGET fmt)
-	add_subdirectory(3rdparty/fmt)
-endif()
 
 target_link_libraries(foundation fmt::fmt)
 

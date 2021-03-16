@@ -168,7 +168,7 @@ public:
 	}
 
 	void init( const void* ptr_ ) { ptr = const_cast<void*>(ptr_); isZombie = false;}
-	void reset( const void* ptr_ ) { ptr = nullptr; isZombie = false;}
+	void reset() { ptr = nullptr; isZombie = false;}
 	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
 	void* get_dereferencable_ptr() const { 

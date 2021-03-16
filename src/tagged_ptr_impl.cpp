@@ -61,6 +61,38 @@ void generic_ptr_with_zombie_property_::throwZombieAccess() const {
 	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
 
+///////  ptr_with_zombie_property_and_data
+
+#ifdef NODECPP_X64
+void optimized_alloc_ptr_with_zombie_property_and_data_::throwNullptrOrZombieAccess() const {
+	if (((uintptr_t)ptr) == zombie_indicator)
+		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
+	else
+		throw ::nodecpp::error::zero_pointer_access; 
+}
+
+void optimized_alloc_ptr_with_zombie_property_and_data_::throwZombieAccess() const {
+	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
+}
+#endif // NODECPP_X64
+
+void generic_allocptr_with_zombie_property_and_data_::throwNullptrOrZombieAccess() const {
+	if (isZombie)
+		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
+	else
+	{
+		NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ptr == nullptr );
+		throw ::nodecpp::error::zero_pointer_access; 
+	}
+}
+
+void generic_allocptr_with_zombie_property_and_data_::throwZombieAccess() const {
+	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, isZombie );
+	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
+}
+
+
+
 void throwZeroPointerAccess() {
 	throw ::nodecpp::error::zero_pointer_access; 
 }

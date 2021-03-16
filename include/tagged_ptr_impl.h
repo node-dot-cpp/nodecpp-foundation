@@ -258,7 +258,7 @@ public:
 		else
 			throwZombieAccess();
 	}
-	uint32_t getData() {
+	uint32_t getData() const {
 		if ( NODECPP_LIKELY( !isZombie ) ) 
 			return data; 
 		else
@@ -339,7 +339,7 @@ public:
 		else
 			throwZombieAccess();
 	}
-	uint32_t getData() {
+	uint32_t getData() const {
 		if ( NODECPP_LIKELY( ptr != zombie_indicator ) ) 
 		{
 			return ptr >> 48;

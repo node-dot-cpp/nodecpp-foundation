@@ -111,6 +111,7 @@ public:
 	}
 
 	void init( const void* ptr_ ) { ptr = const_cast<void*>(ptr_); }
+	void reset() { ptr = nullptr; }
 	void set_zombie() { ptr = (void*)zombie_indicator; }
 	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
 	void* get_dereferencable_ptr() const { 
@@ -167,6 +168,7 @@ public:
 	}
 
 	void init( const void* ptr_ ) { ptr = const_cast<void*>(ptr_); isZombie = false;}
+	void reset( const void* ptr_ ) { ptr = nullptr; isZombie = false;}
 	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
 	void* get_dereferencable_ptr() const { 

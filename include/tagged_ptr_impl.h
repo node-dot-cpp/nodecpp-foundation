@@ -249,7 +249,7 @@ public:
 	}
 	void set_zombie() { isZombie = true; }
 	bool is_zombie() const { return isZombie; }
-	void setdata( uint16_t data_ ) {
+	void set_data( uint16_t data_ ) {
 		if ( NODECPP_LIKELY( !isZombie ) )
 		{
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, data <= max_data ); 
@@ -258,7 +258,7 @@ public:
 		else
 			throwZombieAccess();
 	}
-	uint32_t getData() const {
+	uint32_t get_data() const {
 		if ( NODECPP_LIKELY( !isZombie ) ) 
 			return data; 
 		else
@@ -331,7 +331,7 @@ public:
 	void reset() { ptr = 0; }
 	void set_zombie() { ptr = zombie_indicator; }
 	bool is_zombie() const { return ptr == zombie_indicator; }
-	void setdata( uint16_t data_ ) {
+	void set_data( uint16_t data_ ) {
 		if ( NODECPP_LIKELY( ptr != zombie_indicator ) )
 		{
 			ptr = ( ptr & (~dataMask_) ) | ( (uintptr_t)data_ << 48 );
@@ -339,7 +339,7 @@ public:
 		else
 			throwZombieAccess();
 	}
-	uint32_t getData() const {
+	uint32_t get_data() const {
 		if ( NODECPP_LIKELY( ptr != zombie_indicator ) ) 
 		{
 			return ptr >> 48;

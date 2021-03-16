@@ -98,6 +98,7 @@ static_assert(sizeof(void*) == 4);
 #if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 
 #if defined(NODECPP_X86) || defined(NODECPP_X64)
+#define NODECPP_SECOND_NULLPTR ((void*)1)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
 struct _TMP_STRUCT_WITH_STD_FUNCTION { std::function<size_t(size_t)> dummy; };
@@ -123,6 +124,7 @@ bool is_guaranteed_on_stack( void* ptr )
 
 #else
 
+//#define NODECPP_SECOND_NULLPTR ((void*)1) // TODO: define accordingly
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1

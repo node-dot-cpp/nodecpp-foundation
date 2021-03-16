@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
+* Copyright (c) 2018-2021, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,14 @@ namespace nodecpp::platform {
 using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_;
 #elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 using ptr_with_zombie_property = ::nodecpp::platform::ptrwithdatastructsdefs::generic_ptr_with_zombie_property_;
+#else
+#error Unsupported configuration
+#endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
+
+#if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
+using allocptr_with_zombie_property_and_data = ::nodecpp::platform::ptrwithdatastructsdefs::optimized_alloc_ptr_with_zombie_property_and_data_;
+#elif defined NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
+using allocptr_with_zombie_property_and_data = ::nodecpp::platform::ptrwithdatastructsdefs::generic_allocptr_with_zombie_property_and_data_;
 #else
 #error Unsupported configuration
 #endif // NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED vs. NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC

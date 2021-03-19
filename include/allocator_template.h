@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2020, OLogN Technologies AG
+* Copyright (c) 2020-2021, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,9 @@ namespace nodecpp {
 	template<class RawAllocT, class _Ty>
 	class selective_allocator
 	{
+		template<class RawAllocT1, class _Ty1>
+		friend class selective_allocator;
+
 		static constexpr size_t alignment4BigAlloc = 32;
 		static_assert(2 * sizeof(void *) <= alignment4BigAlloc);
 
@@ -62,6 +65,8 @@ namespace nodecpp {
 			}
 		}
 
+		RawAllocT allocProvider;
+
 	public:
 		static_assert(!std::is_const_v<_Ty>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
 
@@ -76,10 +81,11 @@ namespace nodecpp {
 			using other = selective_allocator<RawAllocT, _Other>;
 			};
 
-		constexpr selective_allocator() noexcept {}
-		constexpr selective_allocator(const selective_allocator&) noexcept = default;
+		constexpr selective_allocator() noexcept { static_assert( !RawAllocT::objectRequired ); }
+		constexpr selective_allocator(RawAllocT ra) noexcept : allocProvider( ra ) {}
+		constexpr selective_allocator(const selective_allocator& other) noexcept : allocProvider( other.allocProvider ) {}
 		template<class RawAllocT1, class _Other>
-		constexpr selective_allocator(const selective_allocator<RawAllocT1, _Other>&) noexcept {}
+		constexpr selective_allocator(const selective_allocator<RawAllocT1, _Other>& other) noexcept : allocProvider( other.allocProvider ) {}
 
 		void deallocate(_Ty * const ptr, size_t count)
 		{
@@ -87,7 +93,7 @@ namespace nodecpp {
 			constexpr size_t alignment = alignof(_Ty) > static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__) ? alignof(_Ty) : static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ptr & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ptr );
-			RawAllocT::template deallocate<alignment>(ptr); // TODO: check that we can ignore other params
+			allocProvider.deallocate<alignment>(ptr); // TODO: check that we can ignore other params
 		}
 
 		NODISCARD _Ty * allocate(const size_t _Count)
@@ -100,7 +106,7 @@ namespace nodecpp {
 			if (iniByteSz == 0)
 				return static_cast<_Ty *>(nullptr);
 
-			_Ty* ret = static_cast<_Ty *>(RawAllocT::template allocate<alignment>(iniByteSz));
+			_Ty* ret = static_cast<_Ty *>(allocProvider.allocate<alignment>(iniByteSz));
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ret & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ret );
 			return ret;
 		}

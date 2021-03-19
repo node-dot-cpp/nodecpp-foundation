@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2020, OLogN Technologies AG
+* Copyright (c) 2020-2021, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,7 @@ namespace nodecpp {
 
 	struct StdRawAllocator
 	{
+		static constexpr bool objectRequired = false;
 		static constexpr size_t guaranteed_alignment = NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW;
 // NOTE: with MS NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW is known tobe the same as malloc supports, and malloc()/free() pair is used for both 'new' operator and this allocator; 
 //       for greater values both 'new' operator and this allocator will use _aligned_malloc()/_aligned_free() pair

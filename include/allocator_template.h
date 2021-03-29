@@ -93,7 +93,7 @@ namespace nodecpp {
 			constexpr size_t alignment = alignof(_Ty) > static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__) ? alignof(_Ty) : static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ptr & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ptr );
-			allocProvider.deallocate<alignment>(ptr); // TODO: check that we can ignore other params
+			allocProvider.template deallocate<alignment>(ptr); // TODO: check that we can ignore other params
 		}
 
 		NODISCARD _Ty * allocate(const size_t _Count)
@@ -106,7 +106,7 @@ namespace nodecpp {
 			if (iniByteSz == 0)
 				return static_cast<_Ty *>(nullptr);
 
-			_Ty* ret = static_cast<_Ty *>(allocProvider.allocate<alignment>(iniByteSz));
+			_Ty* ret = static_cast<_Ty *>(allocProvider.template allocate<alignment>(iniByteSz));
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, ((uintptr_t)ret & (alignment-1)) == 0, "indeed: alignment = {}, ret = {:x}", alignment, (uintptr_t)ret );
 			return ret;
 		}

@@ -224,6 +224,8 @@ namespace nodecpp::platform::internal_msg {
 			size_t totalSz;
 			size_t sizeRemainingInBlock;
 			size_t idxInIndexPage;
+			size_t currentOffset = 0;
+
 			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
 //				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz >= total_reserved );
@@ -277,6 +279,7 @@ namespace nodecpp::platform::internal_msg {
 				}
 				else
 					page += sz;
+				currentOffset += sz;
 				return ret;
 			}
 			uint8_t operator * ()
@@ -287,6 +290,7 @@ namespace nodecpp::platform::internal_msg {
 			void operator ++ () 
 			{
 				impl_skip( 1 );
+				++currentOffset;
 			}
 			size_t read( void* buff, size_t size )
 			{
@@ -331,8 +335,10 @@ namespace nodecpp::platform::internal_msg {
 					}
 					asz = directlyAvailableSize();
 				}
+				currentOffset += size;
 				return ret;
 			}
+			size_t offset() { return currentOffset; }
 		};
 
 		using ReadIteratorT = ReadIter;

@@ -226,6 +226,9 @@ namespace nodecpp::platform::internal_msg {
 			size_t idxInIndexPage;
 			size_t currentOffset = 0;
 
+		public:
+			using BufferT = InternalMsg;
+
 			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
 //				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz >= total_reserved );

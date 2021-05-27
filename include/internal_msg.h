@@ -398,6 +398,7 @@ namespace nodecpp::platform::internal_msg {
 		InternalMsg& operator = ( InternalMsg&& other )
 		{
 			if ( this == &other ) return *this;
+			impl_clear();
 			firstHeader = std::move( other.firstHeader );
 			pageCnt = other.pageCnt;
 			other.pageCnt = 0;

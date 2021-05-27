@@ -452,8 +452,6 @@ namespace nodecpp::platform::internal_msg {
 			impl_clear();
 			if ( ptr != nullptr )
 			{
-				reserveSpaceForConvertionToTag();
-				uint8_t* prefix = firstHeader.pages()[0].page();
 				memcpy( this, ptr, sizeof( InternalMsg ) );
 			}
 		}

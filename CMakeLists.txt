@@ -46,16 +46,17 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
+	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions -fno-strict-aliasing)
 	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
-#	target_link_options(foundation PUBLIC -rdynamic)
+
+	#	target_link_options(foundation PUBLIC -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	# stack info not supported on Darwin yet
 	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 
-	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions)
+	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions -fno-strict-aliasing)
 	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
 #	target_link_options(foundation PUBLIC -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)

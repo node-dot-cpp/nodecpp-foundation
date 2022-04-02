@@ -48,6 +48,10 @@ static_assert(sizeof(void*) == 8);
 #elif defined(__i386__) || defined(i386) || defined(__i386) || defined(__I86__) || defined(_M_IX86)
 #define NODECPP_X86
 static_assert(sizeof(void*) == 4);
+#elif defined(arm64)
+#define NODECPP_ARM64
+static_assert(sizeof(void*) == 8);
+#pragma message( "ARM architecture is only partially supported. Use with precaution" ) 
 #else
 #pragma message( "Unknown CPU. CPU-specific optimizations are disabled." ) 
 #endif
@@ -97,7 +101,7 @@ static_assert(sizeof(void*) == 4);
 //MMU-BASED SYSTEMS IN PROTECTED MODE
 #if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
 
-#if defined(NODECPP_X86) || defined(NODECPP_X64)
+#if defined(NODECPP_X86) || defined(NODECPP_X64) || defined(NODECPP_ARM64)
 #define NODECPP_SECOND_NULLPTR ((void*)1)
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096
@@ -127,7 +131,9 @@ bool is_guaranteed_on_stack( void* ptr )
 //#define NODECPP_SECOND_NULLPTR ((void*)1) // TODO: define accordingly
 #define NODECPP_MINIMUM_CPU_PAGE_SIZE 0 // protective value; redefine properly wherever possible
 #define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 0 // protective value; redefine properly wherever possible
-#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1
+#define NODECPP_MAX_SUPPORTED_ALIGNMENT 1 // protective value; redefine properly wherever possible
+#define NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW 1 // protective value; redefine properly wherever possible
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT 1 // protective value; redefine properly wherever possible
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 0 // rather a forward declaration; protective value; is iibmalloc is at all implemented?
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 

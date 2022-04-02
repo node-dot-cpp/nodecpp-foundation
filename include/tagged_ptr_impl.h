@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
+* Copyright (c) 2018-2022, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = NODECPP_GU
 #endif // USING_ALIGNED_MALLOC
 
 // main values describing pointer bit usage
-#ifdef NODECPP_X64
+#if defined NODECPP_X64
 constexpr size_t nodecpp_ptr_pointer_bit_size = 64;
 constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 16;
@@ -70,63 +70,6 @@ constexpr uintptr_t nodecpp_ptr_upper_data_mask = ( ( ((uintptr_t)1) << nodecpp_
 [[noreturn]] void throwLatelyDetectedZombieAccess();
 
 ///////  ptr_with_zombie_property
-
-struct optimized_ptr_with_zombie_property_ {
-private:
-	static constexpr uintptr_t zombie_indicator = ( (uintptr_t)1 << nodecpp_allocated_ptr_unused_lower_bit_count_minimum );
-	void* ptr = nullptr;
-	// means to keep mainstream branch clean
-	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
-	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
-public:
-	optimized_ptr_with_zombie_property_() {}
-	optimized_ptr_with_zombie_property_( const optimized_ptr_with_zombie_property_& other ) = delete;
-	optimized_ptr_with_zombie_property_& operator =( const optimized_ptr_with_zombie_property_& other ) = delete;
-	optimized_ptr_with_zombie_property_( optimized_ptr_with_zombie_property_&& other ) = delete;
-	optimized_ptr_with_zombie_property_& operator =( optimized_ptr_with_zombie_property_&& other ) = delete;
-	void copy_from( const optimized_ptr_with_zombie_property_& other ) {
-		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
-			ptr = other.ptr; 
-		else
-			throwZombieAccess();
-	}
-	void move_from( optimized_ptr_with_zombie_property_&& other ) {
-		if ( NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
-		{
-			ptr = other.ptr; 
-			other.ptr = nullptr;
-		}
-		else
-			throwZombieAccess();
-	}
-	void swap( optimized_ptr_with_zombie_property_& other ) {
-		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
-		{
-			void* tmp = ptr;
-			ptr = other.ptr; 
-			other.ptr = tmp;
-		}
-		else
-			throwZombieAccess();
-	}
-
-	void init( const void* ptr_ ) { ptr = const_cast<void*>(ptr_); }
-	void reset() { ptr = nullptr; }
-	void set_zombie() { ptr = (void*)zombie_indicator; }
-	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
-	void* get_dereferencable_ptr() const { 
-		if ( NODECPP_LIKELY( ((uintptr_t)ptr) > zombie_indicator ) )
-			return ptr; 
-		else
-			throwNullptrOrZombieAccess();
-	}
-	void* get_ptr() const { 
-		if ( NODECPP_LIKELY( ((uintptr_t)ptr) != zombie_indicator ) ) 
-			return ptr; 
-		else
-			throwZombieAccess();
-	}
-};
 
 struct generic_ptr_with_zombie_property_ {
 private:
@@ -184,6 +127,67 @@ public:
 			throwZombieAccess();
 	}
 };
+
+#ifdef NODECPP_X64
+struct optimized_ptr_with_zombie_property_ {
+private:
+	static constexpr uintptr_t zombie_indicator = ( (uintptr_t)1 << nodecpp_allocated_ptr_unused_lower_bit_count_minimum );
+	void* ptr = nullptr;
+	// means to keep mainstream branch clean
+	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
+	[[noreturn]] NODECPP_NOINLINE void throwZombieAccess() const;
+public:
+	optimized_ptr_with_zombie_property_() {}
+	optimized_ptr_with_zombie_property_( const optimized_ptr_with_zombie_property_& other ) = delete;
+	optimized_ptr_with_zombie_property_& operator =( const optimized_ptr_with_zombie_property_& other ) = delete;
+	optimized_ptr_with_zombie_property_( optimized_ptr_with_zombie_property_&& other ) = delete;
+	optimized_ptr_with_zombie_property_& operator =( optimized_ptr_with_zombie_property_&& other ) = delete;
+	void copy_from( const optimized_ptr_with_zombie_property_& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+			ptr = other.ptr; 
+		else
+			throwZombieAccess();
+	}
+	void move_from( optimized_ptr_with_zombie_property_&& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+		{
+			ptr = other.ptr; 
+			other.ptr = nullptr;
+		}
+		else
+			throwZombieAccess();
+	}
+	void swap( optimized_ptr_with_zombie_property_& other ) {
+		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+		{
+			void* tmp = ptr;
+			ptr = other.ptr; 
+			other.ptr = tmp;
+		}
+		else
+			throwZombieAccess();
+	}
+
+	void init( const void* ptr_ ) { ptr = const_cast<void*>(ptr_); }
+	void reset() { ptr = nullptr; }
+	void set_zombie() { ptr = (void*)zombie_indicator; }
+	bool is_zombie() const { return ((uintptr_t)ptr) == zombie_indicator; }
+	void* get_dereferencable_ptr() const { 
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) > zombie_indicator ) )
+			return ptr; 
+		else
+			throwNullptrOrZombieAccess();
+	}
+	void* get_ptr() const { 
+		if ( NODECPP_LIKELY( ((uintptr_t)ptr) != zombie_indicator ) ) 
+			return ptr; 
+		else
+			throwZombieAccess();
+	}
+};
+#else
+using optimized_ptr_with_zombie_property_ = generic_ptr_with_zombie_property_;
+#endif // NODECPP_X64
 
 ///////  ptr_with_zombie_property_and_data
 
@@ -363,7 +367,7 @@ public:
 	}
 };
 #else
-using struct optimized_alloc_ptr_with_zombie_property_and_data_ = generic_allocptr_with_zombie_property_and_data_;
+using optimized_alloc_ptr_with_zombie_property_and_data_ = generic_allocptr_with_zombie_property_and_data_;
 #endif // NODECPP_X64
 
 ///////  allocated_ptr_with_flags
@@ -423,7 +427,9 @@ private:
 
 	static constexpr uintptr_t ptrMask_ = ( ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - allocated_ptr_unused_lower_bit_count - nodecpp_ptr_unused_upper_bit_count ) ) - 1 ) << allocated_ptr_unused_lower_bit_count;
 	static_assert( masksize <= allocated_ptr_unused_lower_bit_count );
+#ifdef NODECPP_X64
 	static_assert( nflags <= nodecpp_ptr_unused_upper_bit_count ); // inspired by optimized version
+#endif
 	static_assert( nflags <= sizeof( flags ) * 8 ); // inspired by this version
 
 public:
@@ -484,8 +490,8 @@ public:
 	void set_mask( size_t mask ) { NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, mask < (1<<masksize)); ptr = (ptr & ~lowerDataMask_) | mask; }
 };
 #else
-template< int masksize, int nflags >
-using optimized_allocated_ptr_with_mask_and_flags_64_ = generic_allocated_ptr_with_mask_and_flags_<masksize, nflags>; // TODO: consider writing optimized version for other platforms
+template< size_t allocated_ptr_unused_lower_bit_count, int masksize, int nflags >
+using optimized_allocated_ptr_with_mask_and_flags_64_ = generic_allocated_ptr_with_mask_and_flags_<allocated_ptr_unused_lower_bit_count, masksize, nflags>; // TODO: consider writing optimized version for other platforms
 #endif // NODECPP_X64
 
 

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
+* Copyright (c) 2018-2022, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 
 ///////  ptr_with_zombie_property
 
+#ifdef NODECPP_X64
 void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (((uintptr_t)ptr) == zombie_indicator)
 		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
@@ -45,6 +46,7 @@ void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 void optimized_ptr_with_zombie_property_::throwZombieAccess() const {
 	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
+#endif
 
 void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (isZombie)

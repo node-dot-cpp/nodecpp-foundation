@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018-2021, OLogN Technologies AG
+* Copyright (c) 2018-2022, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,9 @@ namespace nodecpp::platform {
 #ifdef NODECPP_X64
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 #else
+#ifdef NODECPP_ARM64
+#pragma message( "Optimized pointer structs on ARM architecture are yet to be implemented. Generic structs will be used instead" ) 
+#endif
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 #endif //NODECPP_X64
 #endif // NODECPP_USE_GENERIC_STRUCTS

@@ -25,6 +25,9 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+// NOTE: details regarding memory layout for ARM64 see here: https://www.kernel.org/doc/html/latest/arm64/memory.html
+// TODO: a separate consideration should be performed for 52-bit userspace VA (ARMv8.2-LVA): practically, by now it will rather not be enabled (see the above doc)
+
 #ifndef TAGGED_PTR_IMPL_H
 #define TAGGED_PTR_IMPL_H
 
@@ -50,13 +53,17 @@ static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = NODECPP_GU
 #endif // USING_ALIGNED_MALLOC
 
 // main values describing pointer bit usage
-#if defined NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 constexpr size_t nodecpp_ptr_pointer_bit_size = 64;
 constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 16;
-#else
+#elif (defined NODECPP_X86)
 constexpr size_t nodecpp_ptr_pointer_bit_size = 32;
 constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
+constexpr size_t nodecpp_ptr_unused_upper_bit_count = 0;
+#else // unsuported
+constexpr size_t nodecpp_ptr_pointer_bit_size = 0;
+constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = 0;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 0;
 #endif
 
@@ -128,7 +135,7 @@ public:
 	}
 };
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 struct optimized_ptr_with_zombie_property_ {
 private:
 	static constexpr uintptr_t zombie_indicator = ( (uintptr_t)1 << nodecpp_allocated_ptr_unused_lower_bit_count_minimum );
@@ -187,7 +194,7 @@ public:
 };
 #else
 using optimized_ptr_with_zombie_property_ = generic_ptr_with_zombie_property_;
-#endif // NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 ///////  ptr_with_zombie_property_and_data
 
@@ -284,7 +291,7 @@ public:
 	}
 };
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 struct optimized_alloc_ptr_with_zombie_property_and_data_ {
 	static constexpr size_t data_bit_size = 16;
 	static constexpr uintptr_t allocptrMask_ = 0xFFFFFFFFFFF8ULL;
@@ -368,7 +375,7 @@ public:
 };
 #else
 using optimized_alloc_ptr_with_zombie_property_and_data_ = generic_allocptr_with_zombie_property_and_data_;
-#endif // NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 ///////  allocated_ptr_with_flags
 
@@ -392,7 +399,7 @@ public:
 	template<int pos>
 	bool has_flag() const { static_assert( pos >= 0 && pos < nflags); return (ptr & (((uintptr_t)(1))<<pos)) != 0; }
 };
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 static_assert( sizeof(optimized_allocated_ptr_with_flags_<3,1>) == 8 );
 static_assert( sizeof(optimized_allocated_ptr_with_flags_<3,2>) == 8 );
 #endif
@@ -427,7 +434,7 @@ private:
 
 	static constexpr uintptr_t ptrMask_ = ( ( ((uintptr_t)1) << ( nodecpp_ptr_pointer_bit_size - allocated_ptr_unused_lower_bit_count - nodecpp_ptr_unused_upper_bit_count ) ) - 1 ) << allocated_ptr_unused_lower_bit_count;
 	static_assert( masksize <= allocated_ptr_unused_lower_bit_count );
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 	static_assert( nflags <= nodecpp_ptr_unused_upper_bit_count ); // inspired by optimized version
 #endif
 	static_assert( nflags <= sizeof( flags ) * 8 ); // inspired by this version
@@ -455,7 +462,7 @@ public:
 	void set_mask( size_t mask_ ) { NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::regular, mask < (1<<masksize)); mask = (uint8_t)mask_; }
 };
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 template< size_t allocated_ptr_unused_lower_bit_count, int masksize, int nflags >
 struct optimized_allocated_ptr_with_mask_and_flags_64_ {
 	static_assert( nflags <= nodecpp_ptr_unused_upper_bit_count );
@@ -492,7 +499,7 @@ public:
 #else
 template< size_t allocated_ptr_unused_lower_bit_count, int masksize, int nflags >
 using optimized_allocated_ptr_with_mask_and_flags_64_ = generic_allocated_ptr_with_mask_and_flags_<allocated_ptr_unused_lower_bit_count, masksize, nflags>; // TODO: consider writing optimized version for other platforms
-#endif // NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 
 ///////  allocated_ptr_and_ptr_and_data_and_flags
@@ -637,7 +644,7 @@ void generic_allocated_ptr_and_ptr_and_data_and_flags_< allocated_ptr_unused_low
 	throwZeroPointerAccess(); 
 }
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 template< size_t allocated_ptr_unused_lower_bit_count, int dataminsize, int nflags >
 struct optimized_allocated_ptr_and_ptr_and_data_and_flags_64_ {
 	// implementation notes:
@@ -815,7 +822,7 @@ void optimized_allocated_ptr_and_ptr_and_data_and_flags_64_< allocated_ptr_unuse
 #else
 template< size_t allocated_ptr_unused_lower_bit_count, int dataminsize, int nflags >
 using allocated_ptr_and_ptr_and_data_and_flags = generic_allocated_ptr_and_ptr_and_data_and_flags_<allocated_ptr_unused_lower_bit_count, dataminsize, nflags>; // TODO: consider writing optimized version for other platforms
-#endif // NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 } // nodecpp::platform::ptrwithdatastructsdefs
 

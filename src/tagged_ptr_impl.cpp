@@ -35,7 +35,7 @@ namespace nodecpp::platform::ptrwithdatastructsdefs {
 
 ///////  ptr_with_zombie_property
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (((uintptr_t)ptr) == zombie_indicator)
 		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
@@ -46,7 +46,7 @@ void optimized_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 void optimized_ptr_with_zombie_property_::throwZombieAccess() const {
 	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
-#endif
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 void generic_ptr_with_zombie_property_::throwNullptrOrZombieAccess() const {
 	if (isZombie)
@@ -65,7 +65,7 @@ void generic_ptr_with_zombie_property_::throwZombieAccess() const {
 
 ///////  ptr_with_zombie_property_and_data
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 void optimized_alloc_ptr_with_zombie_property_and_data_::throwNullptrOrZombieAccess() const {
 	if (((uintptr_t)ptr) == zombie_indicator)
 		throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
@@ -76,7 +76,7 @@ void optimized_alloc_ptr_with_zombie_property_and_data_::throwNullptrOrZombieAcc
 void optimized_alloc_ptr_with_zombie_property_and_data_::throwZombieAccess() const {
 	throw ::nodecpp::error::lately_detected_zombie_pointer_access; 
 }
-#endif // NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 void generic_allocptr_with_zombie_property_and_data_::throwNullptrOrZombieAccess() const {
 	if (isZombie)

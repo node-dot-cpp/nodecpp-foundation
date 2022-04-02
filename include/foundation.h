@@ -35,23 +35,22 @@
 
 namespace nodecpp::platform { 
 
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 #define nodecpp_memory_size_bits 47
-#else
+#elif (defined NODECPP_X86)
 #define nodecpp_memory_size_bits 31
-#endif
+#else
+#define nodecpp_memory_size_bits 0 // not implemented
+#endif // NODECPP_X64 || NODECPP_ARM64
 
 #ifdef NODECPP_USE_GENERIC_STRUCTS // unconditionally
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
 #else // depending on a platform
-#ifdef NODECPP_X64
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED
 #else
-#ifdef NODECPP_ARM64
-#pragma message( "Optimized pointer structs on ARM architecture are yet to be implemented. Generic structs will be used instead" ) 
-#endif
 #define NODECPP_DECLARE_PTR_STRUCTS_AS_GENERIC
-#endif //NODECPP_X64
+#endif // NODECPP_X64 || NODECPP_ARM64
 #endif // NODECPP_USE_GENERIC_STRUCTS
 
 #if defined NODECPP_DECLARE_PTR_STRUCTS_AS_OPTIMIZED

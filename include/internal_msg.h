@@ -53,6 +53,7 @@ namespace nodecpp::platform::internal_msg {
 		PagePtrWrapper& operator =( PagePtrWrapper&& other ) = default;
 		~PagePtrWrapper() {}
 		uint8_t* page() { return ptr; }
+		const uint8_t* page() const { return ptr; }
 		void init() {ptr = 0;}
 		void init( void* page ) {ptr = reinterpret_cast<uint8_t*>(page); }
 	};
@@ -84,6 +85,7 @@ namespace nodecpp::platform::internal_msg {
 			PagePointer next_;
 			size_t usedCnt;
 			PagePointer* pages() { return reinterpret_cast<PagePointer*>(this+1); }
+			const PagePointer* pages() const { return reinterpret_cast<const PagePointer*>(this+1); }
 			IndexPageHeader() { init(); }
 			IndexPageHeader( const IndexPageHeader& ) = delete;
 			IndexPageHeader& operator = ( const IndexPageHeader& ) = delete;
@@ -106,6 +108,7 @@ namespace nodecpp::platform::internal_msg {
 			void init(PagePointer page) { next_.init(); usedCnt = 1; pages()[0] = page;}
 			void setNext( PagePointer n ) { next_ = n; }
 			IndexPageHeader* next() { return reinterpret_cast<IndexPageHeader*>( next_.page() ); }
+			const IndexPageHeader* next() const { return reinterpret_cast<const IndexPageHeader*>( next_.page() ); }
 		};
 		static constexpr size_t maxAddressedByPage = ( pageSize - sizeof( IndexPageHeader ) ) / sizeof( uint8_t*);
 
@@ -144,8 +147,8 @@ namespace nodecpp::platform::internal_msg {
 		PagePointer currentPage;
 		size_t totalSz = 0;
 
-		size_t offsetInCurrentPage() { return totalSz & ( pageSize - 1 ); }
-		size_t remainingSizeInCurrentPage() { return pageSize - offsetInCurrentPage(); }
+		size_t offsetInCurrentPage() const { return totalSz & ( pageSize - 1 ); }
+		size_t remainingSizeInCurrentPage() const { return pageSize - offsetInCurrentPage(); }
 		void implReleaseAllPages()
 		{
 			size_t i;
@@ -219,7 +222,7 @@ namespace nodecpp::platform::internal_msg {
 		class ReadIter
 		{
 			friend class InternalMsg;
-			IndexPageHeader* ip;
+			const IndexPageHeader* ip;
 			const uint8_t* page;
 			size_t totalSz;
 			size_t sizeRemainingInBlock;
@@ -229,7 +232,7 @@ namespace nodecpp::platform::internal_msg {
 		public:
 			using BufferT = InternalMsg;
 
-			ReadIter( IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
+			ReadIter( const IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
 //				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz >= total_reserved );
 				sizeRemainingInBlock = sz <= pageSize - total_reserved ? sz : pageSize - total_reserved;
@@ -258,9 +261,9 @@ namespace nodecpp::platform::internal_msg {
 					page += sz;
 			}
 		public:
-			size_t directlyAvailableSize() {return sizeRemainingInBlock;}
-			size_t totalAvailableSize() {return totalSz;}
-			bool isData() { return totalSz != 0; }
+			size_t directlyAvailableSize() const {return sizeRemainingInBlock;}
+			size_t totalAvailableSize() const {return totalSz;}
+			bool isData() const { return totalSz != 0; }
 			const uint8_t* directRead( size_t sz )
 			{
 				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, sz <= sizeRemainingInBlock );
@@ -341,12 +344,12 @@ namespace nodecpp::platform::internal_msg {
 				currentOffset += size;
 				return ret;
 			}
-			size_t offset() { return currentOffset; }
+			size_t offset() const { return currentOffset; }
 		};
 
 		using ReadIteratorT = ReadIter;
 
-		ReadIter getReadIter()
+		ReadIter getReadIter() const 
 		{
 //			return ReadIter( &firstHeader, firstHeader.pages()[0].page(), totalSz );
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz == 0 || totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
@@ -423,12 +426,12 @@ namespace nodecpp::platform::internal_msg {
 			uint8_t* appPrefix = firstHeader.pages()[0].page() + total_reserved - app_reserved;
 			memcpy( appPrefix + offset, data, sz );
 		}
-		void appReadData( void* data, size_t offset, size_t sz )
+		void appReadData( void* data, size_t offset, size_t sz ) const
 		{
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz == 0 || totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, offset + sz <= app_reserved, "{} + {} vs. {}", offset, sz, app_reserved );
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstHeader.pages()[0].page() != nullptr );
-			uint8_t* appPrefix = firstHeader.pages()[0].page() + total_reserved - app_reserved;
+			const uint8_t* appPrefix = firstHeader.pages()[0].page() + total_reserved - app_reserved;
 			memcpy( data, appPrefix + offset, sz );
 		}
 		InternalMsg* convertToPointer()
@@ -523,7 +526,7 @@ namespace nodecpp::platform::internal_msg {
 			impl_clear();
 		}
 
-		size_t size() { 
+		size_t size() const { 
 			NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz == 0 || totalSz >= total_reserved, "{} vs. {}", totalSz, total_reserved );
 			return totalSz != 0 ? totalSz - total_reserved : 0;
 		}

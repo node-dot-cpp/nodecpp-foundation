@@ -458,6 +458,20 @@ namespace nodecpp::platform::internal_msg {
 				memcpy( this, ptr, sizeof( InternalMsg ) );
 			}
 		}
+
+		void append(ReadIter it, size_t sz)
+		{
+			size_t pending = (it.totalAvailableSize() < sz) ? it.totalAvailableSize() : sz;
+			while (pending != 0)
+			{
+				size_t currentSz = (it.directlyAvailableSize() < pending) ? it.directlyAvailableSize() : pending;
+				const uint8_t* ptr = it.directRead(currentSz);
+				append(ptr, currentSz);
+
+				pending -= currentSz;
+			}
+		}
+
 		void append( const void* buff_, size_t sz )
 		{
 			const uint8_t* buff = reinterpret_cast<const uint8_t*>(buff_);

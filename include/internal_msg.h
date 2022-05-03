@@ -162,8 +162,8 @@ namespace nodecpp::platform::internal_msg {
 				{
 					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, pageCnt > localStorageSize || firstHeader.next()->next() == nullptr );
 					NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, firstHeader.next()->usedCnt <= pageCnt );
-					for ( size_t i=0; i<firstHeader.next()->usedCnt; ++i )
-						implReleasePageWrapper( firstHeader.next()->pages()[i] );
+					for ( size_t j=0; j<firstHeader.next()->usedCnt; ++j )
+						implReleasePageWrapper( firstHeader.next()->pages()[j] );
 					pageCnt -= firstHeader.next()->usedCnt;
 					PagePointer page = firstHeader.next_;
 					firstHeader.next_ = firstHeader.next()->next_;

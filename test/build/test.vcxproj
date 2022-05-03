@@ -203,6 +203,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -220,6 +221,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -237,6 +239,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -254,6 +257,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -273,6 +277,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -294,6 +299,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -315,6 +321,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -336,6 +343,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -163,6 +163,8 @@ void VirtualMemory::FreeAddressSpace(void* addr, size_t size)
 
 #elif defined NODECPP_WINDOWS
 
+#pragma warning (disable: 6250) // Calling 'VirtualFree' without the MEM_RELEASE
+
 #include <cstdlib>
 #include <cstddef>
 #include <memory>

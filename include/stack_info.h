@@ -69,7 +69,21 @@ namespace nodecpp {
 			StackPointers( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; }
 			StackPointers& operator = ( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; return *this; }
 			~StackPointers() { if (ptrs ) free( ptrs ); }
-			void init( void** ptrs_, size_t cnt_ ) { if (ptrs ) free( ptrs ); cnt = cnt_; ptrs = (void**)( malloc( sizeof(void*) * cnt ) ); memcpy( ptrs, ptrs_, sizeof(void*) * cnt ); }
+			void init( void** ptrs_, size_t cnt_ ) { 
+				// note: due to the purpose of this class we cannot throw here; if something goes wrong, we just indicate no data
+				if (ptrs ) 
+					free( ptrs ); 
+				ptrs = nullptr;
+				cnt = cnt_; 
+				if ( cnt )
+				{
+					ptrs = (void**)( malloc( sizeof(void*) * cnt ) ); 
+					if ( ptrs != nullptr )
+						memcpy( ptrs, ptrs_, sizeof(void*) * cnt );
+					else
+						cnt = 0;
+				}
+			}
 			size_t size() const { return cnt; }
 			void** get() const { return ptrs; }
 		};

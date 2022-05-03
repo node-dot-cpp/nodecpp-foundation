@@ -65,7 +65,8 @@ namespace nodecpp::assert { // pedantic regular critical
 			}
 			else
 				logBuf[res.size] = 0;
-			onAssertionFailed( file, line, condString, logBuf, ShouldAssert<module, level>::value == ActionType::throwing );
+			constexpr bool shouldThrow = ShouldAssert<module, level>::value == ActionType::throwing;
+			onAssertionFailed( file, line, condString, logBuf, shouldThrow );
 		}
 	}
 
@@ -75,7 +76,8 @@ namespace nodecpp::assert { // pedantic regular critical
 		{
 			if ( expr() )
 				return;
-			onAssertionFailed( file, line, condString, ShouldAssert<module, level>::value == ActionType::throwing );
+			constexpr bool shouldThrow = ShouldAssert<module, level>::value == ActionType::throwing;
+			onAssertionFailed( file, line, condString, shouldThrow );
 		}
 	}
 

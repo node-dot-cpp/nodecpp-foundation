@@ -90,12 +90,12 @@ namespace nodecpp::logging_impl {
 		{
 			for (;;)
 			{
-				std::unique_lock<std::mutex> lock(logData->mx);
+				std::unique_lock<std::mutex> lock1(logData->mx);
 				while ( ( logData->action == LogBufferBaseData::Action::proceed && logData->end == logData->start && logData->mustBeWrittenImmediately <= logData->start && logData->firstToRelease == nullptr && logData->firstToReleaseGuaranteed == nullptr ) ||
 						( ( logData->action == LogBufferBaseData::Action::proceedToTermination || logData->action == LogBufferBaseData::Action::terminationAllowed ) && logData->end == logData->start && logData->firstToRelease == nullptr && logData->firstToReleaseGuaranteed == nullptr ) )
-//					logData->waitWriter.wait(lock);
-					logData->waitWriter.wait_for(lock, std::chrono::milliseconds(200));
-				lock.unlock();
+//					logData->waitWriter.wait(lock1);
+					logData->waitWriter.wait_for(lock1, std::chrono::milliseconds(200));
+				lock1.unlock();
 
 				// there are two things we can do here:
 				// 1. write data of the amount exceeding some threshold or required to be written immediately
@@ -383,11 +383,11 @@ namespace nodecpp::log {
 		while ( waitAgain )
 		{
 			waitAgain = false;
-			std::unique_lock<std::mutex> lock(d.mx);
+			std::unique_lock<std::mutex> lock1(d.mx);
 			while (!d.canRun)
-				d.w.wait(lock);
+				d.w.wait(lock1);
 			d.canRun = false;
-			lock.unlock();
+			lock1.unlock();
 
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);

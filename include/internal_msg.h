@@ -89,14 +89,14 @@ namespace nodecpp::platform::internal_msg {
 			IndexPageHeader() { init(); }
 			IndexPageHeader( const IndexPageHeader& ) = delete;
 			IndexPageHeader& operator = ( const IndexPageHeader& ) = delete;
-			IndexPageHeader( IndexPageHeader&& other )
+			IndexPageHeader( IndexPageHeader&& other ) noexcept
 			{
 				usedCnt = other.usedCnt;
 				other.usedCnt = 0;
 				next_ = other.next_;
 				other.next_.init();
 			}
-			IndexPageHeader& operator = ( IndexPageHeader&& other )
+			IndexPageHeader& operator = ( IndexPageHeader&& other ) noexcept
 			{
 				usedCnt = other.usedCnt;
 				other.usedCnt = 0;
@@ -119,7 +119,7 @@ namespace nodecpp::platform::internal_msg {
 			FirstHeader() : IndexPageHeader() {}
 			FirstHeader( const FirstHeader& ) = delete;
 			FirstHeader& operator = ( const FirstHeader& ) = delete;
-			FirstHeader( FirstHeader&& other ) : IndexPageHeader( std::move( other ) )
+			FirstHeader( FirstHeader&& other ) noexcept : IndexPageHeader( std::move( other ) )
 			{
 				for ( size_t i=0; i<localStorageSize;++i )
 				{
@@ -127,7 +127,7 @@ namespace nodecpp::platform::internal_msg {
 					other.firstPages[i].init();
 				}
 			}
-			FirstHeader& operator = ( FirstHeader&& other )
+			FirstHeader& operator = ( FirstHeader&& other ) noexcept
 			{
 				IndexPageHeader::operator = ( std::move( other ) );
 				for ( size_t i=0; i<localStorageSize;++i )
@@ -386,7 +386,7 @@ namespace nodecpp::platform::internal_msg {
 		}
 		InternalMsg( const InternalMsg& ) = delete;
 		InternalMsg& operator = ( const InternalMsg& ) = delete;
-		InternalMsg( InternalMsg&& other )
+		InternalMsg( InternalMsg&& other ) noexcept
 		{
 			firstHeader = std::move( other.firstHeader );
 			pageCnt = other.pageCnt;
@@ -398,7 +398,7 @@ namespace nodecpp::platform::internal_msg {
 			totalSz = other.totalSz;
 			other.totalSz = 0;
 		}
-		InternalMsg& operator = ( InternalMsg&& other )
+		InternalMsg& operator = ( InternalMsg&& other ) noexcept
 		{
 			if ( this == &other ) return *this;
 			impl_clear();

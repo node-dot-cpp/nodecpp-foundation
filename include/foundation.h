@@ -105,7 +105,7 @@ using allocated_ptr_and_ptr_and_data_and_flags = ::nodecpp::platform::ptrwithdat
 class SE_Exception  
 {  
 private:  
-    unsigned int nSE;  
+    unsigned int nSE = 0;  
 public:  
     SE_Exception() {}  
     SE_Exception( unsigned int n ) : nSE( n ) {}  

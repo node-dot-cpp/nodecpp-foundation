@@ -156,13 +156,16 @@ public:
 			throwZombieAccess();
 	}
 	void move_from( optimized_ptr_with_zombie_property_&& other ) {
-		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+		if ( &other != this )
 		{
-			ptr = other.ptr; 
-			other.ptr = nullptr;
+			if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
+			{
+				ptr = other.ptr; 
+				other.ptr = nullptr;
+			}
+			else
+				throwZombieAccess();
 		}
-		else
-			throwZombieAccess();
 	}
 	void swap( optimized_ptr_with_zombie_property_& other ) {
 		if ( NODECPP_LIKELY( ((uintptr_t)(ptr)) != zombie_indicator ) && NODECPP_LIKELY( ((uintptr_t)(other.ptr)) != zombie_indicator ) )
@@ -202,7 +205,7 @@ struct generic_allocptr_with_zombie_property_and_data_ {
 	static constexpr size_t data_bit_size = 16;
 private:
 	void* ptr = nullptr;
-	uint16_t data;
+	uint16_t data = 0;
 	bool isZombie = false;
 	// means to keep mainstream branch clean
 	[[noreturn]] NODECPP_NOINLINE void throwNullptrOrZombieAccess() const;
@@ -317,13 +320,16 @@ public:
 			throwZombieAccess();
 	}
 	void move_from( optimized_alloc_ptr_with_zombie_property_and_data_&& other ) {
-		if ( NODECPP_LIKELY( ptr != zombie_indicator ) && NODECPP_LIKELY( other.ptr != zombie_indicator ) )
+		if ( &other != this )
 		{
-			ptr = other.ptr; 
-			other.ptr = 0;
+			if ( NODECPP_LIKELY( ptr != zombie_indicator ) && NODECPP_LIKELY( other.ptr != zombie_indicator ) )
+			{
+				ptr = other.ptr; 
+				other.ptr = 0;
+			}
+			else
+				throwZombieAccess();
 		}
-		else
-			throwZombieAccess();
 	}
 	void swap( optimized_alloc_ptr_with_zombie_property_and_data_& other ) {
 		if ( NODECPP_LIKELY( ptr != zombie_indicator ) && NODECPP_LIKELY( other.ptr != zombie_indicator ) )

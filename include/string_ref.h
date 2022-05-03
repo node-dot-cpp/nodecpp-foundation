@@ -84,13 +84,13 @@ namespace nodecpp::error {
 			fromLiteral = other.fromLiteral;
 			return *this;
 		}
-		string_ref( string_ref&& other ) {
+		string_ref( string_ref&& other ) noexcept {
 			str = other.str;
 			other.str = nullptr;
 			fromLiteral = other.fromLiteral;
 			other.fromLiteral = false;
 		}
-		string_ref& operator = ( string_ref&& other ) {
+		string_ref& operator = ( string_ref&& other ) noexcept {
 			release_str();
 			str = other.str;
 			other.str = nullptr;

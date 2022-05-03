@@ -66,8 +66,8 @@ namespace nodecpp {
 			StackPointers() {};
 			StackPointers( const StackPointers& other ) { init( other.ptrs, other.cnt ); }
 			StackPointers& operator = ( const StackPointers& other ) { init( other.ptrs, other.cnt ); return *this; }
-			StackPointers( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; }
-			StackPointers& operator = ( StackPointers&& other ) { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; return *this; }
+			StackPointers( StackPointers&& other ) noexcept { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; }
+			StackPointers& operator = ( StackPointers&& other ) noexcept { ptrs = other.ptrs; cnt = other.cnt; other.ptrs = nullptr; other.cnt = 0; return *this; }
 			~StackPointers() { if (ptrs ) free( ptrs ); }
 			void init( void** ptrs_, size_t cnt_ ) { 
 				// note: due to the purpose of this class we cannot throw here; if something goes wrong, we just indicate no data

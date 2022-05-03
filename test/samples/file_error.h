@@ -54,7 +54,7 @@ namespace nodecpp::error {
 			fileName = other.fileName;
 			return *this;
 		}
-		file_error_value& operator = ( file_error_value&& other ) {
+		file_error_value& operator = ( file_error_value&& other ) noexcept {
 			errorCode = other.errorCode;
 			fileName = std::move( other.fileName );
 			return *this;

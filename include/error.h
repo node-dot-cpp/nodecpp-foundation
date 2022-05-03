@@ -115,13 +115,13 @@ namespace nodecpp::error {
 				value_ = nullptr;
 			return *this;
 		}
-		error( error&& other ) {
+		error( error&& other ) noexcept {
 			domain_ = other.domain_;
 			other.domain_ = nullptr;
 			value_ = other.value_;
 			other.value_ = nullptr;
 		}
-		error operator = ( error&& other ) {
+		error operator = ( error&& other ) noexcept {
 			domain_ = other.domain_;
 			other.domain_ = nullptr;
 			value_ = other.value_;

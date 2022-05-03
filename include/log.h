@@ -43,7 +43,7 @@ namespace nodecpp::logging_impl {
 	extern thread_local size_t instanceId;
 	struct LoggingTimeStamp
 	{
-		uint64_t t;
+		uint64_t t = 0;
 	};
 	LoggingTimeStamp getCurrentTimeStamp();
 } // namespace logging_impl
@@ -104,7 +104,7 @@ namespace nodecpp::log {
 	{
 		std::condition_variable w;
 		std::mutex mx;
-		uint64_t end;
+		uint64_t end = 0;
 		bool canRun = false;
 		ChainedWaitingForGuaranteedWrite* next = nullptr;
 	};
@@ -114,7 +114,7 @@ namespace nodecpp::log {
 		static constexpr size_t maxMessageSize = 0x1000;
 		LogLevel levelCouldBeSkipped = LogLevel::info;
 		LogLevel levelGuaranteedWrite = LogLevel::fatal;
-		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
+		size_t pageSize = 0; // consider making a constexpr (do we consider 2Mb pages?)
 		static constexpr size_t pageCount = 4; // so far it is not obvious why we really need something else
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
@@ -239,11 +239,11 @@ namespace nodecpp::log {
 		LogTransport( LogBufferBaseData* data ) : logData( data ) { data->addRef(); }
 		LogTransport( const LogTransport& ) = delete;
 		LogTransport& operator = ( const LogTransport& ) = delete;
-		LogTransport( LogTransport&& other ) {
+		LogTransport( LogTransport&& other ) noexcept {
 			logData = other.logData;
 			other.logData = nullptr;
 		}
-		LogTransport& operator = ( LogTransport&& other )
+		LogTransport& operator = ( LogTransport&& other ) noexcept
 		{
 			logData = other.logData;
 			other.logData = nullptr;

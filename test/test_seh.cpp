@@ -53,6 +53,10 @@ public:
 
 };
 
+#ifdef NODECPP_MSVC
+#pragma warning (disable: 6011) // se below: badCallInner_Nullptr(), etc
+#endif // NODECPP_MSVC
+
 void badCallInner_Nullptr()
 {
 	volatile int * ptr = nullptr;

@@ -133,7 +133,7 @@ namespace nodecpp::log {
 		ChainedWaitingForGuaranteedWrite* firstToReleaseGuaranteed = nullptr; // for writer
 		ChainedWaitingForGuaranteedWrite* nextToAddGuaranteed = nullptr; // for loggers
 
-		enum Action { proceed = 0, proceedToTermination, terminationAllowed };
+		enum class Action { proceed = 0, proceedToTermination, terminationAllowed };
 		Action action = Action::proceed;
 
 		FILE* target = nullptr; // so far...

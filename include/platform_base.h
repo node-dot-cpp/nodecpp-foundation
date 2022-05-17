@@ -48,7 +48,7 @@ static_assert(sizeof(void*) == 8);
 #elif defined(__i386__) || defined(i386) || defined(__i386) || defined(__I86__) || defined(_M_IX86)
 #define NODECPP_X86
 static_assert(sizeof(void*) == 4);
-#elif defined(arm64)
+#elif defined(__arm64) || defined(arm64)
 #define NODECPP_ARM64
 static_assert(sizeof(void*) == 8);
 #pragma message( "ARM architecture is only partially supported. Use with precaution" ) 

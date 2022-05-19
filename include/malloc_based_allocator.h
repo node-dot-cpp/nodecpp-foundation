@@ -75,10 +75,15 @@ namespace nodecpp {
 		template<size_t alignment = 0> 
 		static NODECPP_FORCEINLINE void* allocate( size_t allocSize ) { 
 			static_assert( alignment <= guaranteed_alignment );
+			void* ptr;
 			if constexpr ( alignment <= guaranteed_malloc_alignment )
-				return ::malloc( allocSize );
+				ptr = ::malloc( allocSize );
 			else
-				return MALLOC_BASED_ALIGNED_ALLOC( allocSize, alignment );
+				ptr = MALLOC_BASED_ALIGNED_ALLOC( allocSize, alignment );
+				
+			if(ptr)
+				return ptr;
+			throw std::bad_alloc();
 		}
 		template<size_t alignment = 0> 
 		static NODECPP_FORCEINLINE void deallocate( void* ptr) {

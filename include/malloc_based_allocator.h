@@ -37,7 +37,15 @@
 #define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) _aligned_malloc( size, alignment )
 #define MALLOC_BASED_ALIGNED_FREE( ptr ) ::_aligned_free( ptr )
 
-#elif ( defined NODECPP_LINUX || defined NODECPP_MAC ) && (defined NODECPP_GCC || defined NODECPP_CLANG)
+#elif  defined(NODECPP_MAC) && defined(NODECPP_ARM64)
+// mb: aligned_alloc on Mac on M1 is always returning null
+// also it seems that default malloc alignment is rather high
+// so temporarily disabling aligned_alloc
+#include <stdlib.h>
+#define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::malloc( size )
+#define MALLOC_BASED_ALIGNED_FREE( ptr ) ::free( ptr )
+
+#elif ( defined(NODECPP_LINUX) || defined(NODECPP_MAC) ) && (defined(NODECPP_GCC) || defined(NODECPP_CLANG))
 
 #include <stdlib.h>
 #define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::aligned_alloc( size, alignment )

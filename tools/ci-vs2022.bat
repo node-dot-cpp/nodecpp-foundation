@@ -1,10 +1,11 @@
 rem script to build with Visual Studio
+rem run from root as 'tools\ci-msvc2022'
 
+rmdir /S /Q build\vs2022
+mkdir build\vs2022
+cd build\vs2022
 
-mkdir build
-cd build
-
-cmake -G "Visual Studio 15 2017 Win64" ..
+cmake -DSAFEMEMORY_TEST=ON -G "Visual Studio 17 2022" ..\..
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
 cmake --build . --config Release

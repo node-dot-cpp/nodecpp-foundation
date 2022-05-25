@@ -44,12 +44,15 @@
 //CPU
 #if defined(__X86_64__) || defined(__X86_64) || defined(__amd64__) || defined(__amd64) || defined(_M_X64)
 #define NODECPP_X64
+#define NODECPP_64BITS
 static_assert(sizeof(void*) == 8);
 #elif defined(__i386__) || defined(i386) || defined(__i386) || defined(__I86__) || defined(_M_IX86)
 #define NODECPP_X86
+#define NODECPP_32BITS
 static_assert(sizeof(void*) == 4);
-#elif defined(__arm64) || defined(arm64)
+#elif defined(__arm64) || defined(arm64) || defined(__aarch64__)
 #define NODECPP_ARM64
+#define NODECPP_64BITS
 static_assert(sizeof(void*) == 8);
 #pragma message( "ARM architecture is only partially supported. Use with precaution" ) 
 #else

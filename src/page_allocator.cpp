@@ -33,7 +33,7 @@
 #include "../include/foundation.h"
 #include "../include/page_allocator.h"
 
-#if defined NODECPP_LINUX || defined  NODECPP_MAC
+#if defined(NODECPP_LINUX) || defined(NODECPP_MAC) || defined(NODECPP_ANDROID)
 
 #include <cstdlib>
 #include <memory>

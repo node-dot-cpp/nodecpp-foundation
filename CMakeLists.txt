@@ -51,8 +51,19 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 	#	target_link_options(foundation PUBLIC -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
+	target_link_libraries(foundation pthread)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	# stack info not supported on Darwin yet
+	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+
+	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions -fno-strict-aliasing)
+	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)
+#	target_link_options(foundation PUBLIC -rdynamic)
+	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
+	target_link_libraries(foundation pthread)
+
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
 	# stack info not supported on Darwin yet
 	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 
@@ -64,10 +75,6 @@ endif()
 
 
 target_link_libraries(foundation fmt::fmt)
-
-if (UNIX)
-	target_link_libraries(foundation pthread)
-endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_link_libraries(foundation dl)

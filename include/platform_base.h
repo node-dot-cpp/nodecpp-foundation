@@ -38,36 +38,36 @@
 #elif defined(_MSC_VER)
 #define NODECPP_MSVC
 #else
-#pragma message( "Unknown compiler. You're on your own." ) 
+#error unknown/unsupported compiler
 #endif
 
 //CPU
 #if defined(__X86_64__) || defined(__X86_64) || defined(__amd64__) || defined(__amd64) || defined(_M_X64)
 #define NODECPP_X64
-#define NODECPP_64BITS
 static_assert(sizeof(void*) == 8);
 #elif defined(__i386__) || defined(i386) || defined(__i386) || defined(__I86__) || defined(_M_IX86)
 #define NODECPP_X86
-#define NODECPP_32BITS
 static_assert(sizeof(void*) == 4);
 #elif defined(__arm64) || defined(arm64) || defined(__aarch64__)
 #define NODECPP_ARM64
-#define NODECPP_64BITS
 static_assert(sizeof(void*) == 8);
-#pragma message( "ARM architecture is only partially supported. Use with precaution" ) 
+//#pragma message( "ARM architecture is only partially supported. Use with precaution" ) 
 #else
-#pragma message( "Unknown CPU. CPU-specific optimizations are disabled." ) 
+#error unknown/unsupported CPU
 #endif
 
 //OS
-#if (defined __linux) || (defined linux) || (defined __linux__)
+#if defined(__ANDROID__)
+//mb: while android is a kind of linux, it has its own libc (Bionic) so we need to diferenciate
+#define NODECPP_ANDROID
+#elif (defined __linux) || (defined linux) || (defined __linux__)
 #define NODECPP_LINUX
 #elif (defined __WINDOWS__) || (defined _WIN32) || (defined _WIN64)
 #define NODECPP_WINDOWS
 #elif (defined __OSX__) || (defined __APPLE__)
 #define NODECPP_MAC
 #else
-#pragma message( "Unknown Operating System. We'll try our best but...") 
+#error unknown/unsupported OS
 #endif
 
 #if defined(NODECPP_MSVC)
@@ -102,7 +102,7 @@ static_assert(sizeof(void*) == 8);
 #include <functional>
 
 //MMU-BASED SYSTEMS IN PROTECTED MODE
-#if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
+#if defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || defined(NODECPP_MAC) || defined(NODECPP_ANDROID)
 
 #if defined(NODECPP_X86) || defined(NODECPP_X64) || defined(NODECPP_ARM64)
 #define NODECPP_SECOND_NULLPTR ((void*)1)
@@ -140,7 +140,7 @@ bool is_guaranteed_on_stack( void* ptr )
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 0 // rather a forward declaration; protective value; is iibmalloc is at all implemented?
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
-#endif//defined(NODECPP_X86) || defined(NODECPP_X64)
+#endif//defined(NODECPP_X86) || defined(NODECPP_X64) || defined(NODECPP_ARM64)
 
 #else // other OSs
 
@@ -150,7 +150,7 @@ bool is_guaranteed_on_stack( void* ptr )
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 0 // rather a forward declaration; protective value; is iibmalloc is at all implemented?
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
-#endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || (defined NODECPP_MAC)
+#endif//defined(NODECPP_LINUX) || defined(NODECPP_WINDOWS) || defined(NODECPP_MAC) || defined(NODECPP_ANDROID)
 
 #ifndef NODECPP_MINIMUM_CPU_PAGE_SIZE
 namespace nodecpp::platform { 

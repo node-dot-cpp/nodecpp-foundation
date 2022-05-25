@@ -45,17 +45,23 @@ void printPlatform()
 #endif
 
 #if defined NODECPP_X64
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "64 bit" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "x86 64 bit" );
 #elif defined NODECPP_X86
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "32 bit" );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "x86 32 bit" );
+#elif defined NODECPP_ARM64
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "Arm 64 bit" );
 #else
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "unknown platform" );
 #endif
 
-#if defined NODECPP_LINUX
+#if defined(NODECPP_LINUX)
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: Linux" );
-#elif (defined NODECPP_WINDOWS )
+#elif defined(NODECPP_WINDOWS)
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: Windows" );
+#elif defined(NODECPP_MAC)
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: MacOS" );
+#elif defined(NODECPP_ANDROID)
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: Android" );
 #else
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "OS: unknown" );
 #endif

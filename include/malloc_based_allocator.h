@@ -37,8 +37,9 @@
 #define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) _aligned_malloc( size, alignment )
 #define MALLOC_BASED_ALIGNED_FREE( ptr ) ::_aligned_free( ptr )
 
-#elif  defined(NODECPP_MAC) && defined(NODECPP_ARM64)
+#elif (defined(NODECPP_MAC) || defined(NODECPP_ANDROID)) && defined(NODECPP_ARM64)
 // mb: aligned_alloc on Mac on M1 is always returning null
+// on Android is not even there
 // also it seems that default malloc alignment is rather high
 // so temporarily disabling aligned_alloc
 #include <stdlib.h>
@@ -67,7 +68,7 @@ namespace nodecpp {
 //       This may be useful when allocation is done by this allocator, and deallocation is done inside 3rd party lib with standard means
 #ifdef NODECPP_WINDOWS
 		static constexpr size_t guaranteed_malloc_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
-#elif ( defined NODECPP_LINUX || defined NODECPP_MAC ) && (defined NODECPP_GCC || defined NODECPP_CLANG)
+#elif ( defined(NODECPP_LINUX) || defined(NODECPP_MAC) || defined(NODECPP_ANDROID)) && (defined(NODECPP_GCC) || defined(NODECPP_CLANG))
 		static constexpr size_t guaranteed_malloc_alignment = NODECPP_GUARANTEED_MALLOC_ALIGNMENT;
 #else
 #error not implemented (add known cases when possible)

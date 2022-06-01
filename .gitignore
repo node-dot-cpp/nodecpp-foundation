@@ -4,3 +4,4 @@ test/build/.vs/
 test/build/Debug/
 test/build/x64/
 test/build/Release/
+/tools/debug-*

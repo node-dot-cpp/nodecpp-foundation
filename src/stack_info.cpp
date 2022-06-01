@@ -39,10 +39,15 @@
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 
-#elif defined NODECPP_CLANG || defined NODECPP_GCC
+#elif defined(NODECPP_LINUX)
 
 #include <execinfo.h>
 #include <unistd.h>
+#include <dlfcn.h>
+
+#elif defined(NODECPP_ANDROID)
+
+#include <unwind.h>
 #include <dlfcn.h>
 
 #else
@@ -54,9 +59,7 @@
 
 
 
-#if ( defined NODECPP_LINUX || defined NODECPP_MAC ) && ( defined NODECPP_CLANG || defined NODECPP_GCC )
-
-#ifdef NODECPP_CLANG
+#if defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
 
 static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFrameInfo& info ) {
 	if ( symbol.size() == 0 )
@@ -79,7 +82,9 @@ static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFr
 	}
 }
 
-#else
+#endif // defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
+
+#if (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID)
 
 static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::ModuleAndOffset& mao ) {
 	Dl_info info;
@@ -95,7 +100,9 @@ static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::Modul
 	return true;
 }
 
-#endif // NODECPP_CLANG
+#endif // (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID)
+
+#if defined(NODECPP_LINUX)
 
 static void parseAddr2LineOutput( const std::string& str, nodecpp::stack_info_impl::StackFrameInfo& info ) {
 	if ( str.size() == 0 )
@@ -148,14 +155,37 @@ static void addFileLineInfo( nodecpp::stack_info_impl::StackFrameInfo& sfi ) {
 	useAddr2Line( sfi );
 }
 
-#endif // defined NODECPP_LINUX && ( defined NODECPP_CLANG || defined NODECPP_GCC )
+#endif // defined(NODECPP_LINUX)
+
+#if defined(NODECPP_ANDROID)
+struct BacktraceState
+{
+	void** current;
+	void** end;
+};
+
+static _Unwind_Reason_Code unwindCallback(struct _Unwind_Context* context, void* arg)
+{
+    BacktraceState* state = static_cast<BacktraceState*>(arg);
+    uintptr_t pc = _Unwind_GetIP(context);
+    if (pc) {
+        if (state->current == state->end) {
+            return _URC_END_OF_STACK;
+        } else {
+            *state->current++ = reinterpret_cast<void*>(pc);
+        }
+    }
+    return _URC_NO_REASON;
+}
+
+#endif // defined(NODECPP_ANDROID)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace nodecpp::stack_info_impl {
 	bool stackPointerToInfo( void* ptr, nodecpp::stack_info_impl::StackFrameInfo& info )
 	{
-	#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+	#if defined(NODECPP_WINDOWS)
 
 		static constexpr size_t TRACE_MAX_FUNCTION_NAME_LENGTH = 1024;
 		HANDLE process = GetCurrentProcess();
@@ -180,8 +210,10 @@ namespace nodecpp::stack_info_impl {
 		if ( addrOK )
 			info.functionName = symbol->Name;
 		return true;
-		
-	#elif defined NODECPP_GCC
+
+	#elif defined(NODECPP_LINUX)
+
+	#if defined(NODECPP_GCC)
 
 		nodecpp::stack_info_impl::ModuleAndOffset mao;
 		if ( addrToModuleAndOffset( ptr, mao ) )
@@ -194,7 +226,7 @@ namespace nodecpp::stack_info_impl {
 		else
 			return false;
 
-	#elif defined NODECPP_CLANG
+	#elif defined(NODECPP_CLANG)
 
 		void* sp = ptr;
 		char ** btsymbols = backtrace_symbols( &sp, 1 );
@@ -206,9 +238,28 @@ namespace nodecpp::stack_info_impl {
 			return true;
 		}
 		return false;
+	#else
+	#error compiler not (yet) supported
+	#endif
+
+	#elif defined(NODECPP_ANDROID)
+
+		nodecpp::stack_info_impl::ModuleAndOffset mao;
+		if ( addrToModuleAndOffset( ptr, mao ) )
+		{
+			info.offset = mao.offsetInModule;
+			info.modulePath = mao.modulePath;
+
+			// mb: addr2line is not present on the device, is on the host where cross compile took place, i.e.
+			// %ANDROID_SDK_HOME%\ndk\24.0.8215888\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-addr2line.exe
+			// addFileLineInfo( info );
+			return true;
+		}
+		else
+			return false;
 
 	#else
-	#error not (yet) supported
+	#error platform not (yet) supported
 	#endif // platform/compiler
 	}
 } // nodecpp::stack_info_impl
@@ -237,7 +288,7 @@ namespace nodecpp {
 	void StackInfo::preinit()
 	{
 		static constexpr size_t TRACE_MAX_STACK_FRAMES = 1024;
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
+#if defined(NODECPP_WINDOWS)
 
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		HANDLE process = GetCurrentProcess();
@@ -245,10 +296,18 @@ namespace nodecpp {
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
 		stackPointers.init( stack, numberOfFrames );
 		
-#elif defined NODECPP_CLANG || defined NODECPP_GCC
+#elif defined(NODECPP_LINUX)
 
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );
+		stackPointers.init( stack, numberOfFrames );
+
+#elif defined(NODECPP_ANDROID)
+
+		void *stack[TRACE_MAX_STACK_FRAMES];
+		BacktraceState state = {stack, stack + TRACE_MAX_STACK_FRAMES};
+		_Unwind_Backtrace(unwindCallback, &state);
+		int numberOfFrames = state.current - stack;
 		stackPointers.init( stack, numberOfFrames );
 
 #else
@@ -259,23 +318,6 @@ namespace nodecpp {
 
 	void StackInfo::postinit() const
 	{
-#if (defined NODECPP_MSVC) || (defined NODECPP_WINDOWS && defined NODECPP_CLANG )
-
-		void** stack = stackPointers.get();
-		size_t numberOfFrames = stackPointers.size();
-		std::string out;
-		for (int i = 0; i < numberOfFrames; i++)
-		{
-			nodecpp::stack_info_impl::StackFrameInfo info;
-			nodecpp::stack_info_impl::StackPointerInfoCache::getRegister().resolveData( stack[i], info );
-			stackPointerToInfoToString( info, out );
-		}
-		if ( !stripPoint.empty() )
-			strip( out, stripPoint.c_str() );
-		*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
-		
-#elif defined NODECPP_CLANG || defined NODECPP_GCC
-
 		void** stack = stackPointers.get();
 		size_t numberOfFrames = stackPointers.size();
 		std::string out;
@@ -288,10 +330,6 @@ namespace nodecpp {
 		if ( !stripPoint.empty() )
 			strip( out, stripPoint.c_str() );
 		*const_cast<error::string_ref*>(&whereTaken) = out.c_str();
-
-#else
-#error not (yet) supported
-#endif // platform/compiler
 	}
 
 

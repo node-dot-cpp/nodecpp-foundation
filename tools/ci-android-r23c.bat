@@ -1,6 +1,3 @@
-rem script to build with Visual Studio
-rem run from root as 'tools\ci-msvc2019'
-
 rmdir /S /Q build\android-r23c
 mkdir build\android-r23c
 cd build\android-r23c

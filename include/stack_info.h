@@ -38,7 +38,7 @@
 #include "log.h"
 #include <fmt/format.h>
 
-#if ! ( ( ( defined NODECPP_LINUX || defined NODECPP_MAC ) && ( defined NODECPP_CLANG || defined NODECPP_GCC ) ) || defined NODECPP_WINDOWS )
+#if ! ( ( ( defined NODECPP_LINUX || defined NODECPP_MAC ) && ( defined NODECPP_CLANG || defined NODECPP_GCC ) ) || defined NODECPP_WINDOWS || defined(NODECPP_ANDROID) )
 #error unsupported
 #endif
 

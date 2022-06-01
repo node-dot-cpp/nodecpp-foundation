@@ -64,8 +64,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_link_libraries(foundation pthread)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Android")
-	# stack info not supported on Darwin yet
-	target_compile_definitions(foundation PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
 
 	target_compile_options(foundation PUBLIC -fexceptions -fnon-call-exceptions -fno-strict-aliasing)
 	target_compile_options(fmt PUBLIC -fexceptions -fnon-call-exceptions)

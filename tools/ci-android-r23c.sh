@@ -9,5 +9,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DANDROID_ABI=arm64-v8a -DANDROID_NDK=${ANDROID
 
 cmake --build .
 
+# TODO, push to virtual device and run tests there
 # ctest --output-on-failure
 

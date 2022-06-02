@@ -39,7 +39,7 @@
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 
-#elif defined(NODECPP_LINUX)
+#elif defined(NODECPP_LINUX) || defined(NODECPP_MAC)
 
 #include <execinfo.h>
 #include <unistd.h>
@@ -84,7 +84,7 @@ static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFr
 
 #endif // defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
 
-#if (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID)
+#if (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID) || defined(NODECPP_MAC)
 
 static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::ModuleAndOffset& mao ) {
 	Dl_info info;
@@ -242,6 +242,21 @@ namespace nodecpp::stack_info_impl {
 	#error compiler not (yet) supported
 	#endif
 
+	#elif defined(NODECPP_MAC)
+
+		nodecpp::stack_info_impl::ModuleAndOffset mao;
+		if ( addrToModuleAndOffset( ptr, mao ) )
+		{
+			info.offset = mao.offsetInModule;
+			info.modulePath = mao.modulePath;
+			
+			// mb: addr2line is not found on mac TODO
+			// addFileLineInfo( info );
+			return true;
+		}
+		else
+			return false;
+
 	#elif defined(NODECPP_ANDROID)
 
 		nodecpp::stack_info_impl::ModuleAndOffset mao;
@@ -296,7 +311,7 @@ namespace nodecpp {
 		WORD numberOfFrames = CaptureStackBackTrace(1, TRACE_MAX_STACK_FRAMES, stack, NULL); // excluding current call itself
 		stackPointers.init( stack, numberOfFrames );
 		
-#elif defined(NODECPP_LINUX)
+#elif defined(NODECPP_LINUX) || defined(NODECPP_MAC)
 
 		void *stack[TRACE_MAX_STACK_FRAMES];
 		int numberOfFrames = backtrace( stack, TRACE_MAX_STACK_FRAMES );

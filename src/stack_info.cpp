@@ -320,11 +320,13 @@ namespace nodecpp::stack_info_impl {
 		nodecpp::stack_info_impl::ModuleAndOffset mao;
 		if ( addrToModuleAndOffset( ptr, mao ) )
 		{
+			// mb: clang on android behaves as gcc on linux,
+			// and not as clang on linux
 			info.offset = mao.offsetInModule;
 			info.modulePath = mao.modulePath;
 
 			// mb: addr2line is not present on the device, is on the host where cross compile took place, i.e.
-			// %ANDROID_SDK_HOME%\ndk\24.0.8215888\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-addr2line.exe
+			// %ANDROID_HOME%\ndk\24.0.8215888\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-addr2line.exe
 			// useAddr2Line( info );
 			return true;
 		}

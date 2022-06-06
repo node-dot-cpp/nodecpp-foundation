@@ -57,34 +57,51 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if defined(NODECPP_LINUX) || defined(NODECPP_MAC)
 
-
-#if defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
-
-static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFrameInfo& info ) {
-	if ( symbol.size() == 0 )
-		return;
-	size_t pos = symbol.find_last_of( '[' );
-	if ( pos != std::string::npos )
-		info.offset = strtoll( symbol.c_str() + pos + 1, NULL, 0);
-	else
-	{
-		info.offset = 0;
-		return;
+static std::string sh(std::string cmd) {
+	static constexpr size_t buffSz = 128;
+	char buffer[buffSz+1];
+	std::string result;
+	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+	if (!pipe) return result; // with no data
+	while (!feof(pipe.get())) {
+		if (fgets(buffer, buffSz, pipe.get()) != nullptr) {
+			buffer[buffSz] = 0;
+			result += buffer;
+		}
 	}
-	pos = symbol.find_last_of( '(' );
-	if ( pos != std::string::npos )
-		info.modulePath = symbol.substr( 0, pos );
-	else
-	{
-		info.modulePath = "";
-		return;
-	}
+    return result;
 }
 
-#endif // defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
+#endif
 
-#if (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID) || defined(NODECPP_MAC)
+// #if defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
+
+// static void parseBtSymbol( std::string symbol, nodecpp::stack_info_impl::StackFrameInfo& info ) {
+// 	if ( symbol.size() == 0 )
+// 		return;
+// 	size_t pos = symbol.find_last_of( '[' );
+// 	if ( pos != std::string::npos )
+// 		info.offset = strtoll( symbol.c_str() + pos + 1, NULL, 0);
+// 	else
+// 	{
+// 		info.offset = 0;
+// 		return;
+// 	}
+// 	pos = symbol.find_last_of( '(' );
+// 	if ( pos != std::string::npos )
+// 		info.modulePath = symbol.substr( 0, pos );
+// 	else
+// 	{
+// 		info.modulePath = "";
+// 		return;
+// 	}
+// }
+
+// #endif // defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
+
+#if defined(NODECPP_LINUX) || defined(NODECPP_ANDROID) || defined(NODECPP_MAC)
 
 static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::ModuleAndOffset& mao ) {
 	Dl_info info;
@@ -100,7 +117,7 @@ static bool addrToModuleAndOffset( void* fnAddr, nodecpp::stack_info_impl::Modul
 	return true;
 }
 
-#endif // (defined(NODECPP_LINUX) && defined(NODECPP_GCC)) || defined(NODECPP_ANDROID)
+#endif // defined(NODECPP_LINUX) || defined(NODECPP_ANDROID) || defined(NODECPP_MAC)
 
 #if defined(NODECPP_LINUX)
 
@@ -116,46 +133,88 @@ static void parseAddr2LineOutput( const std::string& str, nodecpp::stack_info_im
 		info.functionName = str;
 		return;
 	}
+	
+	if(info.functionName == "??")
+		info.functionName.clear();
+
 	size_t start = pos + 1;
 	pos = str.find( ':', start );
 	if ( pos != std::string::npos )
 		info.srcPath = str.substr( start, pos - start );
 	else // something went wrong
 		return;
+
+	if(info.srcPath == "??")
+		info.srcPath.clear();
+
 	info.line = atol( str.c_str() + pos + 1 );
 }
 
-std::string sh(std::string cmd) {
-	static constexpr size_t buffSz = 128;
-	char buffer[buffSz+1];
-	std::string result;
-	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-	if (!pipe) return result; // with no data
-	while (!feof(pipe.get())) {
-		if (fgets(buffer, buffSz, pipe.get()) != nullptr) {
-			buffer[buffSz] = 0;
-			result += buffer;
-		}
-	}
-    return result;
-}
 
-static void useAddr2Line( nodecpp::stack_info_impl::StackFrameInfo& info ) {
+static std::string callAddr2Line( nodecpp::stack_info_impl::stdstring modulePath, uintptr_t offset ) {
 	char offsetstr[32];
-	sprintf( offsetstr, "0x%zx", info.offset );
+	sprintf( offsetstr, "0x%zx", offset );
 	std::string cmd = "addr2line -e ";
-	cmd += info.modulePath;
+	cmd += modulePath;
 	cmd += " -f -C ";
 	cmd += offsetstr;
 	auto r = sh(cmd);
+	return r;
+}
+
+static void useAddr2Line( nodecpp::stack_info_impl::StackFrameInfo& info ) {
+	// mb: clang on linux has special case
+	auto r = callAddr2Line(info.modulePath, info.offset);
+	if(r == "??\n??:0\n" && info.offset2 != 0)
+	{
+		r = callAddr2Line(info.modulePath, info.offset2);
+		std::swap(info.offset, info.offset2);
+	}
+
 	parseAddr2LineOutput( r, info );
 }
 
-static void addFileLineInfo( nodecpp::stack_info_impl::StackFrameInfo& sfi ) {
-	useAddr2Line( sfi );
+#endif // defined(NODECPP_LINUX)
+
+#if defined(NODECPP_MAC)
+static void parseAtosOutput( const std::string& str, nodecpp::stack_info_impl::StackFrameInfo& info ) {
+	if ( str.size() == 0 )
+		return;
+	size_t pos = 0;
+	size_t pos1 = str.find(' ');
+
+	if ( pos1 != std::string::npos && pos2 != std::string::npos && pos1 < pos2)
+		info.functionName = str.substr(0, pos1);
+	else
+	{
+		info.functionName = str;
+		return;
+	}
+
+	size_t pos3 = str.find_last_of('(');
+	size_t pos4 = str.find_last_of(':');
+	size_t pos5 = str.find_last_of(')');
+
+	if ( pos3 != std::string::npos && pos4 != std::string::npos  && pos5 != std::string::npos && pos3 < pos4 && pos4 < pos5)
+	{
+		info.srcPath = str.substr( pos3 + 1, pos4 - (pos3 + 1) );
+		std::string lineStr = str.substr( pos4 + 1, pos5 - (pos4 + 1));
+		info.line = atol( lineStr.c_str() );
+	}
 }
 
-#endif // defined(NODECPP_LINUX)
+void useAtos( nodecpp::stack_info_impl::StackFrameInfo& info ) {
+	char offsetstr[32];
+	sprintf( offsetstr, "0x%zx", info.offset );
+	std::string cmd = "atos -o ";
+	cmd += info.modulePath;
+	cmd += " --offset ";
+	cmd += offsetstr;
+	auto r = sh(cmd);
+	parseAtosOutput( r, info );
+}
+
+#endif // defined(NODECPP_MAC)
 
 #if defined(NODECPP_ANDROID)
 struct BacktraceState
@@ -211,36 +270,36 @@ namespace nodecpp::stack_info_impl {
 			info.functionName = symbol->Name;
 		return true;
 
-	#elif defined(NODECPP_LINUX)
-
-	#if defined(NODECPP_GCC)
+	#elif defined(NODECPP_LINUX) && defined(NODECPP_GCC)
 
 		nodecpp::stack_info_impl::ModuleAndOffset mao;
 		if ( addrToModuleAndOffset( ptr, mao ) )
 		{
 			info.offset = mao.offsetInModule;
 			info.modulePath = mao.modulePath;
-			addFileLineInfo( info );
+			useAddr2Line( info );
 			return true;
 		}
 		else
 			return false;
 
-	#elif defined(NODECPP_CLANG)
+	#elif defined(NODECPP_LINUX) && defined(NODECPP_CLANG)
 
-		void* sp = ptr;
-		char ** btsymbols = backtrace_symbols( &sp, 1 );
-		if ( btsymbols && btsymbols[0] )
+		nodecpp::stack_info_impl::ModuleAndOffset mao;
+		if ( addrToModuleAndOffset( ptr, mao ) )
 		{
-			parseBtSymbol( btsymbols[0], info );
-			free( btsymbols );
-			addFileLineInfo( info );
+			// mb: I see strange behaviour on clang on linux.
+			// when we are the main executable, ptr returned by
+			// backtrace is already an offset. But is an absolute
+			// address when we are a dynamic load library
+			info.offset = reinterpret_cast<uintptr_t>(ptr);
+			info.offset2 = mao.offsetInModule;
+			info.modulePath = mao.modulePath;
+			useAddr2Line( info );
 			return true;
 		}
-		return false;
-	#else
-	#error compiler not (yet) supported
-	#endif
+		else
+			return false;
 
 	#elif defined(NODECPP_MAC)
 
@@ -249,9 +308,8 @@ namespace nodecpp::stack_info_impl {
 		{
 			info.offset = mao.offsetInModule;
 			info.modulePath = mao.modulePath;
-			
-			// mb: addr2line is not found on mac TODO
-			// addFileLineInfo( info );
+			// mb: addr2line is not found on mac, use atos
+			useAtos( info );
 			return true;
 		}
 		else
@@ -267,14 +325,14 @@ namespace nodecpp::stack_info_impl {
 
 			// mb: addr2line is not present on the device, is on the host where cross compile took place, i.e.
 			// %ANDROID_SDK_HOME%\ndk\24.0.8215888\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-addr2line.exe
-			// addFileLineInfo( info );
+			// useAddr2Line( info );
 			return true;
 		}
 		else
 			return false;
 
 	#else
-	#error platform not (yet) supported
+	#error platform not (yet) supported, use NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 	#endif // platform/compiler
 	}
 } // nodecpp::stack_info_impl

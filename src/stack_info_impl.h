@@ -57,6 +57,7 @@ namespace nodecpp::stack_info_impl {
 		int line = 0;
 		int column = 0;
 		uintptr_t offset = 0;
+		uintptr_t offset2 = 0;
 	};
 
 	struct ModuleAndOffset

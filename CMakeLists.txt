@@ -52,6 +52,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	#	target_link_options(foundation PUBLIC -rdynamic)
 	set_target_properties(foundation PROPERTIES LINK_FLAGS -rdynamic)
 	target_link_libraries(foundation pthread)
+	target_link_libraries(foundation dl)
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
@@ -71,10 +72,6 @@ endif()
 
 
 target_link_libraries(foundation fmt::fmt)
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_link_libraries(foundation dl)
-endif()
 
 #-------------------------------------------------------------------------------------------
 # Tests 

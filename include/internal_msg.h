@@ -231,6 +231,7 @@ namespace nodecpp::platform::internal_msg {
 
 		public:
 			using BufferT = InternalMsg;
+			using CharT = char;
 
 			ReadIter( const IndexPageHeader* ip_, const uint8_t* page_, size_t sz ) : ip( ip_ ), page( page_ ), totalSz( sz )
 			{
@@ -345,6 +346,14 @@ namespace nodecpp::platform::internal_msg {
 				return ret;
 			}
 			size_t offset() const { return currentOffset; }
+			CharT readChar()
+			{
+				NODECPP_ASSERT( nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::pedantic, totalSz );
+				CharT ret = *page;
+				impl_skip( 1 );
+				++currentOffset;
+				return ret;
+			}
 		};
 
 		using ReadIteratorT = ReadIter;

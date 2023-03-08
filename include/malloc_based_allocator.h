@@ -31,13 +31,10 @@
 #include "platform_base.h"
 #include "allocator_template.h"
 
-#ifdef NODECPP_WINDOWS
 
-#include <malloc.h>
-#define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) _aligned_malloc( size, alignment )
-#define MALLOC_BASED_ALIGNED_FREE( ptr ) ::_aligned_free( ptr )
+#if defined(NODECPP_ARM64)
 
-#elif (defined(NODECPP_MAC) || defined(NODECPP_ANDROID)) && defined(NODECPP_ARM64)
+#if defined(NODECPP_MAC) || defined(NODECPP_ANDROID)
 // mb: aligned_alloc on Mac on M1 is always returning null
 // on Android is not even there
 // also it seems that default malloc alignment is rather high
@@ -46,15 +43,40 @@
 #define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::malloc( size )
 #define MALLOC_BASED_ALIGNED_FREE( ptr ) ::free( ptr )
 
-#elif ( defined(NODECPP_LINUX) || defined(NODECPP_MAC) ) && (defined(NODECPP_GCC) || defined(NODECPP_CLANG))
+#else
+#error not implemented (add known cases when possible)
+#endif
+
+#elif defined(NODECPP_X86) || defined(NODECPP_X64)
+
+#if defined(NODECPP_WINDOWS)
+
+#include <malloc.h>
+#define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) _aligned_malloc( size, alignment )
+#define MALLOC_BASED_ALIGNED_FREE( ptr ) ::_aligned_free( ptr )
+
+#elif defined(NODECPP_LINUX) || defined(NODECPP_MAC)
 
 #include <stdlib.h>
 #define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::aligned_alloc( size, alignment )
 #define MALLOC_BASED_ALIGNED_FREE( ptr ) ::free( ptr )
 
+#elif defined(NODECPP_ANDROID)
+// mb: aligned_alloc doesn't exist on Android
+// but it seems that default malloc alignment is rather high
+// so temporarily disabling aligned_alloc
+#include <stdlib.h>
+#define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::malloc( size )
+#define MALLOC_BASED_ALIGNED_FREE( ptr ) ::free( ptr )
+
 #else
 #error not implemented (add known cases when possible)
 #endif
+
+#else
+#error not implemented (add known cases when possible)
+#endif
+
 
 namespace nodecpp {
 

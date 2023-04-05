@@ -29,6 +29,8 @@
 #define ALLOCATOR_TEMPLATE_H
 
 #include "platform_base.h"
+#include "nodecpp_assert.h"
+#include "foundation_module.h"
 #include <stdlib.h>
 //#include <malloc.h>
 

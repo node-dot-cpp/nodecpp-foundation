@@ -53,11 +53,11 @@ static constexpr size_t NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP = NODECPP_GU
 #endif // USING_ALIGNED_MALLOC
 
 // main values describing pointer bit usage
-#if (defined NODECPP_X64) || (defined NODECPP_ARM64)
+#if (defined NODECPP_X64) || (defined NODECPP_ARM64) || (defined NODECPP_WASM64)
 constexpr size_t nodecpp_ptr_pointer_bit_size = 64;
 constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 16;
-#elif (defined NODECPP_X86)
+#elif (defined NODECPP_X86) || (defined NODECPP_WASM32)
 constexpr size_t nodecpp_ptr_pointer_bit_size = 32;
 constexpr size_t nodecpp_allocated_ptr_unused_lower_bit_count_minimum = NODECPP_GUARANTEED_ALLOCATION_ALIGNMENT_EXP;
 constexpr size_t nodecpp_ptr_unused_upper_bit_count = 0;

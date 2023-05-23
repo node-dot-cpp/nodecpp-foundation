@@ -278,6 +278,65 @@ void VirtualMemory::FreeAddressSpace(void* addr, size_t size)
 	}
 }
 
+#elif defined(NODECPP_WASM32) || defined(NODECPP_WASM64)
+
+
+#include <stdlib.h>
+
+/*#include <cstdlib>
+#include <cstddef>
+#include <memory>
+#include <cstring>
+#include <limits>*/
+
+#include <windows.h>
+
+
+
+using namespace nodecpp;
+
+static constexpr size_t WasmPageSize = 0x1000;
+
+/*static*/
+size_t VirtualMemory::getPageSize()
+{
+	return WasmPageSize;  
+}
+
+/*static*/
+size_t VirtualMemory::getAllocGranularity()
+{
+	return getPageSize();
+}
+
+/*static*/
+void* VirtualMemory::allocate(size_t size)
+{
+	void* ptr = ::malloc( size + WasmPageSize );
+	if (ptr == (void*)(-1))
+	{
+		int e = errno;
+		nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::foundation_module_id), "mmap error at allocate({}), error = {} ({})", size, e, strerror(e) );
+		throw std::bad_alloc();
+	}
+
+	uintptr_t* ret = (uintptr_t*)((((uintptr_t)ptr) & (~(WasmPageSize-1))) + WasmPageSize);
+	*(ret-1) = (uintptr_t)ptr;
+	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, (uintptr_t)ret - (uintptr_t)ptr <= WasmPageSize );
+	return ret;
+}
+
+/*static*/
+void VirtualMemory::deallocate(void* ptr, size_t size)
+{
+	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, size % WasmPageSize == 0 );
+	void* ptrToDelete = (void*)(*((uintptr_t*)ptr - 1));
+	NODECPP_ASSERT(nodecpp::foundation::module_id, nodecpp::assert::AssertLevel::critical, (uintptr_t)ptr - (uintptr_t)ptrToDelete <= WasmPageSize );
+	::free(ptrToDelete);
+}
+ 
+
+
 #else // other OSs
 
 #error unknown/unsupported OS

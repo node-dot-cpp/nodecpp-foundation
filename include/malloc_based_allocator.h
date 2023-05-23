@@ -73,6 +73,11 @@
 #error not implemented (add known cases when possible)
 #endif
 
+#elif defined(NODECPP_WASM32) || defined(NODECPP_WASM64)
+#include <stdlib.h>
+#define MALLOC_BASED_ALIGNED_ALLOC( size, alignment ) ::malloc( size )
+#define MALLOC_BASED_ALIGNED_FREE( ptr ) ::free( ptr )
+
 #else
 #error not implemented (add known cases when possible)
 #endif
@@ -91,6 +96,8 @@ namespace nodecpp {
 #ifdef NODECPP_WINDOWS
 		static constexpr size_t guaranteed_malloc_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
 #elif ( defined(NODECPP_LINUX) || defined(NODECPP_MAC) || defined(NODECPP_ANDROID)) && (defined(NODECPP_GCC) || defined(NODECPP_CLANG))
+		static constexpr size_t guaranteed_malloc_alignment = NODECPP_GUARANTEED_MALLOC_ALIGNMENT;
+#elif ( defined(NODECPP_WASM32) || defined(NODECPP_WASM64) )
 		static constexpr size_t guaranteed_malloc_alignment = NODECPP_GUARANTEED_MALLOC_ALIGNMENT;
 #else
 #error not implemented (add known cases when possible)

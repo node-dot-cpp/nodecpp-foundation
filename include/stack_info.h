@@ -28,8 +28,6 @@
 #ifndef NODECPP_STACK_INFO_H
 #define NODECPP_STACK_INFO_H
 
-#ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
-
 // NOTE: on Linux (both clang and gcc) the following is required: -rdynamic -ldl
 
 #include "platform_base.h"
@@ -37,6 +35,8 @@
 #include "string_ref.h"
 #include "log.h"
 #include <fmt/format.h>
+
+#ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
 #if ! ( ( ( defined NODECPP_LINUX || defined NODECPP_MAC ) && ( defined NODECPP_CLANG || defined NODECPP_GCC ) ) || defined NODECPP_WINDOWS || defined(NODECPP_ANDROID) )
 #error unsupported

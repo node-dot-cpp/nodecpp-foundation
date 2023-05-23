@@ -37,6 +37,8 @@
 #define NODECPP_GCC
 #elif defined(_MSC_VER)
 #define NODECPP_MSVC
+#elif defined(__EMSCRIPTEN__)
+#define NODECPP_EMSCRIPTEN
 #else
 #error unknown/unsupported compiler
 #endif
@@ -52,6 +54,17 @@ static_assert(sizeof(void*) == 4);
 #define NODECPP_ARM64
 static_assert(sizeof(void*) == 8);
 //#pragma message( "ARM architecture is only partially supported. Use with precaution" ) 
+#elif defined(__EMSCRIPTEN__)
+#if defined(__wasm32__) || defined(__wasm32)
+#define NODECPP_WASM32
+static_assert(sizeof(void*) == 4);
+#elif defined(__wasm64__) || defined(__wasm64)
+#define NODECPP_WASM64
+static_assert(sizeof(void*) == 8);
+#else
+#error unknown/unsupported CPU
+#endif 
+//#pragma message( "EMSCRIPTEN (virtual) architecture is only partially supported. Use with precaution" ) 
 #else
 #error unknown/unsupported CPU
 #endif
@@ -66,6 +79,15 @@ static_assert(sizeof(void*) == 8);
 #define NODECPP_WINDOWS
 #elif (defined __OSX__) || (defined __APPLE__)
 #define NODECPP_MAC
+#elif (defined ___EMSCRIPTEN__)
+#if defined(__wasm32__) || defined(__wasm32)
+#define NODECPP_WASM32
+static_assert(sizeof(void*) == 4);
+#elif defined(__wasm64__) || defined(__wasm64)
+#define NODECPP_WASM64
+static_assert(sizeof(void*) == 8);
+#define NODECPP_NO_STACK_INFO_IN_EXCEPTIONS // yet to be developed
+#endif
 #else
 #error unknown/unsupported OS
 #endif
@@ -141,6 +163,22 @@ bool is_guaranteed_on_stack( void* ptr )
 #define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT (1<<NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP)
 
 #endif//defined(NODECPP_X86) || defined(NODECPP_X64) || defined(NODECPP_ARM64)
+
+#elif defined(NODECPP_WASM32) || defined(NODECPP_WASM64)
+
+#define NODECPP_SECOND_NULLPTR ((void*)1) // TODO: define accordingly
+#define NODECPP_MINIMUM_CPU_PAGE_SIZE 4096 // protective value; redefine properly wherever possible
+#define NODECPP_MINIMUM_ZERO_GUARD_PAGE_SIZE 4096 // protective value; redefine properly wherever possible
+struct _TMP_STRUCT_WITH_STD_FUNCTION { std::function<size_t(size_t)> dummy; };
+#define NODECPP_MAX_SUPPORTED_ALIGNMENT ( std::max( sizeof(::std::max_align_t), alignof(_TMP_STRUCT_WITH_STD_FUNCTION) ) )
+#define NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW ( std::max( std::max( sizeof(::std::max_align_t), static_cast<size_t>(__STDCPP_DEFAULT_NEW_ALIGNMENT__)), alignof(_TMP_STRUCT_WITH_STD_FUNCTION) ) )
+#if defined(NODECPP_WASM32)
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 2
+#else
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT_EXP 3
+#endif
+#define NODECPP_GUARANTEED_MALLOC_ALIGNMENT (sizeof(::std::max_align_t))
+#define NODECPP_GUARANTEED_IIBMALLOC_ALIGNMENT NODECPP_GUARANTEED_MALLOC_ALIGNMENT
 
 #else // other OSs
 

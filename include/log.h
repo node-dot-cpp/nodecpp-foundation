@@ -195,7 +195,7 @@ namespace nodecpp::log {
 		// NOTE: it is just a quick sketch
 		friend class Log;
 
-		LogBufferBaseData* logData;
+		LogBufferBaseData* logData = nullptr;
 		ChainedWaitingForGuaranteedWrite gww;
 
 		void insertSingleMsg( const char* msg, size_t sz );

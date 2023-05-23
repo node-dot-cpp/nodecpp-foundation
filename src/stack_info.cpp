@@ -25,9 +25,10 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#include "stack_info.h"
+
 #ifndef NODECPP_NO_STACK_INFO_IN_EXCEPTIONS
 
-#include "stack_info.h"
 #include "stack_info_impl.h"
 #include "log.h"
 

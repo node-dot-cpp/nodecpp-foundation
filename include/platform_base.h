@@ -79,7 +79,7 @@ static_assert(sizeof(void*) == 8);
 #define NODECPP_WINDOWS
 #elif (defined __OSX__) || (defined __APPLE__)
 #define NODECPP_MAC
-#elif (defined ___EMSCRIPTEN__)
+#elif (defined __EMSCRIPTEN__)
 #if defined(__wasm32__) || defined(__wasm32)
 #define NODECPP_WASM32
 static_assert(sizeof(void*) == 4);
